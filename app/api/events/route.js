@@ -1,10 +1,7 @@
 import { Redis } from '@upstash/redis'
-
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-})
 import { NextResponse } from 'next/server'
+
+const kv = Redis.fromEnv()
 
 const VALID_KEYS = ['cart_adds', 'bundle_upgrades', 'checkout_starts', 'purchases']
 const KV_KEY = 'fitzone_events'
