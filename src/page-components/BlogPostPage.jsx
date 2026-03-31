@@ -641,10 +641,12 @@ Stand beside a wall, place your arm on it at a 90-degree angle. Rotate your body
   },
 }
 
-export default function BlogPostPage() {
-  const { id } = useParams()
+export default function BlogPostPage({ initialPost, postId }) {
+  const params = useParams()
+  const id = postId || params?.id
   const { lang } = useLanguage()
-  const post = blogPosts[id]
+  // Use server-fetched post if provided, fall back to hardcoded
+  const post = initialPost || blogPosts[id]
 
   if (!post) {
     return (

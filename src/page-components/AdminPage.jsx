@@ -1,27 +1,17 @@
 'use client'
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShoppingCart, Gift, CreditCard, CheckCircle, ExternalLink,
   Copy, LogOut, Lock, BarChart2, Package, Megaphone, RefreshCw,
-  Eye, EyeOff, TrendingUp, AlertTriangle
+  Eye, EyeOff, TrendingUp, AlertTriangle, Pencil, X, Save,
+  Plus, Trash2, BookOpen, Upload, Link as LinkIcon, ChevronDown, ChevronUp
 } from 'lucide-react'
-import { BOOKS_DATA } from '../context/CartContext'
 
 const ADMIN_PASSWORD = 'fitzone2025'
 const SESSION_KEY = 'fitzone_admin'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX'
-
 const EVENT_DEFAULTS = { cart_adds: 0, bundle_upgrades: 0, checkout_starts: 0, purchases: 0 }
-
-const MARKETING_INFO = [
-  { label: 'WhatsApp Number', value: '966500000000', copyable: true },
-  { label: 'WhatsApp Link', value: 'https://wa.me/966500000000', copyable: true },
-  { label: 'Twitter / X', value: 'https://x.com/', copyable: true },
-  { label: 'Instagram', value: 'https://instagram.com/', copyable: true },
-  { label: 'YouTube', value: 'https://youtube.com/', copyable: true },
-  { label: 'GA4 Measurement ID', value: GA_ID, copyable: true },
-]
 
 const eventCards = [
   { key: 'cart_adds',       label: 'Cart Adds',       icon: ShoppingCart, color: 'text-brand',        bg: 'bg-brand/10' },
@@ -29,6 +19,24 @@ const eventCards = [
   { key: 'checkout_starts', label: 'Checkout Starts', icon: CreditCard,   color: 'text-yellow-400',  bg: 'bg-yellow-400/10' },
   { key: 'purchases',       label: 'Purchases',       icon: CheckCircle,  color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
 ]
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function SaveBtn({ saving, onClick }) {
+  return (
+    <button onClick={onClick} disabled={saving}
+      className="flex items-center gap-1 text-xs bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50">
+      <Save size={12} />{saving ? 'Saving…' : 'Save'}
+    </button>
+  )
+}
+function CancelBtn({ onClick }) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-1 text-xs text-text-muted hover:text-white border border-border px-3 py-1.5 rounded-lg transition-colors">
+      <X size={12} />Cancel
+    </button>
+  )
+}
 
 // ── Login Gate ────────────────────────────────────────────────────────────────
 function LoginGate({ onSuccess }) {
@@ -38,58 +46,32 @@ function LoginGate({ onSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, 'true')
-      onSuccess()
-    } else {
-      setError('Incorrect password.')
-      setPassword('')
-    }
+    if (password === ADMIN_PASSWORD) { sessionStorage.setItem(SESSION_KEY, 'true'); onSuccess() }
+    else { setError('Incorrect password.'); setPassword('') }
   }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6" dir="ltr">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="w-full max-w-sm"
-      >
+      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-sm">
         <div className="flex items-center gap-3 mb-8">
           <img src="/fitzone-logo.jpeg" alt="FitZone" className="w-10 h-10 rounded-xl object-contain" />
           <span className="text-white text-xl font-bold">FitZone Admin</span>
         </div>
         <div className="bg-surface border border-border rounded-2xl p-8">
-          <div className="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6">
-            <Lock size={22} className="text-brand" />
-          </div>
+          <div className="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mb-6"><Lock size={22} className="text-brand" /></div>
           <h1 className="text-white text-2xl font-bold mb-1">Sign in</h1>
           <p className="text-text-secondary text-sm mb-6">Admin access only</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
-              <input
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => { setPassword(e.target.value); setError('') }}
-                placeholder="Password"
-                className="w-full bg-background border border-border rounded-xl px-4 py-3 pr-11 text-white placeholder:text-text-muted focus:outline-none focus:border-brand transition-colors"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw(p => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-white transition-colors"
-              >
+              <input type={showPw ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); setError('') }}
+                placeholder="Password" autoFocus
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 pr-11 text-white placeholder:text-text-muted focus:outline-none focus:border-brand transition-colors" />
+              <button type="button" onClick={() => setShowPw(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-white transition-colors">
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button
-              type="submit"
-              className="w-full bg-brand text-white py-3 rounded-xl font-bold hover:bg-brand-dark transition-colors"
-            >
-              Enter Dashboard
-            </button>
+            <button type="submit" className="w-full bg-brand text-white py-3 rounded-xl font-bold hover:bg-brand-dark transition-colors">Enter Dashboard</button>
           </form>
         </div>
       </motion.div>
@@ -97,7 +79,7 @@ function LoginGate({ onSuccess }) {
   )
 }
 
-// ── Funnel Bar Chart ──────────────────────────────────────────────────────────
+// ── Funnel Chart ──────────────────────────────────────────────────────────────
 function FunnelChart({ events }) {
   const steps = [
     { label: 'Cart Adds',       value: events.cart_adds,       color: 'bg-brand' },
@@ -105,31 +87,23 @@ function FunnelChart({ events }) {
     { label: 'Purchases',       value: events.purchases,       color: 'bg-emerald-400' },
   ]
   const max = Math.max(...steps.map(s => s.value), 1)
-
   return (
     <div className="bg-surface border border-border rounded-2xl p-5 space-y-3">
       <p className="text-white text-sm font-semibold mb-4">Conversion Funnel</p>
       {steps.map((step, i) => {
         const pct = Math.round((step.value / max) * 100)
-        const dropPct = i > 0 && steps[i - 1].value > 0
-          ? Math.round((1 - step.value / steps[i - 1].value) * 100)
-          : null
+        const dropPct = i > 0 && steps[i - 1].value > 0 ? Math.round((1 - step.value / steps[i - 1].value) * 100) : null
         return (
           <div key={step.label}>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-text-secondary text-xs">{step.label}</span>
               <div className="flex items-center gap-2">
-                {dropPct !== null && (
-                  <span className="text-red-400 text-xs">-{dropPct}%</span>
-                )}
+                {dropPct !== null && <span className="text-red-400 text-xs">-{dropPct}%</span>}
                 <span className="text-white text-xs font-bold">{step.value}</span>
               </div>
             </div>
             <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-              <div
-                className={`h-full ${step.color} rounded-full transition-all duration-700`}
-                style={{ width: `${pct}%` }}
-              />
+              <div className={`h-full ${step.color} rounded-full transition-all duration-700`} style={{ width: `${pct}%` }} />
             </div>
           </div>
         )
@@ -138,44 +112,300 @@ function FunnelChart({ events }) {
   )
 }
 
+// ── Blog Editor Modal ─────────────────────────────────────────────────────────
+function BlogEditor({ post, onSave, onClose }) {
+  const isNew = !post?.id
+  const [form, setForm] = useState({
+    id: post?.id || '',
+    title: { ar: post?.title?.ar || '', en: post?.title?.en || '' },
+    excerpt: { ar: post?.excerpt?.ar || '', en: post?.excerpt?.en || '' },
+    content: { ar: post?.content?.ar || '', en: post?.content?.en || '' },
+    category: post?.category || 'nutrition',
+    readTime: { ar: post?.readTime?.ar || '', en: post?.readTime?.en || '' },
+    date: post?.date || new Date().toISOString().split('T')[0],
+    image: post?.image || '',
+    featured: post?.featured || false,
+  })
+  const [saving, setSaving] = useState(false)
+  const [imageMode, setImageMode] = useState('url') // 'url' | 'upload'
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef()
+
+  const set = (path, value) => {
+    const keys = path.split('.')
+    setForm(prev => {
+      const next = { ...prev }
+      if (keys.length === 1) next[keys[0]] = value
+      else next[keys[0]] = { ...prev[keys[0]], [keys[1]]: value }
+      return next
+    })
+  }
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+      const { url } = await res.json()
+      if (url) set('image', url)
+    } catch {}
+    setUploading(false)
+  }
+
+  const handleSave = async () => {
+    if (!form.title.en && !form.title.ar) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/blogs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (data.ok) onSave({ ...form, id: data.id || form.id })
+    } catch {}
+    setSaving(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center overflow-y-auto py-8 px-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-3xl bg-surface border border-border rounded-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h3 className="text-white font-bold">{isNew ? 'New Blog Post' : 'Edit Blog Post'}</h3>
+          <button onClick={onClose} className="text-text-muted hover:text-white transition-colors"><X size={18} /></button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Title */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Title (AR)</label>
+              <input value={form.title.ar} onChange={e => set('title.ar', e.target.value)} dir="rtl"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Title (EN)</label>
+              <input value={form.title.en} onChange={e => set('title.en', e.target.value)}
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
+            </div>
+          </div>
+
+          {/* Excerpt */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Excerpt (AR)</label>
+              <textarea value={form.excerpt.ar} onChange={e => set('excerpt.ar', e.target.value)} rows={2} dir="rtl"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors resize-none" />
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Excerpt (EN)</label>
+              <textarea value={form.excerpt.en} onChange={e => set('excerpt.en', e.target.value)} rows={2}
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors resize-none" />
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Content (AR) — Markdown supported</label>
+              <textarea value={form.content.ar} onChange={e => set('content.ar', e.target.value)} rows={8} dir="rtl"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-brand transition-colors resize-y" />
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Content (EN) — Markdown supported</label>
+              <textarea value={form.content.en} onChange={e => set('content.en', e.target.value)} rows={8}
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-brand transition-colors resize-y" />
+            </div>
+          </div>
+
+          {/* Image */}
+          <div>
+            <label className="text-text-secondary text-xs mb-1.5 block">Cover Image</label>
+            <div className="flex gap-2 mb-2">
+              <button onClick={() => setImageMode('url')}
+                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${imageMode === 'url' ? 'bg-brand/10 border-brand/40 text-brand' : 'border-border text-text-muted hover:text-white'}`}>
+                <LinkIcon size={12} />URL
+              </button>
+              <button onClick={() => setImageMode('upload')}
+                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${imageMode === 'upload' ? 'bg-brand/10 border-brand/40 text-brand' : 'border-border text-text-muted hover:text-white'}`}>
+                <Upload size={12} />Upload
+              </button>
+            </div>
+            {imageMode === 'url' ? (
+              <input value={form.image} onChange={e => set('image', e.target.value)} placeholder="https://..."
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
+            ) : (
+              <div>
+                <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
+                <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                  className="flex items-center gap-2 border border-dashed border-border hover:border-brand/40 rounded-xl px-4 py-3 text-text-secondary hover:text-white text-sm transition-colors w-full justify-center">
+                  <Upload size={15} />{uploading ? 'Uploading…' : 'Choose image file'}
+                </button>
+              </div>
+            )}
+            {form.image && (
+              <img src={form.image} alt="" className="mt-2 h-24 w-full object-cover rounded-xl" />
+            )}
+          </div>
+
+          {/* Meta row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Category</label>
+              <select value={form.category} onChange={e => set('category', e.target.value)}
+                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors">
+                <option value="nutrition">Nutrition</option>
+                <option value="workout">Workout</option>
+                <option value="lifestyle">Lifestyle</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Read Time (AR)</label>
+              <input value={form.readTime.ar} onChange={e => set('readTime.ar', e.target.value)} placeholder="٥ دقائق" dir="rtl"
+                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Read Time (EN)</label>
+              <input value={form.readTime.en} onChange={e => set('readTime.en', e.target.value)} placeholder="5 min read"
+                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
+            </div>
+            <div>
+              <label className="text-text-secondary text-xs mb-1.5 block">Date</label>
+              <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={form.featured} onChange={e => set('featured', e.target.checked)} className="w-4 h-4 accent-brand" />
+            <span className="text-text-secondary text-sm">Featured post (shows in hero grid)</span>
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-2 px-6 py-4 border-t border-border">
+          <CancelBtn onClick={onClose} />
+          <SaveBtn saving={saving} onClick={handleSave} />
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function Dashboard({ onLogout, initialEvents }) {
+  // Traffic
   const [events, setEvents] = useState(initialEvents ?? EVENT_DEFAULTS)
-  const [copied, setCopied] = useState(null)
-  const [resetting, setResetting] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [resetting, setResetting] = useState(false)
 
-  const conversionRate = events.cart_adds > 0
-    ? Math.round((events.purchases / events.cart_adds) * 100)
-    : 0
+  // Prices
+  const [prices, setPrices] = useState({ transformation: 79, nutrition: 79 })
+  const [editingPrice, setEditingPrice] = useState(null) // 'transformation' | 'nutrition'
+  const [priceInput, setPriceInput] = useState('')
+  const [savingPrice, setSavingPrice] = useState(false)
 
-  const avgOrderValue = events.purchases > 0
-    ? Math.round(
-        (events.purchases * BOOKS_DATA.bundle.price) / events.purchases
-      )
-    : BOOKS_DATA.bundle.price
+  // Marketing
+  const [marketing, setMarketing] = useState({ whatsapp: '', twitter: '', instagram: '', youtube: '' })
+  const [editingMkt, setEditingMkt] = useState(null)
+  const [mktInput, setMktInput] = useState('')
+  const [savingMkt, setSavingMkt] = useState(false)
 
+  // Blogs
+  const [blogs, setBlogs] = useState([])
+  const [editingBlog, setEditingBlog] = useState(null) // null | 'new' | post object
+  const [deletingBlog, setDeletingBlog] = useState(null)
+  const [blogsExpanded, setBlogsExpanded] = useState(true)
+
+  // Misc
+  const [copied, setCopied] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/admin/prices').then(r => r.json()).then(setPrices).catch(() => {})
+    fetch('/api/admin/marketing').then(r => r.json()).then(setMarketing).catch(() => {})
+    fetch('/api/admin/blogs').then(r => r.json()).then(data => { if (Array.isArray(data)) setBlogs(data) }).catch(() => {})
+  }, [])
+
+  const conversionRate = events.cart_adds > 0 ? Math.round((events.purchases / events.cart_adds) * 100) : 0
+  const bundlePrice = prices.transformation + prices.nutrition
+  const estRevenue = events.purchases * bundlePrice
+
+  // ── Handlers ──
   const handleReset = async () => {
     setResetting(true)
+    try { await fetch('/api/events', { method: 'DELETE' }); setEvents({ ...EVENT_DEFAULTS }) }
+    finally { setResetting(false); setConfirmReset(false) }
+  }
+
+  const startEditPrice = (id, currentPrice) => { setEditingPrice(id); setPriceInput(String(currentPrice)) }
+  const savePrice = async () => {
+    setSavingPrice(true)
     try {
-      await fetch('/api/events', { method: 'DELETE' })
-      setEvents({ ...EVENT_DEFAULTS })
-    } finally {
-      setResetting(false)
-      setConfirmReset(false)
-    }
+      await fetch('/api/admin/prices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingPrice]: Number(priceInput) }) })
+      setPrices(p => ({ ...p, [editingPrice]: Number(priceInput) }))
+      setEditingPrice(null)
+    } finally { setSavingPrice(false) }
+  }
+
+  const startEditMkt = (key, val) => { setEditingMkt(key); setMktInput(val) }
+  const saveMkt = async () => {
+    setSavingMkt(true)
+    try {
+      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingMkt]: mktInput }) })
+      setMarketing(m => ({ ...m, [editingMkt]: mktInput }))
+      setEditingMkt(null)
+    } finally { setSavingMkt(false) }
+  }
+
+  const handleBlogSave = (saved) => {
+    setBlogs(prev => {
+      const idx = prev.findIndex(p => p.id === saved.id)
+      if (idx >= 0) { const next = [...prev]; next[idx] = saved; return next }
+      return [saved, ...prev]
+    })
+    setEditingBlog(null)
+  }
+
+  const handleBlogDelete = async (id) => {
+    await fetch(`/api/admin/blogs?id=${id}`, { method: 'DELETE' })
+    setBlogs(prev => prev.filter(p => p.id !== id))
+    setDeletingBlog(null)
   }
 
   const handleCopy = (value, label) => {
     navigator.clipboard.writeText(value).catch(() => {})
-    setCopied(label)
-    setTimeout(() => setCopied(null), 1500)
+    setCopied(label); setTimeout(() => setCopied(null), 1500)
   }
 
-  const products = Object.values(BOOKS_DATA)
+  const mktFields = [
+    { key: 'whatsapp', label: 'WhatsApp Number' },
+    { key: 'twitter',  label: 'Twitter / X' },
+    { key: 'instagram',label: 'Instagram' },
+    { key: 'youtube',  label: 'YouTube' },
+  ]
+
+  const productCards = [
+    { id: 'transformation', titleEn: 'Complete Shredding & Building Guide', titleAr: 'الدليل الشامل للتنشيف وبناء الجسم', image: '/fitzone-workout.jpeg', price: prices.transformation },
+    { id: 'nutrition',      titleEn: 'Complete Fat Loss Guide',              titleAr: 'الدليل الكامل لخسارة الدهون',         image: '/fitzone-nutrition.jpeg', price: prices.nutrition },
+    { id: 'bundle',         titleEn: 'Complete Bundle',                      titleAr: 'الباقة الكاملة',                       image: '/fitzone-workout.jpeg', price: bundlePrice, isBundle: true },
+  ]
 
   return (
     <div className="min-h-screen bg-background" dir="ltr">
+      {/* Blog editor modal */}
+      <AnimatePresence>
+        {editingBlog !== null && (
+          <BlogEditor
+            post={editingBlog === 'new' ? null : editingBlog}
+            onSave={handleBlogSave}
+            onClose={() => setEditingBlog(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -185,21 +415,12 @@ function Dashboard({ onLogout, initialEvents }) {
             <span className="text-text-muted text-sm hidden sm:block">/ Dashboard</span>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href="/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-white border border-border hover:border-brand/40 px-3 py-1.5 rounded-lg transition-all"
-            >
-              <ExternalLink size={13} />
-              View Site
+            <a href="/" target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-white border border-border hover:border-brand/40 px-3 py-1.5 rounded-lg transition-all">
+              <ExternalLink size={13} />View Site
             </a>
-            <button
-              onClick={onLogout}
-              className="flex items-center gap-2 text-text-secondary hover:text-white text-sm transition-colors"
-            >
-              <LogOut size={15} />
-              <span>Logout</span>
+            <button onClick={onLogout} className="flex items-center gap-2 text-text-secondary hover:text-white text-sm transition-colors">
+              <LogOut size={15} /><span>Logout</span>
             </button>
           </div>
         </div>
@@ -207,7 +428,7 @@ function Dashboard({ onLogout, initialEvents }) {
 
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
 
-        {/* ── Section 1: Traffic & Funnel ── */}
+        {/* ── 1: Traffic & Funnel ── */}
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -215,66 +436,37 @@ function Dashboard({ onLogout, initialEvents }) {
               <h2 className="text-white font-bold text-lg">Traffic & Funnel</h2>
             </div>
             <div className="flex items-center gap-3">
-              <a
-                href="https://analytics.google.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-white border border-border hover:border-brand/40 px-3 py-1.5 rounded-lg transition-all"
-              >
-                <ExternalLink size={13} />
-                Open GA4
+              <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-white border border-border hover:border-brand/40 px-3 py-1.5 rounded-lg transition-all">
+                <ExternalLink size={13} />Open GA4
               </a>
               {confirmReset ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-text-secondary text-xs flex items-center gap-1">
-                    <AlertTriangle size={12} className="text-yellow-400" />
-                    Are you sure?
-                  </span>
-                  <button
-                    onClick={handleReset}
-                    disabled={resetting}
-                    className="text-xs text-red-400 hover:text-red-300 border border-red-400/30 hover:border-red-400/60 px-3 py-1.5 rounded-lg transition-all"
-                  >
+                  <span className="text-text-secondary text-xs flex items-center gap-1"><AlertTriangle size={12} className="text-yellow-400" />Are you sure?</span>
+                  <button onClick={handleReset} disabled={resetting} className="text-xs text-red-400 hover:text-red-300 border border-red-400/30 px-3 py-1.5 rounded-lg transition-all">
                     {resetting ? 'Resetting…' : 'Yes, reset'}
                   </button>
-                  <button
-                    onClick={() => setConfirmReset(false)}
-                    className="text-xs text-text-muted hover:text-white border border-border px-3 py-1.5 rounded-lg transition-all"
-                  >
-                    Cancel
-                  </button>
+                  <button onClick={() => setConfirmReset(false)} className="text-xs text-text-muted hover:text-white border border-border px-3 py-1.5 rounded-lg transition-all">Cancel</button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setConfirmReset(true)}
-                  className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-red-400 border border-border hover:border-red-400/40 px-3 py-1.5 rounded-lg transition-all"
-                >
-                  <RefreshCw size={13} />
-                  Reset
+                <button onClick={() => setConfirmReset(true)} className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-red-400 border border-border hover:border-red-400/40 px-3 py-1.5 rounded-lg transition-all">
+                  <RefreshCw size={13} />Reset
                 </button>
               )}
             </div>
           </div>
-
-          {/* Event counter cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {eventCards.map(({ key, label, icon: Icon, color, bg }) => (
               <div key={key} className="bg-surface border border-border rounded-2xl p-5">
-                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}>
-                  <Icon size={18} className={color} />
-                </div>
+                <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center mb-3`}><Icon size={18} className={color} /></div>
                 <p className="text-text-secondary text-xs mb-1">{label}</p>
                 <p className="text-white text-3xl font-bold">{events[key] ?? 0}</p>
               </div>
             ))}
           </div>
-
-          {/* Conversion rate + revenue row */}
           <div className="grid sm:grid-cols-2 gap-4 mb-4">
             <div className="bg-surface border border-border rounded-2xl p-5 flex items-center gap-4">
-              <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                <TrendingUp size={18} className="text-purple-400" />
-              </div>
+              <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center flex-shrink-0"><TrendingUp size={18} className="text-purple-400" /></div>
               <div>
                 <p className="text-text-secondary text-xs mb-1">Conversion Rate</p>
                 <p className="text-white text-3xl font-bold">{conversionRate}%</p>
@@ -282,91 +474,182 @@ function Dashboard({ onLogout, initialEvents }) {
               </div>
             </div>
             <div className="bg-surface border border-border rounded-2xl p-5 flex items-center gap-4">
-              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                <CheckCircle size={18} className="text-emerald-400" />
-              </div>
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center flex-shrink-0"><CheckCircle size={18} className="text-emerald-400" /></div>
               <div>
                 <p className="text-text-secondary text-xs mb-1">Est. Revenue</p>
-                <p className="text-white text-3xl font-bold">
-                  {(events.purchases * avgOrderValue).toLocaleString()} SAR
-                </p>
-                <p className="text-text-muted text-xs mt-0.5">{events.purchases} purchases × {avgOrderValue} SAR avg</p>
+                <p className="text-white text-3xl font-bold">{estRevenue.toLocaleString()} SAR</p>
+                <p className="text-text-muted text-xs mt-0.5">{events.purchases} purchases × {bundlePrice} SAR avg</p>
               </div>
             </div>
           </div>
-
-          {/* Funnel chart */}
           <FunnelChart events={events} />
         </motion.section>
 
-        {/* ── Section 2: Products ── */}
+        {/* ── 2: Products (editable prices) ── */}
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
           <div className="flex items-center gap-2 mb-5">
             <Package size={18} className="text-brand" />
             <h2 className="text-white font-bold text-lg">Products</h2>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
-            {products.map((book) => (
+            {productCards.map((book) => (
               <div key={book.id} className="bg-surface border border-border rounded-2xl p-5">
                 <div className="flex items-start gap-3 mb-4">
-                  <img
-                    src={book.image}
-                    alt={book.titleEn}
-                    className="w-12 h-16 object-cover rounded-lg flex-shrink-0"
-                  />
+                  <img src={book.image} alt={book.titleEn} className="w-12 h-16 object-cover rounded-lg flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-white font-semibold text-sm leading-snug mb-1">{book.titleEn}</p>
                     <p className="text-text-muted text-xs leading-snug">{book.titleAr}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-3 border-t border-border">
-                  <span className="text-text-secondary text-xs">Price</span>
-                  <span className="text-white font-bold">{book.price} SAR</span>
+                <div className="pt-3 border-t border-border">
+                  {!book.isBundle && editingPrice === book.id ? (
+                    <div className="flex items-center gap-2">
+                      <input type="number" value={priceInput} onChange={e => setPriceInput(e.target.value)}
+                        className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none w-20" />
+                      <span className="text-text-muted text-xs">SAR</span>
+                      <SaveBtn saving={savingPrice} onClick={savePrice} />
+                      <CancelBtn onClick={() => setEditingPrice(null)} />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-secondary text-xs">Price</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-bold">{book.price} SAR</span>
+                        {!book.isBundle && (
+                          <button onClick={() => startEditPrice(book.id, book.price)} className="text-text-muted hover:text-brand transition-colors">
+                            <Pencil size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {book.isBundle && (
+                    <p className="text-[#25d366] text-xs mt-2 flex items-center gap-1">
+                      <Gift size={11} />Includes WhatsApp support (free gift)
+                    </p>
+                  )}
                 </div>
-                {book.id === 'bundle' && (
-                  <p className="text-[#25d366] text-xs mt-2 flex items-center gap-1">
-                    <Gift size={11} />
-                    Includes WhatsApp support (free gift)
-                  </p>
-                )}
               </div>
             ))}
           </div>
         </motion.section>
 
-        {/* ── Section 3: Marketing Info ── */}
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+        {/* ── 3: Marketing Info (editable) ── */}
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
           <div className="flex items-center gap-2 mb-5">
             <Megaphone size={18} className="text-brand" />
             <h2 className="text-white font-bold text-lg">Marketing Info</h2>
           </div>
           <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-            {MARKETING_INFO.map(({ label, value, copyable }, i) => (
-              <div
-                key={label}
-                className={`flex items-center justify-between gap-4 px-5 py-3.5 ${i < MARKETING_INFO.length - 1 ? 'border-b border-border' : ''}`}
-              >
-                <span className="text-text-secondary text-sm w-44 flex-shrink-0">{label}</span>
-                <a
-                  href={value.startsWith('http') ? value : undefined}
-                  target={value.startsWith('http') ? '_blank' : undefined}
-                  rel="noopener noreferrer"
-                  className={`text-white text-sm font-mono flex-1 truncate ${value.startsWith('http') ? 'hover:text-brand transition-colors' : ''}`}
-                >
-                  {value}
-                </a>
-                {copyable && (
-                  <button
-                    onClick={() => handleCopy(value, label)}
-                    className="flex items-center gap-1 text-xs text-text-muted hover:text-brand transition-colors flex-shrink-0"
-                  >
-                    <Copy size={13} />
-                    {copied === label ? 'Copied!' : 'Copy'}
-                  </button>
-                )}
-              </div>
-            ))}
+            {mktFields.map(({ key, label }, i) => {
+              const val = marketing[key] || ''
+              const isEditing = editingMkt === key
+              return (
+                <div key={key} className={`px-5 py-3.5 ${i < mktFields.length - 1 ? 'border-b border-border' : ''}`}>
+                  {isEditing ? (
+                    <div className="flex items-center gap-3">
+                      <span className="text-text-secondary text-sm w-40 flex-shrink-0">{label}</span>
+                      <input value={mktInput} onChange={e => setMktInput(e.target.value)} autoFocus
+                        className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none" />
+                      <SaveBtn saving={savingMkt} onClick={saveMkt} />
+                      <CancelBtn onClick={() => setEditingMkt(null)} />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-text-secondary text-sm w-40 flex-shrink-0">{label}</span>
+                      <a href={val.startsWith('http') ? val : val ? `https://wa.me/${val}` : undefined}
+                        target="_blank" rel="noopener noreferrer"
+                        className={`text-white text-sm font-mono flex-1 truncate ${val.startsWith('http') || val ? 'hover:text-brand transition-colors' : 'text-text-muted'}`}>
+                        {val || '—'}
+                      </a>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => handleCopy(val, key)} className="text-text-muted hover:text-brand transition-colors">
+                          <Copy size={13} />
+                        </button>
+                        <button onClick={() => startEditMkt(key, val)} className="text-text-muted hover:text-brand transition-colors">
+                          <Pencil size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {/* GA4 ID — read only */}
+            <div className="px-5 py-3.5 flex items-center justify-between gap-4">
+              <span className="text-text-secondary text-sm w-40 flex-shrink-0">GA4 Measurement ID</span>
+              <span className="text-white text-sm font-mono flex-1 truncate">{GA_ID}</span>
+              <button onClick={() => handleCopy(GA_ID, 'ga4')} className="text-text-muted hover:text-brand transition-colors flex-shrink-0">
+                <Copy size={13} />
+              </button>
+            </div>
           </div>
+        </motion.section>
+
+        {/* ── 4: Blog Management ── */}
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <BookOpen size={18} className="text-brand" />
+              <h2 className="text-white font-bold text-lg">Blog Posts</h2>
+              <span className="text-text-muted text-sm">({blogs.length})</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setEditingBlog('new')}
+                className="flex items-center gap-1.5 text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors">
+                <Plus size={14} />New Post
+              </button>
+              <button onClick={() => setBlogsExpanded(e => !e)} className="text-text-muted hover:text-white transition-colors p-1.5">
+                {blogsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {blogsExpanded && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                {blogs.length === 0 ? (
+                  <div className="bg-surface border border-border rounded-2xl p-8 text-center">
+                    <p className="text-text-muted text-sm">No posts yet. Click "New Post" to add one.</p>
+                  </div>
+                ) : (
+                  <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+                    {blogs.map((post, i) => (
+                      <div key={post.id} className={`flex items-center gap-4 px-5 py-3.5 ${i < blogs.length - 1 ? 'border-b border-border' : ''}`}>
+                        {post.image && (
+                          <img src={post.image} alt="" className="w-12 h-10 object-cover rounded-lg flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-medium truncate">{post.title?.en || post.title?.ar}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-text-muted text-xs capitalize">{post.category}</span>
+                            <span className="text-text-muted text-xs">·</span>
+                            <span className="text-text-muted text-xs">{post.date}</span>
+                            {post.featured && <span className="text-brand text-xs">· Featured</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button onClick={() => setEditingBlog(post)} className="text-text-muted hover:text-brand transition-colors p-1">
+                            <Pencil size={14} />
+                          </button>
+                          {deletingBlog === post.id ? (
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => handleBlogDelete(post.id)} className="text-xs text-red-400 hover:text-red-300 border border-red-400/30 px-2 py-1 rounded-lg">Delete</button>
+                              <button onClick={() => setDeletingBlog(null)} className="text-xs text-text-muted border border-border px-2 py-1 rounded-lg">Cancel</button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setDeletingBlog(post.id)} className="text-text-muted hover:text-red-400 transition-colors p-1">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.section>
 
       </div>
@@ -377,19 +660,10 @@ function Dashboard({ onLogout, initialEvents }) {
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function AdminPage({ initialEvents }) {
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => {
-      try { return sessionStorage.getItem(SESSION_KEY) === 'true' } catch { return false }
-    }
+    () => { try { return sessionStorage.getItem(SESSION_KEY) === 'true' } catch { return false } }
   )
+  const handleLogout = () => { sessionStorage.removeItem(SESSION_KEY); setIsAuthenticated(false) }
 
-  const handleLogout = () => {
-    sessionStorage.removeItem(SESSION_KEY)
-    setIsAuthenticated(false)
-  }
-
-  if (!isAuthenticated) {
-    return <LoginGate onSuccess={() => setIsAuthenticated(true)} />
-  }
-
+  if (!isAuthenticated) return <LoginGate onSuccess={() => setIsAuthenticated(true)} />
   return <Dashboard onLogout={handleLogout} initialEvents={initialEvents} />
 }

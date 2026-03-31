@@ -2,9 +2,11 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useLanguage } from '../context/LanguageContext'
+import { useMarketing } from '../context/MarketingContext'
 
 export default function Footer() {
   const { lang } = useLanguage()
+  const { whatsapp, twitter, instagram, youtube } = useMarketing()
 
   const footerLinks = {
     books: [
@@ -15,7 +17,7 @@ export default function Footer() {
     links: [
       { label: lang === 'ar' ? 'قصص النجاح' : 'Success Stories', href: '/results' },
       { label: lang === 'ar' ? 'المدونة' : 'Blog', href: '/blog' },
-      { label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: 'https://wa.me/966500000000', external: true },
+      { label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: `https://wa.me/${whatsapp}`, external: true },
     ],
     legal: [
       { label: lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy', href: '/privacy' },
@@ -25,10 +27,10 @@ export default function Footer() {
   }
 
   const socialLinks = [
-    { icon: '𝕏', label: 'Twitter / X', href: 'https://x.com/' },
-    { icon: '📷', label: 'Instagram', href: 'https://instagram.com/' },
-    { icon: '▶️', label: 'YouTube', href: 'https://youtube.com/' },
-    { icon: '💬', label: 'WhatsApp', href: 'https://wa.me/966500000000', isWhatsapp: true },
+    { icon: '𝕏', label: 'Twitter / X', href: twitter },
+    { icon: '📷', label: 'Instagram', href: instagram },
+    { icon: '▶️', label: 'YouTube', href: youtube },
+    { icon: '💬', label: 'WhatsApp', href: `https://wa.me/${whatsapp}`, isWhatsapp: true },
   ]
 
   const paymentMethods = [

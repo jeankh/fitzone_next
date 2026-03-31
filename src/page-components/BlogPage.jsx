@@ -1,7 +1,7 @@
 'use client'
 import { motion } from 'framer-motion'
 import { Clock, ArrowLeft, ArrowRight, Tag, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useLanguage } from '../context/LanguageContext'
 
@@ -92,25 +92,35 @@ const blogPosts = [
   },
 ]
 
-export default function BlogPage() {
+export default function BlogPage({ initialPosts }) {
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [posts, setPosts] = useState(initialPosts || blogPosts)
   const { lang, t } = useLanguage()
 
+  useEffect(() => {
+    if (!initialPosts) {
+      fetch('/api/admin/blogs')
+        .then(r => r.json())
+        .then(data => { if (Array.isArray(data)) setPosts(data) })
+        .catch(() => {})
+    }
+  }, [initialPosts])
+
   const categories = [
-    { id: 'all', label: t('blogPage.all'), count: 9 },
-    { id: 'nutrition', label: t('blogPage.nutrition'), count: 4 },
-    { id: 'workout', label: t('blogPage.workout'), count: 3 },
-    { id: 'lifestyle', label: t('blogPage.lifestyle'), count: 2 },
+    { id: 'all', label: t('blogPage.all') },
+    { id: 'nutrition', label: t('blogPage.nutrition') },
+    { id: 'workout', label: t('blogPage.workout') },
+    { id: 'lifestyle', label: t('blogPage.lifestyle') },
   ]
 
-  const filteredPosts = blogPosts.filter(post => {
+  const filteredPosts = posts.filter(post => {
     const matchesCategory = activeCategory === 'all' || post.category === activeCategory
     const matchesSearch = post.title[lang].toLowerCase().includes(searchQuery.toLowerCase()) || post.excerpt[lang].toLowerCase().includes(searchQuery.toLowerCase())
     return matchesCategory && (searchQuery === '' || matchesSearch)
   })
 
-  const featuredPosts = blogPosts.filter(post => post.featured)
+  const featuredPosts = posts.filter(post => post.featured)
   const regularPosts = filteredPosts.filter(post => !post.featured || activeCategory !== 'all')
 
   const getCategoryLabel = (catId) => categories.find(c => c.id === catId)?.label || catId

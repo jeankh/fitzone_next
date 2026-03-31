@@ -2,13 +2,15 @@
 import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
+import { useMarketing } from '../context/MarketingContext'
 
 export default function WhatsAppButton() {
   const { lang } = useLanguage()
+  const { whatsapp } = useMarketing()
 
   return (
     <motion.a
-      href="https://wa.me/966500000000"
+      href={`https://wa.me/${whatsapp}`}
       target="_blank"
       rel="noopener noreferrer"
       initial={{ scale: 0, opacity: 0 }}
