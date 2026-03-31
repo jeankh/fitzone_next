@@ -1,0 +1,170 @@
+'use client'
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+import { useLanguage } from '../context/LanguageContext'
+
+export default function Footer() {
+  const { lang } = useLanguage()
+
+  const footerLinks = {
+    books: [
+      { label: lang === 'ar' ? 'خطة التحول الشامل' : 'Transformation Plan', href: '/programs', bookId: 'transformation' },
+      { label: lang === 'ar' ? 'دليل التغذية' : 'Nutrition Guide', href: '/programs', bookId: 'nutrition' },
+      { label: lang === 'ar' ? 'الباقة الكاملة' : 'Complete Bundle', href: '/programs', bookId: 'bundle' },
+    ],
+    links: [
+      { label: lang === 'ar' ? 'قصص النجاح' : 'Success Stories', href: '/results' },
+      { label: lang === 'ar' ? 'المدونة' : 'Blog', href: '/blog' },
+      { label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: 'https://wa.me/966500000000', external: true },
+    ],
+    legal: [
+      { label: lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy', href: '/privacy' },
+      { label: lang === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions', href: '/terms' },
+      { label: lang === 'ar' ? 'سياسة الاسترداد' : 'Refund Policy', href: '/refund' },
+    ],
+  }
+
+  const socialLinks = [
+    { icon: '𝕏', label: 'Twitter / X', href: 'https://x.com/' },
+    { icon: '📷', label: 'Instagram', href: 'https://instagram.com/' },
+    { icon: '▶️', label: 'YouTube', href: 'https://youtube.com/' },
+    { icon: '💬', label: 'WhatsApp', href: 'https://wa.me/966500000000', isWhatsapp: true },
+  ]
+
+  const paymentMethods = [
+    { icon: '🔒', label: lang === 'ar' ? 'دفع آمن' : 'Secure' },
+    { icon: '💳', label: 'Visa / MC' },
+    { icon: '🍎', label: 'Apple Pay' },
+    { icon: '🏦', label: lang === 'ar' ? 'تحويل' : 'Bank' },
+  ]
+
+  return (
+    <footer className="border-t border-border">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 lg:py-20">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-12">
+          {/* Brand */}
+          <div className="col-span-2 lg:col-span-1">
+            <Link href="/" className="flex items-center gap-3 mb-5">
+              <img src="/fitzone-logo.jpeg" alt="FitZone" className="w-11 h-11 rounded-xl object-contain" />
+              <span className="text-xl font-bold text-white">FitZone</span>
+            </Link>
+
+            <p className="text-text-secondary text-sm leading-relaxed mb-6 font-tajawal">
+              {lang === 'ar'
+                ? 'برامج تدريبية متخصصة في التغذية والتمارين الرياضية. نساعدك على تحقيق أهدافك الصحية بطريقة علمية ومستدامة.'
+                : 'Specialized training programs in nutrition and exercise. We help you achieve your health goals scientifically.'
+              }
+            </p>
+
+            <div className="flex gap-2.5">
+              {socialLinks.map((social, index) => (
+                <motion.a
+                  key={index}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={social.label}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg transition-all ${
+                    social.isWhatsapp
+                      ? 'bg-[#25d366] text-white hover:bg-[#20bd5a]'
+                      : 'bg-white/[0.04] border border-border text-text-secondary hover:bg-brand/10 hover:border-brand/30 hover:text-brand'
+                  }`}
+                >
+                  {social.icon}
+                </motion.a>
+              ))}
+            </div>
+          </div>
+
+          {/* Books Column */}
+          <div>
+            <h4 className="text-white font-bold text-sm mb-5">
+              {lang === 'ar' ? 'البرامج' : 'Programs'}
+            </h4>
+            <ul className="space-y-3.5">
+              {footerLinks.books.map((link, index) => (
+                <li key={index}>
+                  <Link
+                    to={`${link.href}?highlight=${link.bookId}`}
+                    className="text-text-secondary text-sm hover:text-brand hover:-translate-x-1 transition-all inline-block"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Links Column */}
+          <div>
+            <h4 className="text-white font-bold text-sm mb-5">
+              {lang === 'ar' ? 'روابط' : 'Links'}
+            </h4>
+            <ul className="space-y-3.5">
+              {footerLinks.links.map((link, index) => (
+                <li key={index}>
+                  {link.external ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-text-secondary text-sm hover:text-brand hover:-translate-x-1 transition-all inline-block"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      to={link.href}
+                      className="text-text-secondary text-sm hover:text-brand hover:-translate-x-1 transition-all inline-block"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Legal Column */}
+          <div>
+            <h4 className="text-white font-bold text-sm mb-5">
+              {lang === 'ar' ? 'قانوني' : 'Legal'}
+            </h4>
+            <ul className="space-y-3.5">
+              {footerLinks.legal.map((link, index) => (
+                <li key={index}>
+                  <Link
+                    to={link.href}
+                    className="text-text-secondary text-sm hover:text-brand hover:-translate-x-1 transition-all inline-block"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="pt-8 border-t border-border flex flex-col lg:flex-row items-center justify-between gap-6">
+          <p className="text-text-muted text-sm">
+            {lang === 'ar' ? '© 2025 FitZone. جميع الحقوق محفوظة' : '© 2025 FitZone. All rights reserved'}
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-2">
+            {paymentMethods.map((method, index) => (
+              <div
+                key={index}
+                className="bg-white/[0.04] border border-border px-3.5 py-2 rounded-lg flex items-center gap-2 text-text-secondary text-xs"
+              >
+                <span>{method.icon}</span>
+                <span>{method.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
