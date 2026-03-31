@@ -655,7 +655,7 @@ export default function BlogPostPage() {
             {lang === 'ar' ? 'المقال غير موجود' : 'Article Not Found'}
           </h1>
           <Link
-            to="/blog"
+            href="/blog"
             className="inline-flex items-center gap-2 text-brand hover:underline"
           >
             <ArrowRight size={18} className={lang === 'en' ? 'rotate-180' : ''} />
@@ -674,7 +674,7 @@ export default function BlogPostPage() {
       <div className="max-w-3xl mx-auto px-6 lg:px-12">
         {/* Back link */}
         <Link
-          to="/blog"
+          href="/blog"
           className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition-colors mb-8"
         >
           <ArrowRight size={18} className={lang === 'en' ? 'rotate-180' : ''} />
@@ -764,7 +764,7 @@ export default function BlogPostPage() {
               : 'Our ebooks contain detailed plans and complete programs to help you achieve your goals.'}
           </p>
           <Link
-            to="/programs"
+            href="/programs"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-dark text-white px-8 py-4 rounded-2xl font-bold hover:-translate-y-1 transition-transform"
           >
             <span>{lang === 'ar' ? 'تصفح الكتب' : 'Browse Books'}</span>

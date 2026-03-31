@@ -86,7 +86,7 @@ export default function Footer() {
               {footerLinks.books.map((link, index) => (
                 <li key={index}>
                   <Link
-                    to={`${link.href}?highlight=${link.bookId}`}
+                    href={`${link.href}?highlight=${link.bookId}`}
                     className="text-text-secondary text-sm hover:text-brand hover:-translate-x-1 transition-all inline-block"
                   >
                     {link.label}
@@ -115,7 +115,7 @@ export default function Footer() {
                     </a>
                   ) : (
                     <Link
-                      to={link.href}
+                      href={link.href}
                       className="text-text-secondary text-sm hover:text-brand hover:-translate-x-1 transition-all inline-block"
                     >
                       {link.label}
@@ -135,7 +135,7 @@ export default function Footer() {
               {footerLinks.legal.map((link, index) => (
                 <li key={index}>
                   <Link
-                    to={link.href}
+                    href={link.href}
                     className="text-text-secondary text-sm hover:text-brand hover:-translate-x-1 transition-all inline-block"
                   >
                     {link.label}

@@ -91,7 +91,7 @@ export default function LegalPage({ type }) {
     <div className="pt-28 pb-20">
       <div className="max-w-3xl mx-auto px-6 lg:px-12">
         <Link
-          to="/"
+          href="/"
           className="inline-flex items-center gap-2 text-text-secondary hover:text-white transition-colors mb-8"
         >
           <ArrowRight size={18} className={lang === 'en' ? 'rotate-180' : ''} />

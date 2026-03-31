@@ -228,7 +228,7 @@ export default function ResultsPage() {
             {t('resultsPage.ctaDesc')}
           </p>
           <Link
-            to="/programs"
+            href="/programs"
             className="inline-flex items-center gap-3 bg-gradient-to-r from-brand to-brand-dark text-white px-8 py-4 rounded-2xl text-lg font-bold hover:-translate-y-1 transition-transform group"
           >
             <span>{t('resultsPage.ctaButton')}</span>

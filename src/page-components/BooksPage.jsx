@@ -125,7 +125,7 @@ function WhatsAppBonus({ lang, bookImages }) {
 
 export default function BooksPage() {
   const router = useRouter()
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
   const { addToCart, isInCart, removeFromCart } = useCart()
   const { lang, t } = useLanguage()
   const { formatPrice } = useCurrency()

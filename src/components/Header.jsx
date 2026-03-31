@@ -21,7 +21,6 @@ export default function Header() {
     { label: t('nav.home'), path: '/', isHash: false },
     { label: t('nav.books'), path: '/programs', isHash: false },
     { label: t('nav.results'), path: '/results', isHash: false },
-    { label: t('nav.coach'), path: '/#support', isHash: true },
     { label: t('nav.blog'), path: '/blog', isHash: false },
   ]
 

@@ -190,7 +190,7 @@ export default function BlogPage() {
               {featuredPosts.map((post, index) => (
                 <Link
                   key={post.id}
-                  to={`/blog/${post.id}`}
+                  href={`/blog/${post.id}`}
                   className={`group bg-surface border border-border rounded-3xl overflow-hidden hover:border-brand/30 transition-all ${
                     index === 0 ? 'lg:col-span-2 lg:row-span-2' : ''
                   }`}
@@ -254,7 +254,7 @@ export default function BlogPage() {
                   transition={{ duration: 0.4, delay: index * 0.05 }}
                 >
                   <Link
-                    to={`/blog/${post.id}`}
+                    href={`/blog/${post.id}`}
                     className="group block bg-surface border border-border rounded-2xl overflow-hidden hover:border-brand/30 hover:-translate-y-1 transition-all"
                   >
                     {/* Image */}

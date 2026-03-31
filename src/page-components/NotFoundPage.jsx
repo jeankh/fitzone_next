@@ -25,7 +25,7 @@ export default function NotFoundPage() {
             : "Sorry, the page you're looking for doesn't exist or has been moved."}
         </p>
         <Link
-          to="/"
+          href="/"
           className="inline-flex items-center gap-2 bg-gradient-to-r from-brand to-brand-dark text-white px-8 py-4 rounded-2xl font-bold hover:-translate-y-1 transition-transform"
         >
           <span>{lang === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}</span>
