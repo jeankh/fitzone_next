@@ -36,14 +36,13 @@ export const BOOKS_DATA = {
 }
 
 // ── Event tracking ──────────────────────────────────────────────────────────
-const EVENT_KEY = 'fitzone_events'
-const EVENT_DEFAULTS = { cart_adds: 0, bundle_upgrades: 0, checkout_starts: 0, purchases: 0 }
-
 export function trackEvent(key) {
   try {
-    const stored = JSON.parse(localStorage.getItem(EVENT_KEY) || '{}')
-    const updated = { ...EVENT_DEFAULTS, ...stored, [key]: ((stored[key] || 0) + 1) }
-    localStorage.setItem(EVENT_KEY, JSON.stringify(updated))
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key }),
+    }).catch(() => {})
   } catch {}
 }
 

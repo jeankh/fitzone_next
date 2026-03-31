@@ -1,6 +1,7 @@
 import Script from 'next/script'
 import './globals.css'
 import ClientLayout from '../src/components/ClientLayout'
+import { Analytics } from '@vercel/analytics/next'
 
 export const metadata = {
   title: 'FitZone | برامج التنشيف وخسارة الدهون',
@@ -50,6 +51,7 @@ export default function RootLayout({ children }) {
         <ClientLayout>
           {children}
         </ClientLayout>
+        <Analytics />
       </body>
     </html>
   )
