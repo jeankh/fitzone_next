@@ -41,12 +41,15 @@ function getPlaceholder(countryCode) {
   } catch { return '' }
 }
 
-// Validate full E.164 number with libphonenumber-js
+// Validate phone — uses isPossiblePhoneNumber (length-based, more lenient)
+// isValidPhoneNumber is too strict and rejects valid real numbers
 function validatePhone(nationalNumber, countryCode) {
   if (!nationalNumber.trim()) return false
+  const digits = nationalNumber.replace(/\D/g, '')
+  if (digits.length < 5) return false
   try {
-    const full = `${COUNTRIES.find(c => c.code === countryCode)?.dial}${nationalNumber.replace(/\D/g, '')}`
-    return isValidPhoneNumber(full, countryCode)
+    const full = `${COUNTRIES.find(c => c.code === countryCode)?.dial}${digits}`
+    return isPossiblePhoneNumber(full, countryCode)
   } catch { return false }
 }
 
