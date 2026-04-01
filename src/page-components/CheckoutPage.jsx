@@ -94,7 +94,7 @@ function getMaxLen(countryCode) {
 }
 
 // ── Country Picker ────────────────────────────────────────────────────────────
-function CountryPicker({ selected, onChange, lang, fullWidth = false }) {
+function CountryPicker({ selected, onChange, lang }) {
   const [open, setOpen]   = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef()
@@ -111,54 +111,61 @@ function CountryPicker({ selected, onChange, lang, fullWidth = false }) {
   )
 
   return (
-    <div ref={ref} className={`relative overflow-visible ${fullWidth ? 'w-full' : 'shrink-0'}`}>
-      {fullWidth ? (
-        /* Full-width country button */
-        <button type="button" onClick={() => setOpen(p => !p)}
-          className="w-full flex items-center gap-3 px-4 py-3 bg-transparent hover:bg-white/[0.04] transition-all duration-200 group rounded-t-2xl">
-          <span className="text-2xl leading-none">{selected.flag}</span>
-          <div className="flex-1 text-left">
-            <p className="text-white text-sm font-medium">{lang === 'ar' ? selected.nameAr : selected.name}</p>
-            <p className="text-white/30 text-xs font-mono">{selected.dial} · {lang === 'ar' ? 'اضغط للتغيير' : 'tap to change'}</p>
-          </div>
-          <ChevronDown size={15} className={`text-white/30 group-hover:text-white/60 transition-all duration-200 ${open ? 'rotate-180' : ''}`} />
-        </button>
-      ) : (
-        /* Inline compact button */
-        <button type="button" onClick={() => setOpen(p => !p)}
-          className="flex items-center gap-1.5 h-full px-3 py-3 border-r border-white/10 hover:bg-white/5 transition-colors rounded-l-2xl">
-          <span className="text-lg leading-none">{selected.flag}</span>
-          <span className="text-white text-sm font-mono tracking-tight">{selected.dial}</span>
-          <ChevronDown size={12} className={`text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
-        </button>
-      )}
+    <div ref={ref} className="relative shrink-0">
+      {/* Trigger button: flag + dial code + chevron */}
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className="flex items-center gap-2 h-full px-3 py-3.5 hover:bg-white/[0.05] transition-colors rounded-l-2xl"
+      >
+        <span className="text-xl leading-none">{selected.flag}</span>
+        <span className="text-white/70 text-sm font-mono">{selected.dial}</span>
+        <ChevronDown size={12} className={`text-white/30 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
 
+      {/* Dropdown */}
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ opacity: 0, y: -8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.97 }}
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 mt-2 w-full min-w-[280px] bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[200] overflow-hidden">
-            <div className="p-2 border-b border-white/8">
+            className="absolute top-full left-0 mt-2 w-72 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[200] overflow-hidden"
+          >
+            {/* Search */}
+            <div className="p-2 border-b border-white/[0.06]">
               <div className="relative">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
-                <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
                   placeholder={lang === 'ar' ? 'ابحث عن دولة…' : 'Search country…'}
-                  className="w-full bg-white/5 rounded-xl pl-8 pr-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-brand/40" />
+                  className="w-full bg-white/5 rounded-xl pl-8 pr-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-brand/40"
+                />
               </div>
             </div>
+            {/* List */}
             <div className="max-h-56 overflow-y-auto">
               {filtered.map(c => (
-                <button key={c.code} type="button" onClick={() => { onChange(c); setOpen(false); setQuery('') }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left ${selected.code === c.code ? 'bg-brand/10' : ''}`}>
-                  <span className="text-xl leading-none">{c.flag}</span>
-                  <div className="flex-1">
-                    <p className="text-white/80 text-sm">{lang === 'ar' ? c.nameAr : c.name}</p>
-                  </div>
+                <button
+                  key={c.code}
+                  type="button"
+                  onClick={() => { onChange(c); setOpen(false); setQuery('') }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors text-left ${selected.code === c.code ? 'bg-brand/10' : ''}`}
+                >
+                  <span className="text-lg leading-none">{c.flag}</span>
+                  <span className="flex-1 text-white/80 text-sm">{lang === 'ar' ? c.nameAr : c.name}</span>
                   <span className="text-white/30 text-xs font-mono">{c.dial}</span>
-                  {selected.code === c.code && <CheckCircle size={14} className="text-brand/70" />}
+                  {selected.code === c.code && <CheckCircle size={13} className="text-brand/70 shrink-0" />}
                 </button>
               ))}
-              {!filtered.length && <p className="text-white/30 text-sm text-center py-5">{lang === 'ar' ? 'لا نتائج' : 'No results'}</p>}
+              {!filtered.length && (
+                <p className="text-white/30 text-sm text-center py-5">
+                  {lang === 'ar' ? 'لا نتائج' : 'No results'}
+                </p>
+              )}
             </div>
           </motion.div>
         )}
@@ -261,42 +268,41 @@ function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur,
         {lang === 'ar' ? 'رقم الهاتف (واتساب)' : 'Phone Number (WhatsApp)'}
       </label>
 
-      {/* Single unified card */}
-      <div className={`rounded-2xl border transition-all duration-200 bg-white/[0.03] ${borderCls}`}>
+      {/* Single row: [country picker] | [number input] */}
+      <div className={`relative flex items-stretch rounded-2xl border transition-all duration-200 bg-white/[0.03] ${borderCls}`}>
 
-        {/* Country row — top half */}
-        <CountryPicker selected={selectedCountry} onChange={onCountryChange} lang={lang} fullWidth />
+        {/* Left: country picker — flag + dial code + chevron */}
+        <CountryPicker selected={selectedCountry} onChange={onCountryChange} lang={lang} />
 
-        {/* Thin divider */}
-        <div className="h-px bg-white/[0.06] mx-4" />
+        {/* Vertical divider */}
+        <div className="w-px bg-white/[0.08] self-stretch" />
 
-        {/* Number input — bottom half */}
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
-            <span className="text-white/40 text-xs font-mono">{selectedCountry.dial}</span>
-            <div className="w-px h-3.5 bg-white/10" />
-          </div>
+        {/* Right: number input */}
+        <div className="relative flex-1">
           <input
-            type="tel" name="phone" value={value}
-            onChange={onChange} onBlur={onBlur}
+            type="tel"
+            name="phone"
+            value={value}
+            onChange={onChange}
+            onBlur={onBlur}
             placeholder={placeholder}
             maxLength={maxLen}
             dir="ltr"
-            className="w-full bg-transparent pl-16 pr-10 py-3.5 text-white text-sm font-mono tracking-wider placeholder:text-white/15 focus:outline-none"
+            className="w-full h-full bg-transparent px-4 py-3.5 text-white text-sm font-mono tracking-wider placeholder:text-white/20 focus:outline-none pr-10"
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-            {isValid  && <CheckCircle size={14} className="text-emerald-400/80" />}
-            {isError  && <AlertCircle size={14} className="text-red-400/80" />}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+            {isValid && <CheckCircle size={14} className="text-emerald-400/80" />}
+            {isError && <AlertCircle size={14} className="text-red-400/80" />}
           </div>
+        </div>
 
-          {/* Progress bar — very subtle, bottom of input */}
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/[0.04] rounded-b-2xl overflow-hidden">
-            <motion.div
-              className={`h-full ${isError ? 'bg-red-500/50' : isValid ? 'bg-emerald-500/50' : 'bg-brand/50'}`}
-              animate={{ width: `${progress * 100}%` }}
-              transition={{ duration: 0.15 }}
-            />
-          </div>
+        {/* Progress bar along the bottom edge */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] rounded-b-2xl overflow-hidden">
+          <motion.div
+            className={`h-full ${isError ? 'bg-red-500/50' : isValid ? 'bg-emerald-500/50' : 'bg-brand/50'}`}
+            animate={{ width: `${progress * 100}%` }}
+            transition={{ duration: 0.15 }}
+          />
         </div>
       </div>
 
