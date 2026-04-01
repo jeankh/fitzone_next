@@ -50,12 +50,20 @@ export function CartProvider({ children }) {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [wasAutoUpgraded, setWasAutoUpgraded] = useState(false)
   const [prices, setPrices] = useState(DEFAULT_PRICES)
+  const [currencyPrices, setCurrencyPrices] = useState({})
 
   useEffect(() => {
-    fetch('/api/admin/prices')
-      .then(r => r.json())
-      .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition) }))
-      .catch(() => {})
+    Promise.all([
+      fetch('/api/admin/prices').then(r => r.json()),
+      fetch('/api/admin/currency-prices').then(r => r.json()),
+    ]).then(([basePrices, cpData]) => {
+      setPrices({ transformation: Number(basePrices.transformation), nutrition: Number(basePrices.nutrition) })
+      setCurrencyPrices(cpData || {})
+    }).catch(() => {
+      fetch('/api/admin/prices').then(r => r.json())
+        .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition) }))
+        .catch(() => {})
+    })
   }, [])
 
   const getPrice = (id) => {
@@ -63,6 +71,20 @@ export function CartProvider({ children }) {
     if (id === 'nutrition') return prices.nutrition
     if (id === 'bundle') return prices.transformation + prices.nutrition
     return 0
+  }
+
+  // Returns override price in the given currency code, or null if no override (use formatPrice instead)
+  const getCurrencyPrice = (id, currencyCode) => {
+    if (!currencyCode) return null
+    if (id === 'bundle') {
+      const t = getCurrencyPrice('transformation', currencyCode)
+      const n = getCurrencyPrice('nutrition', currencyCode)
+      if (t !== null && n !== null) return t + n
+      return null
+    }
+    const key = `${currencyCode}_${id}`
+    if (key in currencyPrices && currencyPrices[key] !== '') return Number(currencyPrices[key])
+    return null
   }
 
   const getBooksData = () => ({
@@ -141,6 +163,8 @@ export function CartProvider({ children }) {
       openCheckout,
       BOOKS_DATA: getBooksData(),
       prices,
+      currencyPrices,
+      getCurrencyPrice,
     }}>
       {children}
     </CartContext.Provider>

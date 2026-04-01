@@ -90,8 +90,23 @@ export function CurrencyProvider({ children }) {
     return `${converted} ${currency.symbol}`
   }
 
+  // Format a pre-converted amount (override price already in target currency)
+  const formatAmount = (amount, lang) => {
+    const rounded = Math.round(amount)
+    if (currency.code === 'SAR') {
+      return lang === 'ar' ? `${rounded} ر.س` : `SAR ${rounded}`
+    }
+    const prefixSymbols = ['$', '£', '€']
+    if (!lang || lang === 'en') {
+      return prefixSymbols.includes(currency.symbol)
+        ? `${currency.symbol}${rounded}`
+        : `${rounded} ${currency.symbolEn}`
+    }
+    return `${rounded} ${currency.symbol}`
+  }
+
   return (
-    <CurrencyContext.Provider value={{ currency, formatPrice, loading }}>
+    <CurrencyContext.Provider value={{ currency, formatPrice, formatAmount, loading }}>
       {children}
     </CurrencyContext.Provider>
   )

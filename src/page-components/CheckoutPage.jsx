@@ -303,6 +303,11 @@ export default function CheckoutPage() {
 
   const [paymentMethod,   setPaymentMethod]   = useState('card')
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
+  const [bankDetails,     setBankDetails]     = useState(null)
+
+  useEffect(() => {
+    fetch('/api/admin/bank').then(r => r.json()).then(setBankDetails).catch(() => {})
+  }, [])
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', cardNumber: '', expiry: '', cvv: '' })
   const [errors,   setErrors]   = useState({})
   const [touched,  setTouched]  = useState({})
@@ -584,9 +589,9 @@ export default function CheckoutPage() {
                     className="rounded-2xl bg-black/30 border border-white/8 p-4 space-y-3">
                     <p className="text-white/60 text-xs font-semibold uppercase tracking-wider">{lang === 'ar' ? 'معلومات الحساب البنكي' : 'Bank Account Details'}</p>
                     {[
-                      { label: lang === 'ar' ? 'البنك' : 'Bank',      value: lang === 'ar' ? 'الراجحي' : 'Al Rajhi Bank' },
-                      { label: lang === 'ar' ? 'رقم الحساب' : 'IBAN', value: 'SA0000000000000000000', mono: true },
-                      { label: lang === 'ar' ? 'الاسم' : 'Name',      value: 'HADIDI' },
+                      { label: lang === 'ar' ? 'البنك' : 'Bank',      value: lang === 'ar' ? (bankDetails?.bankName_ar || '—') : (bankDetails?.bankName_en || '—') },
+                      { label: lang === 'ar' ? 'رقم الحساب' : 'IBAN', value: bankDetails?.iban || '—', mono: true },
+                      { label: lang === 'ar' ? 'الاسم' : 'Name',      value: lang === 'ar' ? (bankDetails?.beneficiaryName_ar || '—') : (bankDetails?.beneficiaryName_en || '—') },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between">
                         <span className="text-white/30 text-sm">{row.label}</span>
