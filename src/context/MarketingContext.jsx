@@ -20,7 +20,12 @@ export function MarketingProvider({ children }) {
   useEffect(() => {
     fetch('/api/admin/marketing')
       .then(r => r.json())
-      .then(data => setMarketing({ ...DEFAULTS, ...data }))
+      .then(data => {
+        // Normalize boolean false → string 'false' (Upstash may return booleans)
+        const normalized = {}
+        for (const [k, v] of Object.entries(data || {})) normalized[k] = String(v)
+        setMarketing({ ...DEFAULTS, ...normalized })
+      })
       .catch(() => {})
   }, [])
 

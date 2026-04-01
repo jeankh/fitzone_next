@@ -11,7 +11,8 @@ export default function Footer() {
 
   const isVisible = (key) => {
     const map = { whatsapp: whatsapp_visible, twitter: twitter_visible, instagram: instagram_visible, youtube: youtube_visible }
-    return map[key] !== 'false'
+    const v = map[key]
+    return v !== 'false' && v !== false
   }
 
   const footerLinks = {

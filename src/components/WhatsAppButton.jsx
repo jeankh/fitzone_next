@@ -8,7 +8,7 @@ export default function WhatsAppButton() {
   const { lang } = useLanguage()
   const { whatsapp, whatsapp_visible } = useMarketing()
 
-  if (whatsapp_visible === 'false') return null
+  if (whatsapp_visible === 'false' || whatsapp_visible === false) return null
 
   return (
     <motion.a
