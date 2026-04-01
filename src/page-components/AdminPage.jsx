@@ -112,6 +112,84 @@ function FunnelChart({ events }) {
   )
 }
 
+// ── Smart Date Input ──────────────────────────────────────────────────────────
+// Displays as YYYY-MM-DD text with auto-slash, double-click select-all, paste.
+// Stores value in YYYY-MM-DD format. Has a hidden date picker for mouse/calendar.
+function DateInput({ value, onChange }) {
+  const [display, setDisplay] = useState(value || '')
+  const [showPicker, setShowPicker] = useState(false)
+  const pickerRef = useRef()
+
+  // Sync display when value changes externally
+  useEffect(() => { setDisplay(value || '') }, [value])
+
+  const toISO = (str) => {
+    // Accept YYYY-MM-DD or YYYY/MM/DD or YYYYMMDD
+    const clean = str.replace(/\//g, '-').replace(/[^0-9-]/g, '')
+    const digits = clean.replace(/-/g, '')
+    if (digits.length === 8) return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}`
+    return clean
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+      e.target.select()
+    }
+  }
+
+  const handleChange = (e) => {
+    let raw = e.target.value
+    const prev = display
+    // Strip non-digit non-dash chars
+    const digits = raw.replace(/[^0-9]/g, '')
+    // Auto-insert dashes after position 4 and 7
+    let formatted = digits
+    if (digits.length > 4) formatted = digits.slice(0,4) + '-' + digits.slice(4)
+    if (digits.length > 6) formatted = digits.slice(0,4) + '-' + digits.slice(4,6) + '-' + digits.slice(6,8)
+    setDisplay(formatted)
+    const iso = toISO(formatted)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) onChange(iso)
+  }
+
+  const handlePaste = (e) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').trim()
+    const iso = toISO(pasted)
+    setDisplay(iso)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) onChange(iso)
+  }
+
+  const handlePickerChange = (e) => {
+    const iso = e.target.value
+    setDisplay(iso)
+    onChange(iso)
+    setShowPicker(false)
+  }
+
+  return (
+    <div className="relative">
+      <input
+        value={display}
+        onChange={handleChange}
+        onPaste={handlePaste}
+        onKeyDown={handleKeyDown}
+        onDoubleClick={e => e.target.select()}
+        placeholder="YYYY-MM-DD"
+        maxLength={10}
+        className="w-full bg-background border border-border rounded-xl px-3 py-2.5 pr-9 text-white text-sm focus:outline-none focus:border-brand transition-colors"
+      />
+      <button type="button" onClick={() => { setShowPicker(p => !p); setTimeout(() => pickerRef.current?.showPicker?.(), 50) }}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-brand transition-colors">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </button>
+      <input ref={pickerRef} type="date" value={value} onChange={handlePickerChange}
+        className="absolute inset-0 opacity-0 pointer-events-none w-full h-full" tabIndex={-1} />
+    </div>
+  )
+}
+
 // ── Blog Editor Modal ─────────────────────────────────────────────────────────
 function BlogEditor({ post, onSave, onClose }) {
   const isNew = !post?.id
@@ -195,12 +273,12 @@ function BlogEditor({ post, onSave, onClose }) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Title (AR)</label>
-              <input value={form.title.ar} onChange={handle('title.ar')} onPaste={handle('title.ar')} dir="rtl"
+              <input value={form.title.ar} onChange={handle('title.ar')} onPaste={handle('title.ar')} onDoubleClick={e => e.target.select()} dir="rtl"
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Title (EN)</label>
-              <input value={form.title.en} onChange={handle('title.en')} onPaste={handle('title.en')}
+              <input value={form.title.en} onChange={handle('title.en')} onPaste={handle('title.en')} onDoubleClick={e => e.target.select()}
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
           </div>
@@ -247,7 +325,7 @@ function BlogEditor({ post, onSave, onClose }) {
               </button>
             </div>
             {imageMode === 'url' ? (
-              <input value={form.image} onChange={handle('image')} placeholder="https://..."
+              <input value={form.image} onChange={handle('image')} onDoubleClick={e => e.target.select()} placeholder="https://..."
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             ) : (
               <div>
@@ -277,18 +355,17 @@ function BlogEditor({ post, onSave, onClose }) {
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Read Time (AR)</label>
-              <input value={form.readTime.ar} onChange={handle('readTime.ar')} placeholder="٥ دقائق" dir="rtl"
+              <input value={form.readTime.ar} onChange={handle('readTime.ar')} onDoubleClick={e => e.target.select()} placeholder="٥ دقائق" dir="rtl"
                 className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Read Time (EN)</label>
-              <input value={form.readTime.en} onChange={handle('readTime.en')} placeholder="5 min read"
+              <input value={form.readTime.en} onChange={handle('readTime.en')} onDoubleClick={e => e.target.select()} placeholder="5 min read"
                 className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Date</label>
-              <input type="date" value={form.date} onChange={handle('date')}
-                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
+              <DateInput value={form.date} onChange={v => set('date', v)} />
             </div>
           </div>
 
