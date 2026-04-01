@@ -112,14 +112,17 @@ function CountryPicker({ selected, onChange, lang }) {
 
   return (
     <div ref={ref} className="relative shrink-0">
-      {/* Trigger button: flag + dial code + chevron */}
+      {/* Trigger button: flag + country name + dial code + chevron */}
       <button
         type="button"
         onClick={() => setOpen(p => !p)}
         className="flex items-center gap-2 h-full px-3 py-3.5 hover:bg-white/[0.05] transition-colors rounded-l-2xl"
       >
         <span className="text-xl leading-none">{selected.flag}</span>
-        <span className="text-white/70 text-sm font-mono">{selected.dial}</span>
+        <div className="flex flex-col items-start leading-none">
+          <span className="text-white/80 text-xs font-medium">{lang === 'ar' ? selected.nameAr : selected.name}</span>
+          <span className="text-white/35 text-xs font-mono mt-0.5">{selected.dial}</span>
+        </div>
         <ChevronDown size={12} className={`text-white/30 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
