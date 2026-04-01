@@ -14,6 +14,76 @@ const SESSION_KEY = 'fitzone_admin'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX'
 const EVENT_DEFAULTS = { cart_adds: 0, bundle_upgrades: 0, checkout_starts: 0, purchases: 0 }
 
+const CURRENCIES = [
+  { code: 'SAR', symbol: 'SAR', rate: 1 },
+  { code: 'USD', symbol: '$',   rate: 0.267 },
+  { code: 'EUR', symbol: '€',   rate: 0.245 },
+  { code: 'GBP', symbol: '£',   rate: 0.210 },
+  { code: 'AED', symbol: 'AED', rate: 0.980 },
+  { code: 'KWD', symbol: 'KWD', rate: 0.082 },
+  { code: 'QAR', symbol: 'QAR', rate: 0.972 },
+  { code: 'BHD', symbol: 'BHD', rate: 0.100 },
+  { code: 'EGP', symbol: 'EGP', rate: 13.1  },
+]
+
+const COUNTRY_TO_CURRENCY = {
+  SA: 'SAR', YE: 'SAR',
+  AE: 'AED', KW: 'KWD', QA: 'QAR', BH: 'BHD', EG: 'EGP',
+  GB: 'GBP', US: 'USD', CA: 'USD', AU: 'USD',
+  DE: 'EUR', FR: 'EUR', IT: 'EUR', ES: 'EUR', NL: 'EUR',
+  BE: 'EUR', AT: 'EUR', PT: 'EUR', FI: 'EUR', IE: 'EUR',
+  GR: 'EUR', LU: 'EUR', SK: 'EUR', SI: 'EUR', EE: 'EUR',
+  LV: 'EUR', LT: 'EUR', CY: 'EUR', MT: 'EUR', HR: 'EUR',
+}
+
+// ── Currency Selector ─────────────────────────────────────────────────────────
+function CurrencySelector({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef()
+
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+
+  const selected = CURRENCIES.find(c => c.code === value) || CURRENCIES[0]
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(p => !p)}
+        className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-white border border-border hover:border-brand/40 px-3 py-1.5 rounded-lg transition-all"
+      >
+        <Globe size={13} />
+        {selected.code}
+        <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: 0.12 }}
+            className="absolute right-0 top-full mt-1.5 w-32 bg-surface border border-border rounded-xl shadow-xl z-50 overflow-hidden"
+          >
+            {CURRENCIES.map(c => (
+              <button
+                key={c.code}
+                onClick={() => { onChange(c.code); setOpen(false) }}
+                className={`w-full text-left px-3 py-2 text-sm transition-colors hover:bg-white/5 ${c.code === value ? 'text-brand' : 'text-text-secondary'}`}
+              >
+                {c.code}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 const eventCards = [
   { key: 'cart_adds',       label: 'Cart Adds',       icon: ShoppingCart, color: 'text-brand',        bg: 'bg-brand/10' },
   { key: 'bundle_upgrades', label: 'Bundle Upgrades', icon: Gift,         color: 'text-[#25d366]',   bg: 'bg-[#25d366]/10' },
@@ -561,6 +631,20 @@ function Dashboard({ onLogout, initialEvents }) {
   const [confirmReset, setConfirmReset] = useState(false)
   const [resetting, setResetting] = useState(false)
 
+  // Revenue currency (default from IP cache, fallback SAR)
+  const [revCurrencyCode, setRevCurrencyCode] = useState(() => {
+    try {
+      const cached = typeof window !== 'undefined' && sessionStorage.getItem('fitzone_currency')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        const cc = COUNTRY_TO_CURRENCY[parsed.countryCode]
+        if (cc) return cc
+        if (parsed.code && CURRENCIES.find(c => c.code === parsed.code)) return parsed.code
+      }
+    } catch {}
+    return 'SAR'
+  })
+
   // Prices
   const [prices, setPrices] = useState({ transformation: 79, nutrition: 79 })
   const [editingPrice, setEditingPrice] = useState(null) // 'transformation' | 'nutrition'
@@ -621,8 +705,16 @@ function Dashboard({ onLogout, initialEvents }) {
   }, [])
 
   const conversionRate = events.cart_adds > 0 ? Math.round((events.purchases / events.cart_adds) * 100) : 0
-  const bundlePrice = prices.transformation + prices.nutrition
-  const estRevenue = events.purchases * bundlePrice
+  const bundlePriceSAR = prices.transformation + prices.nutrition
+  const revCurrency = CURRENCIES.find(c => c.code === revCurrencyCode) || CURRENCIES[0]
+  // Use per-currency override if available, otherwise convert from SAR
+  const bundlePriceInCurrency = (() => {
+    const tOvr = currencyPrices[`${revCurrencyCode}_transformation`]
+    const nOvr = currencyPrices[`${revCurrencyCode}_nutrition`]
+    if (tOvr && nOvr) return Number(tOvr) + Number(nOvr)
+    return Math.round(bundlePriceSAR * revCurrency.rate)
+  })()
+  const estRevenue = events.purchases * bundlePriceInCurrency
 
   // ── Handlers ──
   const handleReset = async () => {
@@ -817,6 +909,7 @@ function Dashboard({ onLogout, initialEvents }) {
               <h2 className="text-white font-bold text-lg">Traffic & Funnel</h2>
             </div>
             <div className="flex items-center gap-3">
+              <CurrencySelector value={revCurrencyCode} onChange={setRevCurrencyCode} />
               <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-white border border-border hover:border-brand/40 px-3 py-1.5 rounded-lg transition-all">
                 <ExternalLink size={13} />Open GA4
@@ -858,8 +951,8 @@ function Dashboard({ onLogout, initialEvents }) {
               <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center flex-shrink-0"><CheckCircle size={18} className="text-emerald-400" /></div>
               <div>
                 <p className="text-text-secondary text-xs mb-1">Est. Revenue</p>
-                <p className="text-white text-3xl font-bold">{estRevenue.toLocaleString()} SAR</p>
-                <p className="text-text-muted text-xs mt-0.5">{events.purchases} purchases × {bundlePrice} SAR avg</p>
+                <p className="text-white text-3xl font-bold">{estRevenue.toLocaleString()} {revCurrency.symbol}</p>
+                <p className="text-text-muted text-xs mt-0.5">{events.purchases} purchases × {bundlePriceInCurrency} {revCurrency.symbol} avg</p>
               </div>
             </div>
           </div>
