@@ -116,8 +116,14 @@ export default function BlogPage({ initialPosts }) {
 
   const filteredPosts = posts.filter(post => {
     const matchesCategory = activeCategory === 'all' || post.category === activeCategory
-    const matchesSearch = post.title[lang].toLowerCase().includes(searchQuery.toLowerCase()) || post.excerpt[lang].toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesCategory && (searchQuery === '' || matchesSearch)
+    if (searchQuery === '') return matchesCategory
+    const q = searchQuery.toLowerCase()
+    const titleEn  = (typeof post.title   === 'object' ? post.title?.en   : post.title   || '').toLowerCase()
+    const titleAr  = (typeof post.title   === 'object' ? post.title?.ar   : '').toLowerCase()
+    const excEn    = (typeof post.excerpt === 'object' ? post.excerpt?.en : post.excerpt || '').toLowerCase()
+    const excAr    = (typeof post.excerpt === 'object' ? post.excerpt?.ar : '').toLowerCase()
+    const matchesSearch = titleEn.includes(q) || titleAr.includes(q) || excEn.includes(q) || excAr.includes(q)
+    return matchesCategory && matchesSearch
   })
 
   const featuredPosts = posts.filter(post => post.featured)
@@ -164,6 +170,8 @@ export default function BlogPage({ initialPosts }) {
               placeholder={t('blogPage.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onPaste={(e) => { setTimeout(() => setSearchQuery(e.target.value), 0) }}
+              onInput={(e) => setSearchQuery(e.target.value)}
               className={`w-full bg-surface border border-border rounded-xl py-3 text-white placeholder:text-text-muted focus:outline-none focus:border-brand/50 transition-colors ${lang === 'ar' ? 'pr-12 pl-4' : 'pl-12 pr-4'}`}
             />
           </div>
