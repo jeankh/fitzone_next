@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight, ArrowLeft, CreditCard, Smartphone, Building2, Lock,
   Trash2, CheckCircle, ShoppingCart, AlertCircle, ChevronDown,
-  Search, Shield, Zap, User, Mail, Phone, Tag
+  Search, Shield, Zap, User, Mail, Phone, Tag, Gift
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { AsYouType, isValidPhoneNumber, isPossiblePhoneNumber, getExampleNumber, parsePhoneNumber } from 'libphonenumber-js'
@@ -298,7 +298,7 @@ export default function CheckoutPage() {
   const router = useRouter()
   const { lang } = useLanguage()
   const { formatPrice } = useCurrency()
-  const { cart, removeFromCart, clearCart, getTotal, BOOKS_DATA } = useCart()
+  const { cart, removeFromCart, clearCart, addToCart, getTotal, getMissingBook, wasAutoUpgraded, BOOKS_DATA } = useCart()
   const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight
 
   const [paymentMethod,   setPaymentMethod]   = useState('card')
@@ -675,6 +675,60 @@ export default function CheckoutPage() {
                   )
                 })}
               </div>
+
+              {/* Upsell — suggest missing book + bundle upgrade */}
+              {(() => {
+                const missingBook = getMissingBook()
+                const missingBookData = missingBook ? BOOKS_DATA[missingBook] : null
+                return (
+                  <>
+                    {missingBookData && !cart.includes('bundle') && (
+                      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                        className="rounded-2xl overflow-hidden border border-[#25d366]/30 bg-[#25d366]/5 mb-4">
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-[#25d366]/10 border-b border-[#25d366]/20">
+                          <Gift size={13} className="text-[#25d366] flex-shrink-0" />
+                          <span className="text-[#25d366] text-xs font-bold">
+                            {lang === 'ar' ? '🎁 أضف البرنامج الثاني واحصل على متابعة واتساب شهر كامل!' : '🎁 Add the 2nd program & get 1 month WhatsApp support!'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 p-4">
+                          <div className="w-10 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+                            <img src={missingBookData.image} alt="" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm font-semibold leading-snug">
+                              {lang === 'ar' ? missingBookData.titleAr : missingBookData.titleEn}
+                            </p>
+                            <p className="text-[#25d366] text-xs font-semibold mt-0.5">
+                              {lang === 'ar' ? '+ متابعة واتساب شهر كامل مع الباقة' : '+ 1 month WhatsApp support with bundle'}
+                            </p>
+                          </div>
+                          <motion.button whileTap={{ scale: 0.96 }} onClick={() => addToCart(missingBook)}
+                            className="flex-shrink-0 bg-[#25d366] text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-green-500 transition-colors whitespace-nowrap">
+                            {lang === 'ar' ? 'أضف الآن' : 'Add Now'}
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                    {wasAutoUpgraded && (
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                        className="flex items-center gap-3 rounded-2xl bg-[#25d366]/10 border border-[#25d366]/30 px-4 py-3 mb-4">
+                        <div className="w-8 h-8 bg-[#25d366]/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Gift size={16} className="text-[#25d366]" />
+                        </div>
+                        <div>
+                          <p className="text-[#25d366] text-sm font-bold">
+                            {lang === 'ar' ? '🎉 تمت الترقية للباقة الكاملة!' : '🎉 Upgraded to the Complete Bundle!'}
+                          </p>
+                          <p className="text-white/30 text-xs mt-0.5">
+                            {lang === 'ar' ? 'وفّرت مقارنةً بالشراء المنفرد' : 'You saved vs buying separately'}
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </>
+                )
+              })()}
 
               {/* Coupon */}
               <div className="mb-4">
