@@ -1,7 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, ArrowLeft, CreditCard, Smartphone, Building2, Lock, Trash2, CheckCircle, ShoppingCart, AlertCircle } from 'lucide-react'
+import { ArrowRight, ArrowLeft, CreditCard, Smartphone, Building2, Lock, Trash2, CheckCircle, ShoppingCart, AlertCircle, ChevronDown, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useLanguage } from '../context/LanguageContext'
 import { useCart, trackEvent } from '../context/CartContext'
@@ -13,9 +13,89 @@ const paymentMethods = [
   { id: 'bank', icon: Building2, label: { ar: 'تحويل بنكي', en: 'Bank Transfer' } },
 ]
 
+// ── Country dial codes with phone validation rules ────────────────────────────
+const COUNTRIES = [
+  { code: 'SA', flag: '🇸🇦', dial: '+966', name: 'Saudi Arabia',    nameAr: 'السعودية',       pattern: /^5\d{8}$/,          placeholder: '5XX XXX XXXX',  maxLen: 9  },
+  { code: 'AE', flag: '🇦🇪', dial: '+971', name: 'UAE',             nameAr: 'الإمارات',       pattern: /^5\d{8}$/,          placeholder: '5X XXX XXXX',   maxLen: 9  },
+  { code: 'KW', flag: '🇰🇼', dial: '+965', name: 'Kuwait',          nameAr: 'الكويت',         pattern: /^[569]\d{7}$/,      placeholder: '5XXX XXXX',     maxLen: 8  },
+  { code: 'QA', flag: '🇶🇦', dial: '+974', name: 'Qatar',           nameAr: 'قطر',            pattern: /^[3567]\d{7}$/,     placeholder: '3XXX XXXX',     maxLen: 8  },
+  { code: 'BH', flag: '🇧🇭', dial: '+973', name: 'Bahrain',         nameAr: 'البحرين',        pattern: /^[36]\d{7}$/,       placeholder: '3XXX XXXX',     maxLen: 8  },
+  { code: 'OM', flag: '🇴🇲', dial: '+968', name: 'Oman',            nameAr: 'عُمان',          pattern: /^[79]\d{7}$/,       placeholder: '9XXX XXXX',     maxLen: 8  },
+  { code: 'JO', flag: '🇯🇴', dial: '+962', name: 'Jordan',          nameAr: 'الأردن',         pattern: /^7[789]\d{7}$/,     placeholder: '79X XXX XXX',   maxLen: 9  },
+  { code: 'EG', flag: '🇪🇬', dial: '+20',  name: 'Egypt',           nameAr: 'مصر',            pattern: /^1[0125]\d{8}$/,    placeholder: '10X XXX XXXX',  maxLen: 10 },
+  { code: 'LB', flag: '🇱🇧', dial: '+961', name: 'Lebanon',         nameAr: 'لبنان',          pattern: /^[37]\d{7}$/,       placeholder: '3XXX XXXX',     maxLen: 8  },
+  { code: 'IQ', flag: '🇮🇶', dial: '+964', name: 'Iraq',            nameAr: 'العراق',         pattern: /^7[3-9]\d{8}$/,     placeholder: '7XX XXX XXXX',  maxLen: 10 },
+  { code: 'MA', flag: '🇲🇦', dial: '+212', name: 'Morocco',         nameAr: 'المغرب',         pattern: /^[67]\d{8}$/,       placeholder: '6XX XXX XXX',   maxLen: 9  },
+  { code: 'TR', flag: '🇹🇷', dial: '+90',  name: 'Turkey',          nameAr: 'تركيا',          pattern: /^5\d{9}$/,          placeholder: '5XX XXX XXXX',  maxLen: 10 },
+  { code: 'GB', flag: '🇬🇧', dial: '+44',  name: 'United Kingdom',  nameAr: 'المملكة المتحدة',pattern: /^7\d{9}$/,          placeholder: '7XXX XXX XXX',  maxLen: 10 },
+  { code: 'US', flag: '🇺🇸', dial: '+1',   name: 'United States',   nameAr: 'الولايات المتحدة',pattern: /^\d{10}$/,         placeholder: 'XXX XXX XXXX', maxLen: 10 },
+  { code: 'FR', flag: '🇫🇷', dial: '+33',  name: 'France',          nameAr: 'فرنسا',          pattern: /^[67]\d{8}$/,       placeholder: '6XX XXX XXX',   maxLen: 9  },
+  { code: 'DE', flag: '🇩🇪', dial: '+49',  name: 'Germany',         nameAr: 'ألمانيا',        pattern: /^1[567]\d{9,10}$/,  placeholder: '15X XXXX XXXX', maxLen: 11 },
+]
+
+// ── Country Picker ────────────────────────────────────────────────────────────
+function CountryPicker({ selected, onChange, lang }) {
+  const [open, setOpen]     = useState(false)
+  const [query, setQuery]   = useState('')
+  const ref                 = useRef()
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const filtered = COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(query.toLowerCase()) ||
+    c.nameAr.includes(query) ||
+    c.dial.includes(query)
+  )
+
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen(p => !p)}
+        className="flex items-center gap-1.5 h-full px-3 border-r border-border bg-background rounded-l-xl hover:bg-white/5 transition-colors min-w-[90px] whitespace-nowrap">
+        <span className="text-lg leading-none">{selected.flag}</span>
+        <span className="text-white text-sm font-mono">{selected.dial}</span>
+        <ChevronDown size={13} className={`text-text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-1 w-72 bg-[#1a1a1a] border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+          {/* Search */}
+          <div className="p-2 border-b border-border">
+            <div className="relative">
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
+                placeholder={lang === 'ar' ? 'ابحث عن دولة…' : 'Search country…'}
+                className="w-full bg-background border border-border rounded-lg pl-8 pr-3 py-2 text-white text-sm placeholder:text-text-muted focus:outline-none focus:border-brand transition-colors" />
+            </div>
+          </div>
+          {/* List */}
+          <div className="max-h-56 overflow-y-auto">
+            {filtered.map(c => (
+              <button key={c.code} type="button"
+                onClick={() => { onChange(c); setOpen(false); setQuery('') }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors text-left ${selected.code === c.code ? 'bg-brand/10' : ''}`}>
+                <span className="text-xl leading-none">{c.flag}</span>
+                <span className="text-white text-sm flex-1">{lang === 'ar' ? c.nameAr : c.name}</span>
+                <span className="text-text-muted text-xs font-mono">{c.dial}</span>
+              </button>
+            ))}
+            {filtered.length === 0 && <p className="text-text-muted text-sm text-center py-4">{lang === 'ar' ? 'لا نتائج' : 'No results'}</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Validation helpers
 const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-const validatePhone = (phone) => /^(\+?966|0)?5\d{8}$/.test(phone.replace(/\s/g, ''))
+const validatePhone = (phone, country) => {
+  const digits = phone.replace(/[\s\-()]/g, '')
+  return country.pattern.test(digits)
+}
 const validateCardNumber = (num) => {
   const digits = num.replace(/\s/g, '')
   if (digits.length !== 16 || !/^\d+$/.test(digits)) return false
@@ -49,14 +129,6 @@ const formatExpiry = (value) => {
   if (digits.length >= 3) return digits.slice(0, 2) + '/' + digits.slice(2)
   return digits
 }
-const formatPhone = (value) => {
-  let digits = value.replace(/[^\d+]/g, '')
-  if (digits.startsWith('+966')) return digits.slice(0, 13)
-  if (digits.startsWith('966')) return '+' + digits.slice(0, 12)
-  if (digits.startsWith('05')) return digits.slice(0, 10)
-  if (digits.startsWith('5')) return digits.slice(0, 9)
-  return digits
-}
 const formatCVV = (value) => value.replace(/\D/g, '').slice(0, 4)
 
 export default function CheckoutPage() {
@@ -68,6 +140,7 @@ export default function CheckoutPage() {
   const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight
 
   const [paymentMethod, setPaymentMethod] = useState('card')
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]) // SA default
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '',
     cardNumber: '', expiry: '', cvv: '',
@@ -87,7 +160,7 @@ export default function CheckoutPage() {
 
     if (name === 'cardNumber') formatted = formatCardNumber(value)
     else if (name === 'expiry') formatted = formatExpiry(value)
-    else if (name === 'phone') formatted = formatPhone(value)
+    else if (name === 'phone') formatted = value.replace(/[^\d\s\-()]/g, '').slice(0, selectedCountry.maxLen + 2)
     else if (name === 'cvv') formatted = formatCVV(value)
 
     setFormData(prev => ({ ...prev, [name]: formatted }))
@@ -118,7 +191,9 @@ export default function CheckoutPage() {
         break
       case 'phone':
         if (!value.trim()) error = req
-        else if (!validatePhone(value)) error = lang === 'ar' ? 'رقم هاتف غير صالح (مثال: 05XXXXXXXX)' : 'Invalid phone (e.g. 05XXXXXXXX)'
+        else if (!validatePhone(value, selectedCountry)) error = lang === 'ar'
+          ? `رقم غير صالح — مثال: ${selectedCountry.placeholder}`
+          : `Invalid number — e.g. ${selectedCountry.placeholder}`
         break
       case 'cardNumber':
         if (paymentMethod !== 'card') break
@@ -430,19 +505,34 @@ export default function CheckoutPage() {
                     <label className="block text-text-secondary text-sm mb-2">
                       {lang === 'ar' ? 'رقم الهاتف (واتساب)' : 'Phone (WhatsApp)'} <span className="text-red-400">*</span>
                     </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      onBlur={() => handleBlur('phone')}
-                      className={getInputClass('phone')}
-                      placeholder="+966 5XX XXX XXXX"
-                      dir="ltr"
-                    />
+                    <div className={`flex rounded-xl border overflow-visible transition-colors ${
+                      touched.phone && errors.phone ? 'border-red-500' :
+                      touched.phone && !errors.phone && formData.phone ? 'border-accent-green/50' :
+                      'border-border focus-within:border-brand'
+                    }`}>
+                      <CountryPicker
+                        selected={selectedCountry}
+                        onChange={(c) => { setSelectedCountry(c); setFormData(p => ({ ...p, phone: '' })); setErrors(p => ({ ...p, phone: '' })) }}
+                        lang={lang}
+                      />
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        onBlur={() => handleBlur('phone')}
+                        placeholder={selectedCountry.placeholder}
+                        maxLength={selectedCountry.maxLen + 2}
+                        dir="ltr"
+                        className="flex-1 bg-background px-4 py-3 text-white placeholder:text-text-muted focus:outline-none rounded-r-xl text-sm"
+                      />
+                    </div>
                     {touched.phone && errors.phone && (
                       <p className="text-red-400 text-xs mt-1 flex items-center gap-1"><AlertCircle size={12} />{errors.phone}</p>
                     )}
+                    <p className="text-text-muted text-xs mt-1">
+                      {selectedCountry.dial} · {lang === 'ar' ? selectedCountry.nameAr : selectedCountry.name}
+                    </p>
                   </div>
                 </div>
               </div>
