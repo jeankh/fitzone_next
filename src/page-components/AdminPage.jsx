@@ -716,6 +716,19 @@ function Dashboard({ onLogout, initialEvents }) {
   })()
   const estRevenue = events.purchases * bundlePriceInCurrency
 
+  // Convert a SAR base price to the selected revenue currency for display
+  const displayPrice = (id, sarAmount) => {
+    if (id === 'bundle') {
+      const tOvr = currencyPrices[`${revCurrencyCode}_transformation`]
+      const nOvr = currencyPrices[`${revCurrencyCode}_nutrition`]
+      if (tOvr && nOvr) return `${Number(tOvr) + Number(nOvr)} ${revCurrency.symbol}`
+    } else {
+      const ovr = currencyPrices[`${revCurrencyCode}_${id}`]
+      if (ovr) return `${Number(ovr)} ${revCurrency.symbol}`
+    }
+    return `${Math.round(sarAmount * revCurrency.rate)} ${revCurrency.symbol}`
+  }
+
   // ── Handlers ──
   const handleReset = async () => {
     setResetting(true)
@@ -994,7 +1007,7 @@ function Dashboard({ onLogout, initialEvents }) {
                     <div className="flex items-center justify-between">
                       <span className="text-text-secondary text-xs">Price</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-white font-bold">{book.price} SAR</span>
+                        <span className="text-white font-bold">{displayPrice(book.id, book.price)}</span>
                         {!book.isBundle && (
                           <button onClick={() => startEditPrice(book.id, book.price)} className="text-text-muted hover:text-brand transition-colors">
                             <Pencil size={13} />
