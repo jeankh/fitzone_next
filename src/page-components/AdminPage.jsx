@@ -575,7 +575,7 @@ function Dashboard({ onLogout, initialEvents }) {
   const [currencyCellInput, setCurrencyCellInput] = useState('')
 
   // Marketing
-  const [marketing, setMarketing] = useState({ whatsapp: '', twitter: '', instagram: '', youtube: '' })
+  const [marketing, setMarketing] = useState({ whatsapp: '', twitter: '', instagram: '', youtube: '', whatsapp_visible: 'true', twitter_visible: 'true', instagram_visible: 'true', youtube_visible: 'true' })
   const [editingMkt, setEditingMkt] = useState(null)
   const [mktInput, setMktInput] = useState('')
   const [savingMkt, setSavingMkt] = useState(false)
@@ -759,6 +759,14 @@ function Dashboard({ onLogout, initialEvents }) {
     { key: 'instagram',label: 'Instagram' },
     { key: 'youtube',  label: 'YouTube' },
   ]
+
+  const toggleMktVisible = async (key) => {
+    const visKey = `${key}_visible`
+    const current = marketing[visKey] === 'true'
+    const next = current ? 'false' : 'true'
+    await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [visKey]: next }) })
+    setMarketing(m => ({ ...m, [visKey]: next }))
+  }
 
   const productCards = [
     { id: 'transformation', titleEn: 'Complete Shredding & Building Guide', titleAr: 'الدليل الشامل للتنشيف وبناء الجسم', image: '/fitzone-workout.jpeg', price: prices.transformation },
@@ -995,8 +1003,9 @@ function Dashboard({ onLogout, initialEvents }) {
             {mktFields.map(({ key, label }, i) => {
               const val = marketing[key] || ''
               const isEditing = editingMkt === key
+              const isVisible = marketing[`${key}_visible`] !== 'false'
               return (
-                <div key={key} className={`px-5 py-3.5 ${i < mktFields.length - 1 ? 'border-b border-border' : ''}`}>
+                <div key={key} className={`px-5 py-3.5 ${i < mktFields.length - 1 ? 'border-b border-border' : ''} ${!isVisible ? 'opacity-50' : ''} transition-opacity`}>
                   {isEditing ? (
                     <div className="flex items-center gap-3">
                       <span className="text-text-secondary text-sm w-40 flex-shrink-0">{label}</span>
@@ -1007,17 +1016,27 @@ function Dashboard({ onLogout, initialEvents }) {
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-text-secondary text-sm w-40 flex-shrink-0">{label}</span>
+                      <div className="flex items-center gap-2 w-40 flex-shrink-0">
+                        <span className="text-text-secondary text-sm">{label}</span>
+                        {!isVisible && <span className="text-xs text-text-muted bg-white/5 px-1.5 py-0.5 rounded">hidden</span>}
+                      </div>
                       <a href={val.startsWith('http') ? val : val ? `https://wa.me/${val}` : undefined}
                         target="_blank" rel="noopener noreferrer"
-                        className={`text-white text-sm font-mono flex-1 truncate ${val.startsWith('http') || val ? 'hover:text-brand transition-colors' : 'text-text-muted'}`}>
+                        className={`text-sm font-mono flex-1 truncate transition-colors ${!isVisible ? 'text-text-muted' : val.startsWith('http') || val ? 'text-white hover:text-brand' : 'text-text-muted'}`}>
                         {val || '—'}
                       </a>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={() => handleCopy(val, key)} className="text-text-muted hover:text-brand transition-colors">
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {/* Visible / Hidden toggle */}
+                        <button onClick={() => toggleMktVisible(key)}
+                          title={isVisible ? 'Hide from site' : 'Show on site'}
+                          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-all ${isVisible ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/5' : 'border-border text-text-muted hover:text-white hover:border-white/20'}`}>
+                          {isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
+                          {isVisible ? 'Visible' : 'Hidden'}
+                        </button>
+                        <button onClick={() => handleCopy(val, key)} className="text-text-muted hover:text-brand transition-colors p-1">
                           <Copy size={13} />
                         </button>
-                        <button onClick={() => startEditMkt(key, val)} className="text-text-muted hover:text-brand transition-colors">
+                        <button onClick={() => startEditMkt(key, val)} className="text-text-muted hover:text-brand transition-colors p-1">
                           <Pencil size={13} />
                         </button>
                       </div>

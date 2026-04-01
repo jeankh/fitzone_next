@@ -6,6 +6,10 @@ const DEFAULTS = {
   twitter: 'https://x.com/',
   instagram: 'https://instagram.com/',
   youtube: 'https://youtube.com/',
+  whatsapp_visible:  'true',
+  twitter_visible:   'true',
+  instagram_visible: 'true',
+  youtube_visible:   'true',
 }
 
 const MarketingContext = createContext(DEFAULTS)

@@ -6,7 +6,9 @@ import { useMarketing } from '../context/MarketingContext'
 
 export default function WhatsAppButton() {
   const { lang } = useLanguage()
-  const { whatsapp } = useMarketing()
+  const { whatsapp, whatsapp_visible } = useMarketing()
+
+  if (whatsapp_visible === 'false') return null
 
   return (
     <motion.a

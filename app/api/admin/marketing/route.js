@@ -9,12 +9,19 @@ const DEFAULTS = {
   twitter: 'https://x.com/',
   instagram: 'https://instagram.com/',
   youtube: 'https://youtube.com/',
+  whatsapp_visible: 'true',
+  twitter_visible:  'true',
+  instagram_visible:'true',
+  youtube_visible:  'true',
 }
+
+const ALLOWED = ['whatsapp', 'twitter', 'instagram', 'youtube',
+                 'whatsapp_visible', 'twitter_visible', 'instagram_visible', 'youtube_visible']
 
 export async function GET() {
   try {
     const data = await kv.hgetall(KV_KEY)
-    return NextResponse.json({ ...DEFAULTS, ...data })
+    return NextResponse.json({ ...DEFAULTS, ...(data || {}) })
   } catch {
     return NextResponse.json(DEFAULTS)
   }
@@ -23,10 +30,9 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json()
-    const allowed = ['whatsapp', 'twitter', 'instagram', 'youtube']
     const updates = {}
-    for (const key of allowed) {
-      if (body[key] !== undefined) updates[key] = body[key]
+    for (const key of ALLOWED) {
+      if (body[key] !== undefined) updates[key] = String(body[key])
     }
     if (Object.keys(updates).length > 0) {
       await kv.hset(KV_KEY, updates)

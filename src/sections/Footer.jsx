@@ -6,7 +6,13 @@ import { useMarketing } from '../context/MarketingContext'
 
 export default function Footer() {
   const { lang } = useLanguage()
-  const { whatsapp, twitter, instagram, youtube } = useMarketing()
+  const { whatsapp, twitter, instagram, youtube,
+          whatsapp_visible, twitter_visible, instagram_visible, youtube_visible } = useMarketing()
+
+  const isVisible = (key) => {
+    const map = { whatsapp: whatsapp_visible, twitter: twitter_visible, instagram: instagram_visible, youtube: youtube_visible }
+    return map[key] !== 'false'
+  }
 
   const footerLinks = {
     books: [
@@ -17,7 +23,7 @@ export default function Footer() {
     links: [
       { label: lang === 'ar' ? 'قصص النجاح' : 'Success Stories', href: '/results' },
       { label: lang === 'ar' ? 'المدونة' : 'Blog', href: '/blog' },
-      { label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: `https://wa.me/${whatsapp}`, external: true },
+      ...(isVisible('whatsapp') ? [{ label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: `https://wa.me/${whatsapp}`, external: true }] : []),
     ],
     legal: [
       { label: lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy', href: '/privacy' },
@@ -27,11 +33,11 @@ export default function Footer() {
   }
 
   const socialLinks = [
-    { icon: '𝕏', label: 'Twitter / X', href: twitter },
-    { icon: '📷', label: 'Instagram', href: instagram },
-    { icon: '▶️', label: 'YouTube', href: youtube },
-    { icon: '💬', label: 'WhatsApp', href: `https://wa.me/${whatsapp}`, isWhatsapp: true },
-  ]
+    { key: 'twitter',   icon: '𝕏',  label: 'Twitter / X', href: twitter },
+    { key: 'instagram', icon: '📷', label: 'Instagram',    href: instagram },
+    { key: 'youtube',   icon: '▶️', label: 'YouTube',      href: youtube },
+    { key: 'whatsapp',  icon: '💬', label: 'WhatsApp',     href: `https://wa.me/${whatsapp}`, isWhatsapp: true },
+  ].filter(s => isVisible(s.key))
 
   const paymentMethods = [
     { icon: '🔒', label: lang === 'ar' ? 'دفع آمن' : 'Secure' },
@@ -59,9 +65,9 @@ export default function Footer() {
             </p>
 
             <div className="flex gap-2.5">
-              {socialLinks.map((social, index) => (
+              {socialLinks.map((social) => (
                 <motion.a
-                  key={index}
+                  key={social.key}
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
