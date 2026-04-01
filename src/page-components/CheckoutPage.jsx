@@ -7,29 +7,68 @@ import {
   Search, Shield, Zap, User, Mail, Phone, Tag
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { AsYouType, isValidPhoneNumber, isPossiblePhoneNumber, getExampleNumber, parsePhoneNumber } from 'libphonenumber-js'
+import examples from 'libphonenumber-js/mobile/examples'
 import { useLanguage } from '../context/LanguageContext'
 import { useCart, trackEvent } from '../context/CartContext'
 import { useCurrency } from '../context/CurrencyContext'
 
-// ── Country dial codes ────────────────────────────────────────────────────────
+// ── Country list — no manual patterns, libphonenumber-js handles all validation
 const COUNTRIES = [
-  { code: 'SA', flag: '🇸🇦', dial: '+966', name: 'Saudi Arabia',     nameAr: 'السعودية',        pattern: /^5\d{8}$/,         placeholder: '5XX XXX XXX',   maxLen: 9  },
-  { code: 'AE', flag: '🇦🇪', dial: '+971', name: 'UAE',              nameAr: 'الإمارات',        pattern: /^5\d{8}$/,         placeholder: '5X XXX XXXX',   maxLen: 9  },
-  { code: 'KW', flag: '🇰🇼', dial: '+965', name: 'Kuwait',           nameAr: 'الكويت',          pattern: /^[569]\d{7}$/,     placeholder: '5XXX XXXX',     maxLen: 8  },
-  { code: 'QA', flag: '🇶🇦', dial: '+974', name: 'Qatar',            nameAr: 'قطر',             pattern: /^[3567]\d{7}$/,    placeholder: '3XXX XXXX',     maxLen: 8  },
-  { code: 'BH', flag: '🇧🇭', dial: '+973', name: 'Bahrain',          nameAr: 'البحرين',         pattern: /^[36]\d{7}$/,      placeholder: '3XXX XXXX',     maxLen: 8  },
-  { code: 'OM', flag: '🇴🇲', dial: '+968', name: 'Oman',             nameAr: 'عُمان',           pattern: /^[79]\d{7}$/,      placeholder: '9XXX XXXX',     maxLen: 8  },
-  { code: 'JO', flag: '🇯🇴', dial: '+962', name: 'Jordan',           nameAr: 'الأردن',          pattern: /^7[789]\d{7}$/,    placeholder: '79X XXX XXX',   maxLen: 9  },
-  { code: 'EG', flag: '🇪🇬', dial: '+20',  name: 'Egypt',            nameAr: 'مصر',             pattern: /^1[0125]\d{8}$/,   placeholder: '10X XXX XXXX',  maxLen: 10 },
-  { code: 'LB', flag: '🇱🇧', dial: '+961', name: 'Lebanon',          nameAr: 'لبنان',           pattern: /^[37]\d{7}$/,      placeholder: '3XXX XXXX',     maxLen: 8  },
-  { code: 'IQ', flag: '🇮🇶', dial: '+964', name: 'Iraq',             nameAr: 'العراق',          pattern: /^7[3-9]\d{8}$/,    placeholder: '7XX XXX XXXX',  maxLen: 10 },
-  { code: 'MA', flag: '🇲🇦', dial: '+212', name: 'Morocco',          nameAr: 'المغرب',          pattern: /^[67]\d{8}$/,      placeholder: '6XX XXX XXX',   maxLen: 9  },
-  { code: 'TR', flag: '🇹🇷', dial: '+90',  name: 'Turkey',           nameAr: 'تركيا',           pattern: /^5\d{9}$/,         placeholder: '5XX XXX XXXX',  maxLen: 10 },
-  { code: 'GB', flag: '🇬🇧', dial: '+44',  name: 'United Kingdom',   nameAr: 'المملكة المتحدة', pattern: /^7\d{9}$/,         placeholder: '7XXX XXX XXX',  maxLen: 10 },
-  { code: 'US', flag: '🇺🇸', dial: '+1',   name: 'United States',    nameAr: 'الولايات المتحدة',pattern: /^\d{10}$/,         placeholder: 'XXX XXX XXXX', maxLen: 10 },
-  { code: 'FR', flag: '🇫🇷', dial: '+33',  name: 'France',           nameAr: 'فرنسا',           pattern: /^[67]\d{8}$/,      placeholder: '6XX XXX XXX',   maxLen: 9  },
-  { code: 'DE', flag: '🇩🇪', dial: '+49',  name: 'Germany',          nameAr: 'ألمانيا',         pattern: /^1[567]\d{9,10}$/, placeholder: '15X XXXX XXXX', maxLen: 11 },
+  { code: 'SA', flag: '🇸🇦', dial: '+966', name: 'Saudi Arabia',     nameAr: 'السعودية'         },
+  { code: 'AE', flag: '🇦🇪', dial: '+971', name: 'UAE',              nameAr: 'الإمارات'         },
+  { code: 'KW', flag: '🇰🇼', dial: '+965', name: 'Kuwait',           nameAr: 'الكويت'           },
+  { code: 'QA', flag: '🇶🇦', dial: '+974', name: 'Qatar',            nameAr: 'قطر'              },
+  { code: 'BH', flag: '🇧🇭', dial: '+973', name: 'Bahrain',          nameAr: 'البحرين'          },
+  { code: 'OM', flag: '🇴🇲', dial: '+968', name: 'Oman',             nameAr: 'عُمان'            },
+  { code: 'JO', flag: '🇯🇴', dial: '+962', name: 'Jordan',           nameAr: 'الأردن'           },
+  { code: 'EG', flag: '🇪🇬', dial: '+20',  name: 'Egypt',            nameAr: 'مصر'              },
+  { code: 'LB', flag: '🇱🇧', dial: '+961', name: 'Lebanon',          nameAr: 'لبنان'            },
+  { code: 'IQ', flag: '🇮🇶', dial: '+964', name: 'Iraq',             nameAr: 'العراق'           },
+  { code: 'MA', flag: '🇲🇦', dial: '+212', name: 'Morocco',          nameAr: 'المغرب'           },
+  { code: 'TR', flag: '🇹🇷', dial: '+90',  name: 'Turkey',           nameAr: 'تركيا'            },
+  { code: 'GB', flag: '🇬🇧', dial: '+44',  name: 'United Kingdom',   nameAr: 'المملكة المتحدة'  },
+  { code: 'US', flag: '🇺🇸', dial: '+1',   name: 'United States',    nameAr: 'الولايات المتحدة' },
+  { code: 'FR', flag: '🇫🇷', dial: '+33',  name: 'France',           nameAr: 'فرنسا'            },
+  { code: 'DE', flag: '🇩🇪', dial: '+49',  name: 'Germany',          nameAr: 'ألمانيا'          },
 ]
+
+// Get the example national number for a country (used as placeholder)
+function getPlaceholder(countryCode) {
+  try {
+    const ex = getExampleNumber(countryCode, examples)
+    return ex ? ex.formatNational() : ''
+  } catch { return '' }
+}
+
+// Validate full E.164 number with libphonenumber-js
+function validatePhone(nationalNumber, countryCode) {
+  if (!nationalNumber.trim()) return false
+  try {
+    const full = `${COUNTRIES.find(c => c.code === countryCode)?.dial}${nationalNumber.replace(/\D/g, '')}`
+    return isValidPhoneNumber(full, countryCode)
+  } catch { return false }
+}
+
+// Format as user types using AsYouType
+function formatAsYouType(value, countryCode) {
+  try {
+    const digits = value.replace(/\D/g, '')
+    const formatter = new AsYouType(countryCode)
+    // Feed digits one by one to get proper national formatting
+    let result = ''
+    for (const d of digits) result = formatter.input(d)
+    return result
+  } catch { return value }
+}
+
+// Get max digit length for a country from example number
+function getMaxLen(countryCode) {
+  try {
+    const ex = getExampleNumber(countryCode, examples)
+    return ex ? ex.nationalNumber.length + 4 : 15 // +4 for spaces/dashes
+  } catch { return 15 }
+}
 
 // ── Country Picker ────────────────────────────────────────────────────────────
 function CountryPicker({ selected, onChange, lang, fullWidth = false }) {
@@ -153,7 +192,6 @@ function FloatingInput({ label, icon: Icon, error, touched, children, hint }) {
 
 // ── Validation helpers ────────────────────────────────────────────────────────
 const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
-const validatePhone = (phone, country) => country.pattern.test(phone.replace(/[\s\-()]/g, ''))
 const validateCardNumber = (num) => {
   const d = num.replace(/\s/g, '')
   if (d.length !== 16 || !/^\d+$/.test(d)) return false
@@ -177,13 +215,17 @@ const formatCVV = (v) => v.replace(/\D/g, '').slice(0, 4)
 
 // ── Phone Field ──────────────────────────────────────────────────────────────
 function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur, error, touched, lang }) {
-  const digits = value.replace(/\D/g, '')
-  const progress = Math.min(digits.length / selectedCountry.maxLen, 1)
-  const isValid = touched && !error && value
-  const isError = touched && error
+  const digits   = value.replace(/\D/g, '')
+  const maxLen   = getMaxLen(selectedCountry.code)
+  const placeholder = getPlaceholder(selectedCountry.code)
+  const progress = Math.min(digits.length / maxLen, 1)
+  const isValid  = touched && !error && value
+  const isError  = touched && error
 
-  // Format placeholder as visual segments e.g. "5XX-XXX-XXX"
-  const segments = selectedCountry.placeholder.split(' ')
+  // Live validation hint during typing (isPossiblePhoneNumber = length check only, faster)
+  const isPossible = digits.length > 2 && (() => {
+    try { return isPossiblePhoneNumber(`${selectedCountry.dial}${digits}`, selectedCountry.code) } catch { return false }
+  })()
 
   return (
     <div className="space-y-2">
@@ -193,21 +235,21 @@ function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur,
           <Phone size={12} />
           {lang === 'ar' ? 'رقم الهاتف (واتساب)' : 'Phone Number (WhatsApp)'}
         </label>
-        {/* Country name pill */}
         <span className="text-white/25 text-xs flex items-center gap-1">
           <span>{selectedCountry.flag}</span>
           <span>{lang === 'ar' ? selectedCountry.nameAr : selectedCountry.name}</span>
         </span>
       </div>
 
-      {/* Country selector row */}
+      {/* Country selector */}
       <CountryPicker selected={selectedCountry} onChange={onCountryChange} lang={lang} fullWidth />
 
       {/* Number input */}
       <div className={`relative rounded-2xl border transition-all duration-200 bg-white/[0.03] ${
-        isError ? 'border-red-500/50 ring-1 ring-red-500/15' :
-        isValid ? 'border-emerald-500/40 ring-1 ring-emerald-500/10' :
-                  'border-white/10 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/15'
+        isError   ? 'border-red-500/50 ring-1 ring-red-500/15' :
+        isValid   ? 'border-emerald-500/40 ring-1 ring-emerald-500/10' :
+        isPossible ? 'border-brand/30' :
+                    'border-white/10 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/15'
       }`}>
         {/* Dial code prefix */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
@@ -216,37 +258,33 @@ function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur,
         </div>
         <input
           type="tel" name="phone" value={value} onChange={onChange} onBlur={onBlur}
-          placeholder={selectedCountry.placeholder}
-          maxLength={selectedCountry.maxLen + 2}
+          placeholder={placeholder}
+          maxLength={maxLen}
           dir="ltr"
           className="w-full bg-transparent pl-[72px] pr-12 py-4 text-white text-sm font-mono tracking-wider placeholder:text-white/15 focus:outline-none"
         />
-        {/* Status icon */}
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          {isValid && <CheckCircle size={16} className="text-emerald-400/70" />}
-          {isError && <AlertCircle size={16} className="text-red-400/70" />}
+          {isValid   && <CheckCircle size={16} className="text-emerald-400/70" />}
+          {isError   && <AlertCircle size={16} className="text-red-400/70" />}
           {!isValid && !isError && <Phone size={14} className="text-white/15" />}
         </div>
 
-        {/* Progress bar at bottom of input */}
+        {/* Progress bar */}
         <div className="absolute bottom-0 left-4 right-4 h-px overflow-hidden rounded-full">
           <motion.div
-            className={`h-full rounded-full transition-colors ${isError ? 'bg-red-500/60' : isValid ? 'bg-emerald-500/60' : 'bg-brand/40'}`}
+            className={`h-full rounded-full transition-colors ${isError ? 'bg-red-500/60' : isValid ? 'bg-emerald-500/60' : isPossible ? 'bg-brand/60' : 'bg-brand/30'}`}
             initial={{ width: 0 }}
             animate={{ width: `${progress * 100}%` }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15 }}
           />
         </div>
       </div>
 
-      {/* Format hint dots */}
-      <div className="flex items-center gap-1.5 px-1">
-        <span className="text-white/20 text-xs font-mono">{selectedCountry.dial}</span>
-        {segments.map((seg, i) => (
-          <span key={i} className="text-white/15 text-xs font-mono tracking-widest">{seg}</span>
-        ))}
+      {/* Format hint */}
+      <div className="flex items-center gap-2 px-1">
+        <span className="text-white/20 text-xs font-mono">{selectedCountry.dial} {placeholder}</span>
         <span className="ml-auto text-white/20 text-xs tabular-nums">
-          {digits.length}/{selectedCountry.maxLen}
+          {digits.length}/{maxLen}
         </span>
       </div>
 
@@ -290,7 +328,7 @@ export default function CheckoutPage() {
     let v = value
     if (name === 'cardNumber') v = formatCardNumber(value)
     else if (name === 'expiry') v = formatExpiry(value)
-    else if (name === 'phone') v = value.replace(/[^\d\s\-()]/g, '').slice(0, selectedCountry.maxLen + 2)
+    else if (name === 'phone') v = formatAsYouType(value, selectedCountry.code).slice(0, getMaxLen(selectedCountry.code))
     else if (name === 'cvv') v = formatCVV(value)
     setFormData(p => ({ ...p, [name]: v }))
     if (errors[name]) setErrors(p => ({ ...p, [name]: '' }))
@@ -302,7 +340,7 @@ export default function CheckoutPage() {
     switch (name) {
       case 'name':       if (!value.trim()) err = req; else if (value.trim().length < 3) err = lang === 'ar' ? 'الاسم قصير جداً' : 'Too short'; break
       case 'email':      if (!value.trim()) err = req; else if (!validateEmail(value)) err = lang === 'ar' ? 'بريد غير صالح' : 'Invalid email'; break
-      case 'phone':      if (!value.trim()) err = req; else if (!validatePhone(value, selectedCountry)) err = lang === 'ar' ? `مثال: ${selectedCountry.placeholder}` : `e.g. ${selectedCountry.placeholder}`; break
+      case 'phone':      if (!value.trim()) err = req; else if (!validatePhone(value, selectedCountry.code)) err = lang === 'ar' ? `رقم غير صالح — مثال: ${getPlaceholder(selectedCountry.code)}` : `Invalid number — e.g. ${getPlaceholder(selectedCountry.code)}`; break
       case 'cardNumber': if (paymentMethod !== 'card') break; if (!value.trim()) err = req; else if (!validateCardNumber(value)) err = lang === 'ar' ? 'رقم بطاقة غير صالح' : 'Invalid card'; break
       case 'expiry':     if (paymentMethod !== 'card') break; if (!value.trim()) err = req; else if (!validateExpiry(value)) err = lang === 'ar' ? 'تاريخ منتهي' : 'Expired or invalid'; break
       case 'cvv':        if (paymentMethod !== 'card') break; if (!value.trim()) err = req; else if (!validateCVV(value)) err = lang === 'ar' ? 'CVV غير صالح' : 'Invalid CVV'; break
