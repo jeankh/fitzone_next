@@ -122,7 +122,9 @@ export default function BlogPage({ initialPosts }) {
     const titleAr  = (typeof post.title   === 'object' ? post.title?.ar   : '').toLowerCase()
     const excEn    = (typeof post.excerpt === 'object' ? post.excerpt?.en : post.excerpt || '').toLowerCase()
     const excAr    = (typeof post.excerpt === 'object' ? post.excerpt?.ar : '').toLowerCase()
-    const matchesSearch = titleEn.includes(q) || titleAr.includes(q) || excEn.includes(q) || excAr.includes(q)
+    const bodyEn = (typeof post.content === 'object' ? post.content?.en : post.content || '').toLowerCase()
+    const bodyAr = (typeof post.content === 'object' ? post.content?.ar : '').toLowerCase()
+    const matchesSearch = titleEn.includes(q) || titleAr.includes(q) || excEn.includes(q) || excAr.includes(q) || bodyEn.includes(q) || bodyAr.includes(q)
     return matchesCategory && matchesSearch
   })
 
