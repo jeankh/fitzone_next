@@ -25,12 +25,32 @@ const COUNTRIES = [
   { code: 'EG', flag: '🇪🇬', dial: '+20',  name: 'Egypt',            nameAr: 'مصر'              },
   { code: 'LB', flag: '🇱🇧', dial: '+961', name: 'Lebanon',          nameAr: 'لبنان'            },
   { code: 'IQ', flag: '🇮🇶', dial: '+964', name: 'Iraq',             nameAr: 'العراق'           },
+  { code: 'SY', flag: '🇸🇾', dial: '+963', name: 'Syria',            nameAr: 'سوريا'            },
+  { code: 'PS', flag: '🇵🇸', dial: '+970', name: 'Palestine',        nameAr: 'فلسطين'           },
+  { code: 'YE', flag: '🇾🇪', dial: '+967', name: 'Yemen',            nameAr: 'اليمن'            },
+  { code: 'LY', flag: '🇱🇾', dial: '+218', name: 'Libya',            nameAr: 'ليبيا'            },
+  { code: 'TN', flag: '🇹🇳', dial: '+216', name: 'Tunisia',          nameAr: 'تونس'             },
+  { code: 'DZ', flag: '🇩🇿', dial: '+213', name: 'Algeria',          nameAr: 'الجزائر'          },
   { code: 'MA', flag: '🇲🇦', dial: '+212', name: 'Morocco',          nameAr: 'المغرب'           },
   { code: 'TR', flag: '🇹🇷', dial: '+90',  name: 'Turkey',           nameAr: 'تركيا'            },
   { code: 'GB', flag: '🇬🇧', dial: '+44',  name: 'United Kingdom',   nameAr: 'المملكة المتحدة'  },
   { code: 'US', flag: '🇺🇸', dial: '+1',   name: 'United States',    nameAr: 'الولايات المتحدة' },
+  { code: 'CA', flag: '🇨🇦', dial: '+1',   name: 'Canada',           nameAr: 'كندا'             },
+  { code: 'AU', flag: '🇦🇺', dial: '+61',  name: 'Australia',        nameAr: 'أستراليا'         },
   { code: 'FR', flag: '🇫🇷', dial: '+33',  name: 'France',           nameAr: 'فرنسا'            },
   { code: 'DE', flag: '🇩🇪', dial: '+49',  name: 'Germany',          nameAr: 'ألمانيا'          },
+  { code: 'IT', flag: '🇮🇹', dial: '+39',  name: 'Italy',            nameAr: 'إيطاليا'          },
+  { code: 'ES', flag: '🇪🇸', dial: '+34',  name: 'Spain',            nameAr: 'إسبانيا'          },
+  { code: 'NL', flag: '🇳🇱', dial: '+31',  name: 'Netherlands',      nameAr: 'هولندا'           },
+  { code: 'BE', flag: '🇧🇪', dial: '+32',  name: 'Belgium',          nameAr: 'بلجيكا'           },
+  { code: 'SE', flag: '🇸🇪', dial: '+46',  name: 'Sweden',           nameAr: 'السويد'           },
+  { code: 'NO', flag: '🇳🇴', dial: '+47',  name: 'Norway',           nameAr: 'النرويج'          },
+  { code: 'DK', flag: '🇩🇰', dial: '+45',  name: 'Denmark',          nameAr: 'الدنمارك'         },
+  { code: 'CH', flag: '🇨🇭', dial: '+41',  name: 'Switzerland',      nameAr: 'سويسرا'           },
+  { code: 'AT', flag: '🇦🇹', dial: '+43',  name: 'Austria',          nameAr: 'النمسا'           },
+  { code: 'PL', flag: '🇵🇱', dial: '+48',  name: 'Poland',           nameAr: 'بولندا'           },
+  { code: 'PT', flag: '🇵🇹', dial: '+351', name: 'Portugal',         nameAr: 'البرتغال'         },
+  { code: 'GR', flag: '🇬🇷', dial: '+30',  name: 'Greece',           nameAr: 'اليونان'          },
 ]
 
 // Get the example national number for a country (used as placeholder)
@@ -91,11 +111,11 @@ function CountryPicker({ selected, onChange, lang, fullWidth = false }) {
   )
 
   return (
-    <div ref={ref} className={`relative ${fullWidth ? 'w-full' : 'shrink-0'}`}>
+    <div ref={ref} className={`relative overflow-visible ${fullWidth ? 'w-full' : 'shrink-0'}`}>
       {fullWidth ? (
         /* Full-width country button */
         <button type="button" onClick={() => setOpen(p => !p)}
-          className="w-full flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/[0.06] transition-all duration-200 group">
+          className="w-full flex items-center gap-3 px-4 py-3 bg-transparent hover:bg-white/[0.04] transition-all duration-200 group rounded-t-2xl">
           <span className="text-2xl leading-none">{selected.flag}</span>
           <div className="flex-1 text-left">
             <p className="text-white text-sm font-medium">{lang === 'ar' ? selected.nameAr : selected.name}</p>
@@ -117,7 +137,7 @@ function CountryPicker({ selected, onChange, lang, fullWidth = false }) {
         {open && (
           <motion.div initial={{ opacity: 0, y: -8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 mt-2 w-full min-w-[280px] bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+            className="absolute top-full left-0 mt-2 w-full min-w-[280px] bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-[200] overflow-hidden">
             <div className="p-2 border-b border-white/8">
               <div className="relative">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
@@ -242,7 +262,7 @@ function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur,
       </label>
 
       {/* Single unified card */}
-      <div className={`rounded-2xl border transition-all duration-200 bg-white/[0.03] overflow-hidden ${borderCls}`}>
+      <div className={`rounded-2xl border transition-all duration-200 bg-white/[0.03] ${borderCls}`}>
 
         {/* Country row — top half */}
         <CountryPicker selected={selectedCountry} onChange={onCountryChange} lang={lang} fullWidth />
