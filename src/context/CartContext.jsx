@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 const INDIVIDUAL_BOOKS = ['transformation', 'nutrition']
 const BUNDLE_ID = 'bundle'
@@ -45,9 +46,9 @@ export function trackEvent(key) {
 const CartContext = createContext()
 
 export function CartProvider({ children }) {
+  const router = useRouter()
   const [cart, setCart] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [wasAutoUpgraded, setWasAutoUpgraded] = useState(false)
   const [prices, setPrices] = useState(DEFAULT_PRICES)
   const [currencyPrices, setCurrencyPrices] = useState({})
@@ -143,7 +144,7 @@ export function CartProvider({ children }) {
     trackEvent('checkout_starts')
     if (typeof window.gtag === 'function') window.gtag('event', 'begin_checkout', { value: getTotal(), currency: 'SAR' })
     setIsCartOpen(false)
-    setIsCheckoutOpen(true)
+    router.push('/checkout')
   }
 
   return (
@@ -158,8 +159,6 @@ export function CartProvider({ children }) {
       wasAutoUpgraded,
       isCartOpen,
       setIsCartOpen,
-      isCheckoutOpen,
-      setIsCheckoutOpen,
       openCheckout,
       BOOKS_DATA: getBooksData(),
       prices,

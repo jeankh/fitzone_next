@@ -4,7 +4,6 @@ import Header from './Header'
 import Footer from '../sections/Footer'
 import WhatsAppButton from './WhatsAppButton'
 import CartModal from './CartModal'
-import CheckoutModal from './CheckoutModal'
 import ScrollToTop from './ScrollToTop'
 
 export default function ShellWrapper({ children }) {
@@ -21,7 +20,6 @@ export default function ShellWrapper({ children }) {
       {!isAdmin && <Footer />}
       {!isAdmin && <WhatsAppButton />}
       {!isAdmin && <CartModal />}
-      {!isAdmin && <CheckoutModal />}
     </div>
   )
 }
