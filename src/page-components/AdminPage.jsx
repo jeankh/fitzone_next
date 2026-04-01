@@ -113,101 +113,100 @@ function FunnelChart({ events }) {
 }
 
 // ── Smart Date Input ──────────────────────────────────────────────────────────
-// Displays as YYYY-MM-DD text with auto-slash, double-click select-all, paste.
-// Stores value in YYYY-MM-DD format. Has a hidden date picker for mouse/calendar.
 function DateInput({ value, onChange }) {
   const [display, setDisplay] = useState(value || '')
-  const [showPicker, setShowPicker] = useState(false)
   const pickerRef = useRef()
-
-  // Sync display when value changes externally
   useEffect(() => { setDisplay(value || '') }, [value])
 
   const toISO = (str) => {
-    // Accept YYYY-MM-DD or YYYY/MM/DD or YYYYMMDD
-    const clean = str.replace(/\//g, '-').replace(/[^0-9-]/g, '')
-    const digits = clean.replace(/-/g, '')
+    const digits = str.replace(/[^0-9]/g, '')
     if (digits.length === 8) return `${digits.slice(0,4)}-${digits.slice(4,6)}-${digits.slice(6,8)}`
-    return clean
-  }
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
-      e.target.select()
-    }
+    return str.replace(/\//g, '-').replace(/[^0-9-]/g, '')
   }
 
   const handleChange = (e) => {
-    let raw = e.target.value
-    const prev = display
-    // Strip non-digit non-dash chars
-    const digits = raw.replace(/[^0-9]/g, '')
-    // Auto-insert dashes after position 4 and 7
-    let formatted = digits
-    if (digits.length > 4) formatted = digits.slice(0,4) + '-' + digits.slice(4)
-    if (digits.length > 6) formatted = digits.slice(0,4) + '-' + digits.slice(4,6) + '-' + digits.slice(6,8)
-    setDisplay(formatted)
-    const iso = toISO(formatted)
+    const digits = e.target.value.replace(/[^0-9]/g, '')
+    let f = digits
+    if (digits.length > 4) f = digits.slice(0,4) + '-' + digits.slice(4)
+    if (digits.length > 6) f = digits.slice(0,4) + '-' + digits.slice(4,6) + '-' + digits.slice(6,8)
+    setDisplay(f)
+    const iso = toISO(f)
     if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) onChange(iso)
   }
 
   const handlePaste = (e) => {
     e.preventDefault()
-    const pasted = e.clipboardData.getData('text').trim()
-    const iso = toISO(pasted)
+    const iso = toISO(e.clipboardData.getData('text').trim())
     setDisplay(iso)
     if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) onChange(iso)
   }
 
-  const handlePickerChange = (e) => {
-    const iso = e.target.value
-    setDisplay(iso)
-    onChange(iso)
-    setShowPicker(false)
-  }
-
   return (
-    <div className="relative">
-      <input
-        value={display}
-        onChange={handleChange}
-        onPaste={handlePaste}
-        onKeyDown={handleKeyDown}
+    <div className="relative group">
+      <input value={display} onChange={handleChange} onPaste={handlePaste}
         onDoubleClick={e => e.target.select()}
-        placeholder="YYYY-MM-DD"
-        maxLength={10}
-        className="w-full bg-background border border-border rounded-xl px-3 py-2.5 pr-9 text-white text-sm focus:outline-none focus:border-brand transition-colors"
-      />
-      <button type="button" onClick={() => { setShowPicker(p => !p); setTimeout(() => pickerRef.current?.showPicker?.(), 50) }}
+        onKeyDown={e => (e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.select()}
+        placeholder="YYYY-MM-DD" maxLength={10}
+        className="w-full bg-background border border-border rounded-xl px-3 py-2.5 pr-9 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
+      <button type="button"
+        onClick={() => { setTimeout(() => pickerRef.current?.showPicker?.(), 10) }}
         className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-brand transition-colors">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
       </button>
-      <input ref={pickerRef} type="date" value={value} onChange={handlePickerChange}
+      <input ref={pickerRef} type="date" value={value}
+        onChange={e => { setDisplay(e.target.value); onChange(e.target.value) }}
         className="absolute inset-0 opacity-0 pointer-events-none w-full h-full" tabIndex={-1} />
     </div>
   )
 }
 
+// ── Field wrapper with label + char counter ───────────────────────────────────
+function Field({ label, hint, count, maxCount, children }) {
+  const pct = maxCount ? count / maxCount : 0
+  const color = pct > 0.9 ? 'text-red-400' : pct > 0.7 ? 'text-yellow-400' : 'text-text-muted'
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-text-secondary">{label}
+          {hint && <span className="ml-1.5 text-text-muted font-normal">{hint}</span>}
+        </label>
+        {maxCount != null && <span className={`text-xs tabular-nums ${color}`}>{count}/{maxCount}</span>}
+      </div>
+      {children}
+    </div>
+  )
+}
+
 // ── Blog Editor Modal ─────────────────────────────────────────────────────────
+const CATEGORIES = [
+  { value: 'nutrition', label: 'Nutrition', icon: '🥗' },
+  { value: 'workout',   label: 'Workout',   icon: '💪' },
+  { value: 'lifestyle', label: 'Lifestyle', icon: '🌱' },
+]
+
 function BlogEditor({ post, onSave, onClose }) {
   const isNew = !post?.id
+  const [lang, setLang] = useState('en') // active language tab
+  const [tab, setTab]   = useState('content') // content | meta | image
   const [form, setForm] = useState({
-    id: post?.id || '',
-    title: { ar: post?.title?.ar || '', en: post?.title?.en || '' },
-    excerpt: { ar: post?.excerpt?.ar || '', en: post?.excerpt?.en || '' },
-    content: { ar: post?.content?.ar || '', en: post?.content?.en || '' },
-    category: post?.category || 'nutrition',
+    id:       post?.id || '',
+    title:    { ar: post?.title?.ar    || '', en: post?.title?.en    || '' },
+    excerpt:  { ar: post?.excerpt?.ar  || '', en: post?.excerpt?.en  || '' },
+    content:  { ar: post?.content?.ar  || '', en: post?.content?.en  || '' },
+    category: post?.category  || 'nutrition',
     readTime: { ar: post?.readTime?.ar || '', en: post?.readTime?.en || '' },
-    date: post?.date || new Date().toISOString().split('T')[0],
-    image: post?.image || '',
-    featured: post?.featured || false,
+    date:     post?.date      || new Date().toISOString().split('T')[0],
+    image:    post?.image     || '',
+    featured: post?.featured  || false,
   })
-  const [saving, setSaving] = useState(false)
-  const [imageMode, setImageMode] = useState('url') // 'url' | 'upload'
-  const [uploading, setUploading] = useState(false)
+  const [saving,      setSaving]      = useState(false)
+  const [saved,       setSaved]       = useState(false)
+  const [imageMode,   setImageMode]   = useState('url')
+  const [uploading,   setUploading]   = useState(false)
   const [uploadError, setUploadError] = useState('')
+  const [dragOver,    setDragOver]    = useState(false)
   const fileRef = useRef()
 
   const set = (path, value) => {
@@ -220,165 +219,335 @@ function BlogEditor({ post, onSave, onClose }) {
     })
   }
 
-  // Universal input handler — works for keyboard, paste, autofill, drag-drop
-  const handle = (path) => (e) => set(path, e.target.value)
+  const field = (path) => ({
+    value: path.split('.').reduce((o, k) => o?.[k], form) || '',
+    onChange: e => set(path, e.target.value),
+    onDoubleClick: e => e.target.select(),
+    onKeyDown: e => (e.ctrlKey || e.metaKey) && e.key === 'a' && e.target.select(),
+  })
 
-  const handleUpload = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading(true)
-    setUploadError('')
+  const uploadFile = async (file) => {
+    if (!file || !file.type.startsWith('image/')) return
+    setUploading(true); setUploadError('')
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
+      const fd = new FormData(); fd.append('file', file)
+      const res  = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
       const data = await res.json()
-      if (data.url) {
-        set('image', data.url)
-      } else {
-        setUploadError(data.error || 'Upload failed — check BLOB_READ_WRITE_TOKEN in Vercel env vars')
-      }
-    } catch {
-      setUploadError('Upload failed — network error')
-    }
+      if (data.url) { set('image', data.url); setImageMode('url') }
+      else setUploadError(data.error || 'Upload failed — add BLOB_READ_WRITE_TOKEN in Vercel')
+    } catch { setUploadError('Upload failed — network error') }
     setUploading(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault(); setDragOver(false)
+    uploadFile(e.dataTransfer.files?.[0])
   }
 
   const handleSave = async () => {
     if (!form.title.en && !form.title.ar) return
     setSaving(true)
     try {
-      const res = await fetch('/api/admin/blogs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
+      const res  = await fetch('/api/admin/blogs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
       const data = await res.json()
-      if (data.ok) onSave({ ...form, id: data.id || form.id })
+      if (data.ok) { setSaved(true); setTimeout(() => { onSave({ ...form, id: data.id || form.id }) }, 600) }
     } catch {}
     setSaving(false)
   }
 
+  // Keyboard shortcut: Ctrl+S / Cmd+S
+  useEffect(() => {
+    const onKey = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave() } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [form])
+
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const completeness = (() => {
+    let done = 0, total = 6
+    if (form.title.en)   done++
+    if (form.title.ar)   done++
+    if (form.excerpt.en) done++
+    if (form.content.en) done++
+    if (form.image)      done++
+    if (form.date)       done++
+    return Math.round((done / total) * 100)
+  })()
+
+  const inputCls = "w-full bg-[#0d0d0d] border border-white/8 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand/60 focus:ring-1 focus:ring-brand/20 transition-all placeholder:text-white/20"
+  const areaCls  = inputCls + " resize-none font-mono leading-relaxed"
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center overflow-y-auto py-8 px-4">
-      <div className="w-full max-w-3xl bg-surface border border-border rounded-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h3 className="text-white font-bold">{isNew ? 'New Blog Post' : 'Edit Blog Post'}</h3>
-          <button onClick={onClose} className="text-text-muted hover:text-white transition-colors"><X size={18} /></button>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto"
+      style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}>
+      <div className="w-full max-w-4xl my-6 mx-4 bg-[#111] border border-white/10 rounded-2xl shadow-2xl flex flex-col"
+        style={{ minHeight: '80vh' }}>
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/8">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-brand/15 flex items-center justify-center">
+              <BookOpen size={15} className="text-brand" />
+            </div>
+            <div>
+              <h3 className="text-white text-sm font-semibold leading-tight">
+                {isNew ? 'New Blog Post' : 'Edit Post'}
+              </h3>
+              <p className="text-white/30 text-xs">
+                {form.title.en || form.title.ar || 'Untitled'}
+              </p>
+            </div>
+          </div>
+
+          {/* Completeness bar */}
+          <div className="hidden sm:flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-white/30 text-xs">Completeness</p>
+              <p className={`text-xs font-bold ${completeness === 100 ? 'text-emerald-400' : completeness > 60 ? 'text-yellow-400' : 'text-white/50'}`}>
+                {completeness}%
+              </p>
+            </div>
+            <div className="w-24 h-1.5 bg-white/8 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-500 ${completeness === 100 ? 'bg-emerald-400' : completeness > 60 ? 'bg-yellow-400' : 'bg-brand'}`}
+                style={{ width: `${completeness}%` }} />
+            </div>
+          </div>
+
+          <button onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/8 transition-all">
+            <X size={16} />
+          </button>
         </div>
 
-        <div className="p-6 space-y-5">
-          {/* Title */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Title (AR)</label>
-              <input value={form.title.ar} onChange={handle('title.ar')} onPaste={handle('title.ar')} onDoubleClick={e => e.target.select()} dir="rtl"
-                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
-            </div>
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Title (EN)</label>
-              <input value={form.title.en} onChange={handle('title.en')} onPaste={handle('title.en')} onDoubleClick={e => e.target.select()}
-                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
-            </div>
-          </div>
+        {/* ── Tab bar ── */}
+        <div className="flex items-center gap-1 px-6 pt-4">
+          {[
+            { id: 'content', label: 'Content' },
+            { id: 'meta',    label: 'Settings' },
+            { id: 'image',   label: form.image ? '✓ Cover Image' : 'Cover Image' },
+          ].map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${
+                tab === t.id
+                  ? 'bg-brand/15 text-brand border border-brand/25'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+              }`}>
+              {t.label}
+            </button>
+          ))}
 
-          {/* Excerpt */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Excerpt (AR)</label>
-              <textarea value={form.excerpt.ar} onChange={handle('excerpt.ar')} rows={2} dir="rtl"
-                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors resize-none" />
-            </div>
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Excerpt (EN)</label>
-              <textarea value={form.excerpt.en} onChange={handle('excerpt.en')} rows={2}
-                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors resize-none" />
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Content (AR) — Markdown supported</label>
-              <textarea value={form.content.ar} onChange={handle('content.ar')} rows={8} dir="rtl"
-                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-brand transition-colors resize-y" />
-            </div>
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Content (EN) — Markdown supported</label>
-              <textarea value={form.content.en} onChange={handle('content.en')} rows={8}
-                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-brand transition-colors resize-y" />
-            </div>
-          </div>
-
-          {/* Image */}
-          <div>
-            <label className="text-text-secondary text-xs mb-1.5 block">Cover Image</label>
-            <div className="flex gap-2 mb-2">
-              <button onClick={() => setImageMode('url')}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${imageMode === 'url' ? 'bg-brand/10 border-brand/40 text-brand' : 'border-border text-text-muted hover:text-white'}`}>
-                <LinkIcon size={12} />URL
+          {/* Language toggle — right side */}
+          <div className="ml-auto flex items-center gap-1 bg-white/5 rounded-lg p-1">
+            {[{ id: 'en', label: 'EN' }, { id: 'ar', label: 'AR' }].map(l => (
+              <button key={l.id} onClick={() => setLang(l.id)}
+                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                  lang === l.id ? 'bg-white/15 text-white' : 'text-white/30 hover:text-white/60'
+                }`}>
+                {l.label}
               </button>
-              <button onClick={() => setImageMode('upload')}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors ${imageMode === 'upload' ? 'bg-brand/10 border-brand/40 text-brand' : 'border-border text-text-muted hover:text-white'}`}>
-                <Upload size={12} />Upload
-              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Body ── */}
+        <div className="flex-1 p-6">
+
+          {/* CONTENT TAB */}
+          {tab === 'content' && (
+            <div className="space-y-5">
+              <Field label={lang === 'ar' ? 'العنوان' : 'Title'} count={form.title[lang].length} maxCount={100}>
+                <input {...field(`title.${lang}`)} dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  placeholder={lang === 'ar' ? 'عنوان المقال…' : 'Post title…'}
+                  className={inputCls + ' text-base font-semibold'} />
+              </Field>
+
+              <Field label={lang === 'ar' ? 'المقتطف' : 'Excerpt'} hint="Shown in blog listing" count={form.excerpt[lang].length} maxCount={200}>
+                <textarea {...field(`excerpt.${lang}`)} dir={lang === 'ar' ? 'rtl' : 'ltr'} rows={3}
+                  placeholder={lang === 'ar' ? 'وصف مختصر…' : 'Brief description shown in the blog listing…'}
+                  className={areaCls} />
+              </Field>
+
+              <Field label={lang === 'ar' ? 'المحتوى' : 'Content'} hint="Markdown supported" count={form.content[lang].length}>
+                <div className="relative">
+                  <textarea {...field(`content.${lang}`)} dir={lang === 'ar' ? 'rtl' : 'ltr'} rows={14}
+                    placeholder={lang === 'ar' ? '## العنوان الفرعي\n\nاكتب المحتوى هنا…' : '## Subheading\n\nWrite your content here…'}
+                    className={areaCls} />
+                  <div className="absolute bottom-3 right-3 text-white/15 text-xs pointer-events-none">
+                    {lang === 'ar' ? 'يدعم Markdown' : 'Markdown'}
+                  </div>
+                </div>
+              </Field>
+
+              {/* Missing translation warning */}
+              {((lang === 'en' && !form.title.ar) || (lang === 'ar' && !form.title.en)) && (
+                <div className="flex items-center gap-2 text-yellow-400/80 text-xs bg-yellow-400/5 border border-yellow-400/15 rounded-xl px-4 py-3">
+                  <AlertTriangle size={13} />
+                  {lang === 'en' ? 'Arabic version is empty — switch to AR tab to add it' : 'النسخة الإنجليزية فارغة — انتقل إلى EN لإضافتها'}
+                </div>
+              )}
             </div>
-            {imageMode === 'url' ? (
-              <input value={form.image} onChange={handle('image')} onDoubleClick={e => e.target.select()} placeholder="https://..."
-                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
-            ) : (
-              <div>
-                <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} className="hidden" />
-                <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                  className="flex items-center gap-2 border border-dashed border-border hover:border-brand/40 rounded-xl px-4 py-3 text-text-secondary hover:text-white text-sm transition-colors w-full justify-center">
-                  <Upload size={15} />{uploading ? 'Uploading…' : 'Choose image file'}
-                </button>
-                {uploadError && <p className="text-red-400 text-xs mt-1.5">{uploadError}</p>}
+          )}
+
+          {/* SETTINGS TAB */}
+          {tab === 'meta' && (
+            <div className="space-y-6">
+              {/* Category pills */}
+              <Field label="Category">
+                <div className="flex gap-2">
+                  {CATEGORIES.map(c => (
+                    <button key={c.value} type="button" onClick={() => set('category', c.value)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                        form.category === c.value
+                          ? 'bg-brand/15 border-brand/40 text-brand'
+                          : 'bg-white/3 border-white/8 text-white/50 hover:text-white hover:border-white/20'
+                      }`}>
+                      <span>{c.icon}</span>{c.label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Date">
+                  <DateInput value={form.date} onChange={v => set('date', v)} />
+                </Field>
+                <Field label="Read Time (EN)">
+                  <input {...field('readTime.en')} placeholder="5 min read" className={inputCls} />
+                </Field>
+                <Field label="وقت القراءة (AR)">
+                  <input {...field('readTime.ar')} placeholder="٥ دقائق" dir="rtl" className={inputCls} />
+                </Field>
               </div>
-            )}
-            {form.image && (
-              <img src={form.image} alt="" className="mt-2 h-24 w-full object-cover rounded-xl" />
-            )}
-          </div>
 
-          {/* Meta row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Category</label>
-              <select value={form.category} onChange={handle('category')}
-                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors">
-                <option value="nutrition">Nutrition</option>
-                <option value="workout">Workout</option>
-                <option value="lifestyle">Lifestyle</option>
-              </select>
+              {/* Featured toggle */}
+              <button type="button" onClick={() => set('featured', !form.featured)}
+                className={`w-full flex items-center justify-between px-5 py-4 rounded-xl border transition-all ${
+                  form.featured
+                    ? 'bg-brand/10 border-brand/30'
+                    : 'bg-white/3 border-white/8 hover:border-white/15'
+                }`}>
+                <div className="text-left">
+                  <p className={`text-sm font-medium ${form.featured ? 'text-brand' : 'text-white/70'}`}>
+                    Featured Post
+                  </p>
+                  <p className="text-xs text-white/30 mt-0.5">Shows in the hero grid on the blog page</p>
+                </div>
+                <div className={`w-11 h-6 rounded-full transition-all relative ${form.featured ? 'bg-brand' : 'bg-white/10'}`}>
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${form.featured ? 'left-6' : 'left-1'}`} />
+                </div>
+              </button>
             </div>
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Read Time (AR)</label>
-              <input value={form.readTime.ar} onChange={handle('readTime.ar')} onDoubleClick={e => e.target.select()} placeholder="٥ دقائق" dir="rtl"
-                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
-            </div>
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Read Time (EN)</label>
-              <input value={form.readTime.en} onChange={handle('readTime.en')} onDoubleClick={e => e.target.select()} placeholder="5 min read"
-                className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
-            </div>
-            <div>
-              <label className="text-text-secondary text-xs mb-1.5 block">Date</label>
-              <DateInput value={form.date} onChange={v => set('date', v)} />
-            </div>
-          </div>
+          )}
 
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={form.featured} onChange={e => set('featured', e.target.checked)} className="w-4 h-4 accent-brand" />
-            <span className="text-text-secondary text-sm">Featured post (shows in hero grid)</span>
-          </label>
+          {/* IMAGE TAB */}
+          {tab === 'image' && (
+            <div className="space-y-4">
+              {/* Mode toggle */}
+              <div className="flex gap-2">
+                {[{ id: 'url', label: 'Image URL', icon: <LinkIcon size={13} /> },
+                  { id: 'upload', label: 'Upload File', icon: <Upload size={13} /> }].map(m => (
+                  <button key={m.id} type="button" onClick={() => setImageMode(m.id)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm border transition-all ${
+                      imageMode === m.id
+                        ? 'bg-brand/15 border-brand/35 text-brand'
+                        : 'bg-white/3 border-white/8 text-white/40 hover:text-white/70'
+                    }`}>
+                    {m.icon}{m.label}
+                  </button>
+                ))}
+              </div>
+
+              {imageMode === 'url' ? (
+                <Field label="Image URL">
+                  <input {...field('image')} placeholder="https://images.unsplash.com/…" className={inputCls} />
+                </Field>
+              ) : (
+                <div
+                  onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  onClick={() => fileRef.current?.click()}
+                  className={`relative flex flex-col items-center justify-center gap-3 h-44 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
+                    dragOver
+                      ? 'border-brand bg-brand/8 scale-[1.01]'
+                      : 'border-white/12 hover:border-white/25 hover:bg-white/3'
+                  }`}>
+                  <input ref={fileRef} type="file" accept="image/*" onChange={e => uploadFile(e.target.files?.[0])} className="hidden" />
+                  {uploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                      <p className="text-white/40 text-sm">Uploading…</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+                        <Upload size={20} className={dragOver ? 'text-brand' : 'text-white/30'} />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-white/60 text-sm">Drop image here or <span className="text-brand">browse</span></p>
+                        <p className="text-white/25 text-xs mt-1">PNG, JPG, WebP up to 10MB</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {uploadError && (
+                <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/5 border border-red-400/15 rounded-xl px-4 py-3">
+                  <AlertTriangle size={13} />{uploadError}
+                </div>
+              )}
+
+              {/* Preview */}
+              {form.image && (
+                <div className="relative rounded-xl overflow-hidden border border-white/8" style={{ aspectRatio: '16/7' }}>
+                  <img src={form.image} alt="Cover preview" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                    <div>
+                      <p className="text-white text-sm font-semibold line-clamp-1">
+                        {form.title.en || form.title.ar || 'Post Title'}
+                      </p>
+                      <p className="text-white/50 text-xs mt-0.5">Cover preview</p>
+                    </div>
+                    <button type="button" onClick={() => set('image', '')}
+                      className="w-7 h-7 rounded-lg bg-black/50 hover:bg-red-500/80 flex items-center justify-center text-white/60 hover:text-white transition-all">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="flex justify-end gap-2 px-6 py-4 border-t border-border">
-          <CancelBtn onClick={onClose} />
-          <SaveBtn saving={saving} onClick={handleSave} />
+        {/* ── Footer ── */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-white/8 bg-white/2 rounded-b-2xl">
+          <p className="text-white/20 text-xs hidden sm:block">
+            {isNew ? 'Ctrl+S to save' : `ID: ${form.id}`}
+          </p>
+          <div className="flex gap-2 ml-auto">
+            <button onClick={onClose}
+              className="px-4 py-2 text-sm text-white/40 hover:text-white border border-white/8 hover:border-white/20 rounded-xl transition-all">
+              Cancel
+            </button>
+            <button onClick={handleSave} disabled={saving || saved}
+              className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl transition-all ${
+                saved
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-brand hover:bg-brand-dark text-white disabled:opacity-50'
+              }`}>
+              {saved ? <><CheckCircle size={14} />Saved!</> : saving ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />Saving…</> : <><Save size={14} />Save Post</>}
+            </button>
+          </div>
         </div>
+
       </div>
     </div>
   )
