@@ -1319,17 +1319,18 @@ function Dashboard({ onLogout, initialEvents }) {
                       </div>
                     ) : (
                       <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-                        <div className="grid grid-cols-4 gap-3 px-5 py-2.5 border-b border-border bg-white/[0.02]">
-                          {['Name', 'Email', 'Phone', 'Date'].map(h => (
+                        <div className="grid grid-cols-5 gap-3 px-5 py-2.5 border-b border-border bg-white/[0.02]">
+                          {['Name', 'Email', 'Phone', 'Entries', 'Date'].map(h => (
                             <span key={h} className="text-text-muted text-xs font-medium">{h}</span>
                           ))}
                         </div>
                         {giveawayEntries.map((entry, idx) => (
                           <div key={idx} className={`flex items-center gap-3 px-5 py-3 ${idx < giveawayEntries.length - 1 ? 'border-b border-border' : ''}`}>
-                            <div className="grid grid-cols-4 gap-3 flex-1">
+                            <div className="grid grid-cols-5 gap-3 flex-1">
                               <span className="text-white text-xs truncate">{entry.name}</span>
                               <span className="text-text-secondary text-xs truncate">{entry.email}</span>
                               <span className="text-text-secondary text-xs font-mono">{entry.phone}</span>
+                              <span className="text-white text-xs font-bold">{entry.entries || 1}{entry.referrals > 0 && <span className="text-brand/70 font-normal ml-1">({entry.referrals} refs)</span>}</span>
                               <span className="text-text-muted text-xs">{entry.enteredAt ? new Date(entry.enteredAt).toLocaleDateString() : '—'}</span>
                             </div>
                             {deletingEntry === idx ? (
