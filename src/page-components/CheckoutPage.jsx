@@ -32,7 +32,7 @@ const COUNTRIES = [
 ]
 
 // ── Country Picker ────────────────────────────────────────────────────────────
-function CountryPicker({ selected, onChange, lang }) {
+function CountryPicker({ selected, onChange, lang, fullWidth = false }) {
   const [open, setOpen]   = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef()
@@ -49,36 +49,54 @@ function CountryPicker({ selected, onChange, lang }) {
   )
 
   return (
-    <div ref={ref} className="relative shrink-0">
-      <button type="button" onClick={() => setOpen(p => !p)}
-        className="flex items-center gap-1.5 h-full px-3 py-3 border-r border-white/10 hover:bg-white/5 transition-colors rounded-l-2xl">
-        <span className="text-lg leading-none">{selected.flag}</span>
-        <span className="text-white text-sm font-mono tracking-tight">{selected.dial}</span>
-        <ChevronDown size={12} className={`text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
-      </button>
+    <div ref={ref} className={`relative ${fullWidth ? 'w-full' : 'shrink-0'}`}>
+      {fullWidth ? (
+        /* Full-width country button */
+        <button type="button" onClick={() => setOpen(p => !p)}
+          className="w-full flex items-center gap-3 px-4 py-3 bg-white/[0.03] border border-white/10 rounded-2xl hover:border-white/20 hover:bg-white/[0.06] transition-all duration-200 group">
+          <span className="text-2xl leading-none">{selected.flag}</span>
+          <div className="flex-1 text-left">
+            <p className="text-white text-sm font-medium">{lang === 'ar' ? selected.nameAr : selected.name}</p>
+            <p className="text-white/30 text-xs font-mono">{selected.dial} · {lang === 'ar' ? 'اضغط للتغيير' : 'tap to change'}</p>
+          </div>
+          <ChevronDown size={15} className={`text-white/30 group-hover:text-white/60 transition-all duration-200 ${open ? 'rotate-180' : ''}`} />
+        </button>
+      ) : (
+        /* Inline compact button */
+        <button type="button" onClick={() => setOpen(p => !p)}
+          className="flex items-center gap-1.5 h-full px-3 py-3 border-r border-white/10 hover:bg-white/5 transition-colors rounded-l-2xl">
+          <span className="text-lg leading-none">{selected.flag}</span>
+          <span className="text-white text-sm font-mono tracking-tight">{selected.dial}</span>
+          <ChevronDown size={12} className={`text-white/40 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        </button>
+      )}
+
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }}
+          <motion.div initial={{ opacity: 0, y: -8, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 mt-2 w-72 bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+            className="absolute top-full left-0 mt-2 w-full min-w-[280px] bg-[#161616] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
             <div className="p-2 border-b border-white/8">
               <div className="relative">
                 <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
                 <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
-                  placeholder={lang === 'ar' ? 'ابحث…' : 'Search…'}
-                  className="w-full bg-white/5 rounded-xl pl-8 pr-3 py-2 text-white text-sm placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-brand/40" />
+                  placeholder={lang === 'ar' ? 'ابحث عن دولة…' : 'Search country…'}
+                  className="w-full bg-white/5 rounded-xl pl-8 pr-3 py-2.5 text-white text-sm placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-brand/40" />
               </div>
             </div>
-            <div className="max-h-52 overflow-y-auto">
+            <div className="max-h-56 overflow-y-auto">
               {filtered.map(c => (
                 <button key={c.code} type="button" onClick={() => { onChange(c); setOpen(false); setQuery('') }}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors text-left ${selected.code === c.code ? 'bg-brand/10' : ''}`}>
-                  <span className="text-lg leading-none">{c.flag}</span>
-                  <span className="text-white/80 text-sm flex-1">{lang === 'ar' ? c.nameAr : c.name}</span>
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left ${selected.code === c.code ? 'bg-brand/10' : ''}`}>
+                  <span className="text-xl leading-none">{c.flag}</span>
+                  <div className="flex-1">
+                    <p className="text-white/80 text-sm">{lang === 'ar' ? c.nameAr : c.name}</p>
+                  </div>
                   <span className="text-white/30 text-xs font-mono">{c.dial}</span>
+                  {selected.code === c.code && <CheckCircle size={14} className="text-brand/70" />}
                 </button>
               ))}
-              {!filtered.length && <p className="text-white/30 text-sm text-center py-4">{lang === 'ar' ? 'لا نتائج' : 'No results'}</p>}
+              {!filtered.length && <p className="text-white/30 text-sm text-center py-5">{lang === 'ar' ? 'لا نتائج' : 'No results'}</p>}
             </div>
           </motion.div>
         )}
@@ -156,6 +174,92 @@ const validateCVV = (cvv) => /^\d{3,4}$/.test(cvv)
 const formatCardNumber = (v) => v.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1 ')
 const formatExpiry = (v) => { const d = v.replace(/\D/g, '').slice(0, 4); return d.length >= 3 ? d.slice(0,2)+'/'+d.slice(2) : d }
 const formatCVV = (v) => v.replace(/\D/g, '').slice(0, 4)
+
+// ── Phone Field ──────────────────────────────────────────────────────────────
+function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur, error, touched, lang }) {
+  const digits = value.replace(/\D/g, '')
+  const progress = Math.min(digits.length / selectedCountry.maxLen, 1)
+  const isValid = touched && !error && value
+  const isError = touched && error
+
+  // Format placeholder as visual segments e.g. "5XX-XXX-XXX"
+  const segments = selectedCountry.placeholder.split(' ')
+
+  return (
+    <div className="space-y-2">
+      {/* Label */}
+      <div className="flex items-center justify-between">
+        <label className="text-white/50 text-xs font-medium flex items-center gap-1.5">
+          <Phone size={12} />
+          {lang === 'ar' ? 'رقم الهاتف (واتساب)' : 'Phone Number (WhatsApp)'}
+        </label>
+        {/* Country name pill */}
+        <span className="text-white/25 text-xs flex items-center gap-1">
+          <span>{selectedCountry.flag}</span>
+          <span>{lang === 'ar' ? selectedCountry.nameAr : selectedCountry.name}</span>
+        </span>
+      </div>
+
+      {/* Country selector row */}
+      <CountryPicker selected={selectedCountry} onChange={onCountryChange} lang={lang} fullWidth />
+
+      {/* Number input */}
+      <div className={`relative rounded-2xl border transition-all duration-200 bg-white/[0.03] ${
+        isError ? 'border-red-500/50 ring-1 ring-red-500/15' :
+        isValid ? 'border-emerald-500/40 ring-1 ring-emerald-500/10' :
+                  'border-white/10 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/15'
+      }`}>
+        {/* Dial code prefix */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
+          <span className="text-white/60 text-sm font-mono font-semibold">{selectedCountry.dial}</span>
+          <div className="w-px h-4 bg-white/15" />
+        </div>
+        <input
+          type="tel" name="phone" value={value} onChange={onChange} onBlur={onBlur}
+          placeholder={selectedCountry.placeholder}
+          maxLength={selectedCountry.maxLen + 2}
+          dir="ltr"
+          className="w-full bg-transparent pl-[72px] pr-12 py-4 text-white text-sm font-mono tracking-wider placeholder:text-white/15 focus:outline-none"
+        />
+        {/* Status icon */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          {isValid && <CheckCircle size={16} className="text-emerald-400/70" />}
+          {isError && <AlertCircle size={16} className="text-red-400/70" />}
+          {!isValid && !isError && <Phone size={14} className="text-white/15" />}
+        </div>
+
+        {/* Progress bar at bottom of input */}
+        <div className="absolute bottom-0 left-4 right-4 h-px overflow-hidden rounded-full">
+          <motion.div
+            className={`h-full rounded-full transition-colors ${isError ? 'bg-red-500/60' : isValid ? 'bg-emerald-500/60' : 'bg-brand/40'}`}
+            initial={{ width: 0 }}
+            animate={{ width: `${progress * 100}%` }}
+            transition={{ duration: 0.2 }}
+          />
+        </div>
+      </div>
+
+      {/* Format hint dots */}
+      <div className="flex items-center gap-1.5 px-1">
+        <span className="text-white/20 text-xs font-mono">{selectedCountry.dial}</span>
+        {segments.map((seg, i) => (
+          <span key={i} className="text-white/15 text-xs font-mono tracking-widest">{seg}</span>
+        ))}
+        <span className="ml-auto text-white/20 text-xs tabular-nums">
+          {digits.length}/{selectedCountry.maxLen}
+        </span>
+      </div>
+
+      {/* Error */}
+      {isError && (
+        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+          className="text-red-400 text-xs flex items-center gap-1.5 pl-1">
+          <AlertCircle size={11} />{error}
+        </motion.p>
+      )}
+    </div>
+  )
+}
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
@@ -329,29 +433,16 @@ export default function CheckoutPage() {
                 </FloatingInput>
 
                 {/* Phone */}
-                <div className="space-y-1.5">
-                  <div className={`flex rounded-2xl border overflow-visible transition-all duration-200 bg-white/[0.03] ${
-                    touched.phone && errors.phone  ? 'border-red-500/60 ring-1 ring-red-500/20' :
-                    touched.phone && !errors.phone ? 'border-emerald-500/40 ring-1 ring-emerald-500/10' :
-                                                     'border-white/10 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/15'
-                  }`}>
-                    <CountryPicker selected={selectedCountry}
-                      onChange={c => { setSelectedCountry(c); setFormData(p => ({ ...p, phone: '' })); setErrors(p => ({ ...p, phone: '' })) }}
-                      lang={lang} />
-                    <input type="tel" name="phone" value={formData.phone} onChange={handleInput} onBlur={() => handleBlur('phone')}
-                      placeholder={selectedCountry.placeholder} maxLength={selectedCountry.maxLen + 2} dir="ltr"
-                      className="flex-1 bg-transparent px-4 py-3.5 text-white text-sm placeholder:text-white/20 focus:outline-none min-w-0" />
-                    {touched.phone && !errors.phone && <div className="flex items-center pr-4"><CheckCircle size={15} className="text-emerald-400/70" /></div>}
-                    {touched.phone && errors.phone  && <div className="flex items-center pr-4"><AlertCircle size={15} className="text-red-400/70" /></div>}
-                  </div>
-                  {touched.phone && errors.phone && (
-                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                      className="text-red-400 text-xs flex items-center gap-1.5 pl-1">
-                      <AlertCircle size={11} />{errors.phone}
-                    </motion.p>
-                  )}
-                  <p className="text-white/20 text-xs pl-1">{selectedCountry.dial} · {lang === 'ar' ? selectedCountry.nameAr : selectedCountry.name}</p>
-                </div>
+                <PhoneField
+                  selectedCountry={selectedCountry}
+                  onCountryChange={c => { setSelectedCountry(c); setFormData(p => ({ ...p, phone: '' })); setErrors(p => ({ ...p, phone: '' })); setTouched(p => ({ ...p, phone: false })) }}
+                  value={formData.phone}
+                  onChange={handleInput}
+                  onBlur={() => handleBlur('phone')}
+                  error={errors.phone}
+                  touched={touched.phone}
+                  lang={lang}
+                />
               </div>
             </div>
 
