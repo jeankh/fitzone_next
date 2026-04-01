@@ -129,6 +129,7 @@ function BlogEditor({ post, onSave, onClose }) {
   const [saving, setSaving] = useState(false)
   const [imageMode, setImageMode] = useState('url') // 'url' | 'upload'
   const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const fileRef = useRef()
 
   const set = (path, value) => {
@@ -141,17 +142,27 @@ function BlogEditor({ post, onSave, onClose }) {
     })
   }
 
+  // Universal input handler — works for keyboard, paste, autofill, drag-drop
+  const handle = (path) => (e) => set(path, e.target.value)
+
   const handleUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
+    setUploadError('')
     try {
       const fd = new FormData()
       fd.append('file', file)
       const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd })
-      const { url } = await res.json()
-      if (url) set('image', url)
-    } catch {}
+      const data = await res.json()
+      if (data.url) {
+        set('image', data.url)
+      } else {
+        setUploadError(data.error || 'Upload failed — check BLOB_READ_WRITE_TOKEN in Vercel env vars')
+      }
+    } catch {
+      setUploadError('Upload failed — network error')
+    }
     setUploading(false)
   }
 
@@ -172,7 +183,7 @@ function BlogEditor({ post, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center overflow-y-auto py-8 px-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-3xl bg-surface border border-border rounded-2xl">
+      <div className="w-full max-w-3xl bg-surface border border-border rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h3 className="text-white font-bold">{isNew ? 'New Blog Post' : 'Edit Blog Post'}</h3>
@@ -184,12 +195,12 @@ function BlogEditor({ post, onSave, onClose }) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Title (AR)</label>
-              <input value={form.title.ar} onChange={e => set('title.ar', e.target.value)} dir="rtl"
+              <input value={form.title.ar} onChange={handle('title.ar')} onPaste={handle('title.ar')} dir="rtl"
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Title (EN)</label>
-              <input value={form.title.en} onChange={e => set('title.en', e.target.value)}
+              <input value={form.title.en} onChange={handle('title.en')} onPaste={handle('title.en')}
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
           </div>
@@ -198,12 +209,12 @@ function BlogEditor({ post, onSave, onClose }) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Excerpt (AR)</label>
-              <textarea value={form.excerpt.ar} onChange={e => set('excerpt.ar', e.target.value)} rows={2} dir="rtl"
+              <textarea value={form.excerpt.ar} onChange={handle('excerpt.ar')} rows={2} dir="rtl"
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors resize-none" />
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Excerpt (EN)</label>
-              <textarea value={form.excerpt.en} onChange={e => set('excerpt.en', e.target.value)} rows={2}
+              <textarea value={form.excerpt.en} onChange={handle('excerpt.en')} rows={2}
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors resize-none" />
             </div>
           </div>
@@ -212,12 +223,12 @@ function BlogEditor({ post, onSave, onClose }) {
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Content (AR) — Markdown supported</label>
-              <textarea value={form.content.ar} onChange={e => set('content.ar', e.target.value)} rows={8} dir="rtl"
+              <textarea value={form.content.ar} onChange={handle('content.ar')} rows={8} dir="rtl"
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-brand transition-colors resize-y" />
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Content (EN) — Markdown supported</label>
-              <textarea value={form.content.en} onChange={e => set('content.en', e.target.value)} rows={8}
+              <textarea value={form.content.en} onChange={handle('content.en')} rows={8}
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-brand transition-colors resize-y" />
             </div>
           </div>
@@ -236,7 +247,7 @@ function BlogEditor({ post, onSave, onClose }) {
               </button>
             </div>
             {imageMode === 'url' ? (
-              <input value={form.image} onChange={e => set('image', e.target.value)} placeholder="https://..."
+              <input value={form.image} onChange={handle('image')} placeholder="https://..."
                 className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             ) : (
               <div>
@@ -245,6 +256,7 @@ function BlogEditor({ post, onSave, onClose }) {
                   className="flex items-center gap-2 border border-dashed border-border hover:border-brand/40 rounded-xl px-4 py-3 text-text-secondary hover:text-white text-sm transition-colors w-full justify-center">
                   <Upload size={15} />{uploading ? 'Uploading…' : 'Choose image file'}
                 </button>
+                {uploadError && <p className="text-red-400 text-xs mt-1.5">{uploadError}</p>}
               </div>
             )}
             {form.image && (
@@ -256,7 +268,7 @@ function BlogEditor({ post, onSave, onClose }) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Category</label>
-              <select value={form.category} onChange={e => set('category', e.target.value)}
+              <select value={form.category} onChange={handle('category')}
                 className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors">
                 <option value="nutrition">Nutrition</option>
                 <option value="workout">Workout</option>
@@ -265,17 +277,17 @@ function BlogEditor({ post, onSave, onClose }) {
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Read Time (AR)</label>
-              <input value={form.readTime.ar} onChange={e => set('readTime.ar', e.target.value)} placeholder="٥ دقائق" dir="rtl"
+              <input value={form.readTime.ar} onChange={handle('readTime.ar')} placeholder="٥ دقائق" dir="rtl"
                 className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Read Time (EN)</label>
-              <input value={form.readTime.en} onChange={e => set('readTime.en', e.target.value)} placeholder="5 min read"
+              <input value={form.readTime.en} onChange={handle('readTime.en')} placeholder="5 min read"
                 className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
             <div>
               <label className="text-text-secondary text-xs mb-1.5 block">Date</label>
-              <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+              <input type="date" value={form.date} onChange={handle('date')}
                 className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
             </div>
           </div>
@@ -290,7 +302,7 @@ function BlogEditor({ post, onSave, onClose }) {
           <CancelBtn onClick={onClose} />
           <SaveBtn saving={saving} onClick={handleSave} />
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
