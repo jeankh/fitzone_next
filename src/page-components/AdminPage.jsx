@@ -863,7 +863,7 @@ function Dashboard({ onLogout, initialEvents }) {
   const productCards = [
     { id: 'transformation', titleEn: 'Complete Shredding & Building Guide', titleAr: 'الدليل الشامل للتنشيف وبناء الجسم', image: '/fitzone-workout.jpeg', price: prices.transformation },
     { id: 'nutrition',      titleEn: 'Complete Fat Loss Guide',              titleAr: 'الدليل الكامل لخسارة الدهون',         image: '/fitzone-nutrition.jpeg', price: prices.nutrition },
-    { id: 'bundle',         titleEn: 'Complete Bundle',                      titleAr: 'الباقة الكاملة',                       image: '/fitzone-workout.jpeg', price: bundlePrice, isBundle: true },
+    { id: 'bundle',         titleEn: 'Complete Bundle',                      titleAr: 'الباقة الكاملة',                       image: '/fitzone-workout.jpeg', price: bundlePriceSAR, isBundle: true },
   ]
 
   return (
