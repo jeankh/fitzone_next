@@ -33,6 +33,7 @@ const CurrencyContext = createContext(null)
 
 export function CurrencyProvider({ children }) {
   const [currency, setCurrency] = useState(RATES.SAR)
+  const [countryCode, setCountryCode] = useState('SA')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export function CurrencyProvider({ children }) {
         const parsed = JSON.parse(cached)
         if (RATES[parsed.code]) {
           setCurrency({ code: parsed.code, ...RATES[parsed.code] })
+          if (parsed.countryCode) setCountryCode(parsed.countryCode)
           setLoading(false)
           return
         }
@@ -52,6 +54,7 @@ export function CurrencyProvider({ children }) {
     const timeout = setTimeout(() => {
       controller.abort()
       setCurrency({ code: 'SAR', ...RATES.SAR })
+      setCountryCode('SA')
       setLoading(false)
     }, 3000)
 
@@ -59,15 +62,18 @@ export function CurrencyProvider({ children }) {
       .then(r => r.json())
       .then(data => {
         clearTimeout(timeout)
-        const code = COUNTRY_TO_CURRENCY[data.country_code] || 'USD'
+        const detectedCountry = data.country_code || 'SA'
+        const code = COUNTRY_TO_CURRENCY[detectedCountry] || 'USD'
         const resolved = { code, ...RATES[code] }
-        sessionStorage.setItem('fitzone_currency', JSON.stringify({ code }))
+        sessionStorage.setItem('fitzone_currency', JSON.stringify({ code, countryCode: detectedCountry }))
         setCurrency(resolved)
+        setCountryCode(detectedCountry)
         setLoading(false)
       })
       .catch(() => {
         clearTimeout(timeout)
         setCurrency({ code: 'SAR', ...RATES.SAR })
+        setCountryCode('SA')
         setLoading(false)
       })
   }, [])

@@ -297,7 +297,7 @@ function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur,
 export default function CheckoutPage() {
   const router = useRouter()
   const { lang } = useLanguage()
-  const { formatPrice } = useCurrency()
+  const { formatPrice, countryCode } = useCurrency()
   const { cart, removeFromCart, clearCart, addToCart, getTotal, getMissingBook, wasAutoUpgraded, BOOKS_DATA } = useCart()
   const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight
 
@@ -308,6 +308,12 @@ export default function CheckoutPage() {
   useEffect(() => {
     fetch('/api/admin/bank').then(r => r.json()).then(setBankDetails).catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!countryCode) return
+    const match = COUNTRIES.find(c => c.code === countryCode)
+    if (match) { setSelectedCountry(match); setFormData(p => ({ ...p, phone: '' })) }
+  }, [countryCode])
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', cardNumber: '', expiry: '', cvv: '' })
   const [errors,   setErrors]   = useState({})
   const [touched,  setTouched]  = useState({})
