@@ -126,8 +126,11 @@ export default function BlogPage({ initialPosts }) {
     return matchesCategory && matchesSearch
   })
 
-  const featuredPosts = posts.filter(post => post.featured)
-  const regularPosts = filteredPosts.filter(post => !post.featured || activeCategory !== 'all')
+  const isFiltering = searchQuery !== '' || activeCategory !== 'all'
+  const featuredPosts = isFiltering ? [] : posts.filter(post => post.featured)
+  const regularPosts  = isFiltering
+    ? filteredPosts
+    : filteredPosts.filter(post => !post.featured)
 
   const getCategoryLabel = (catId) => categories.find(c => c.id === catId)?.label || catId
 
