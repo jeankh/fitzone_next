@@ -21,7 +21,10 @@ const ALLOWED = ['whatsapp', 'twitter', 'instagram', 'youtube',
 export async function GET() {
   try {
     const data = await kv.hgetall(KV_KEY)
-    return NextResponse.json({ ...DEFAULTS, ...(data || {}) })
+    // Upstash hgetall returns booleans for 'true'/'false' strings — normalize back to strings
+    const normalized = {}
+    for (const [k, v] of Object.entries(data || {})) normalized[k] = String(v)
+    return NextResponse.json({ ...DEFAULTS, ...normalized })
   } catch {
     return NextResponse.json(DEFAULTS)
   }
