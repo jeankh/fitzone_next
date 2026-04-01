@@ -108,10 +108,10 @@ export default function BlogPage({ initialPosts }) {
   }, [initialPosts])
 
   const categories = [
-    { id: 'all', label: t('blogPage.all') },
-    { id: 'nutrition', label: t('blogPage.nutrition') },
-    { id: 'workout', label: t('blogPage.workout') },
-    { id: 'lifestyle', label: t('blogPage.lifestyle') },
+    { id: 'all',       label: t('blogPage.all'),       count: posts.length },
+    { id: 'nutrition', label: t('blogPage.nutrition'), count: posts.filter(p => p.category === 'nutrition').length },
+    { id: 'workout',   label: t('blogPage.workout'),   count: posts.filter(p => p.category === 'workout').length },
+    { id: 'lifestyle', label: t('blogPage.lifestyle'), count: posts.filter(p => p.category === 'lifestyle').length },
   ]
 
   const filteredPosts = posts.filter(post => {
