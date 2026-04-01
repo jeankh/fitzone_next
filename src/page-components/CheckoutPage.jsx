@@ -218,86 +218,77 @@ const formatCVV = (v) => v.replace(/\D/g, '').slice(0, 4)
 
 // ── Phone Field ──────────────────────────────────────────────────────────────
 function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur, error, touched, lang }) {
-  const digits   = value.replace(/\D/g, '')
-  const maxLen   = getMaxLen(selectedCountry.code)
+  const digits      = value.replace(/\D/g, '')
+  const maxLen      = getMaxLen(selectedCountry.code)
   const placeholder = getPlaceholder(selectedCountry.code)
-  const progress = Math.min(digits.length / maxLen, 1)
-  const isValid  = touched && !error && value
-  const isError  = touched && error
-
-  // Live validation hint during typing (isPossiblePhoneNumber = length check only, faster)
-  const isPossible = digits.length > 2 && (() => {
+  const progress    = Math.min(digits.length / maxLen, 1)
+  const isValid     = touched && !error && value
+  const isError     = touched && !!error
+  const isPossible  = digits.length > 2 && (() => {
     try { return isPossiblePhoneNumber(`${selectedCountry.dial}${digits}`, selectedCountry.code) } catch { return false }
   })()
 
+  const borderCls = isError    ? 'border-red-500/50 ring-1 ring-red-500/15'
+                  : isValid    ? 'border-emerald-500/40 ring-1 ring-emerald-500/10'
+                  : isPossible ? 'border-brand/40'
+                               : 'border-white/10 focus-within:border-brand/40 focus-within:ring-1 focus-within:ring-brand/10'
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {/* Label */}
-      <div className="flex items-center justify-between">
-        <label className="text-white/50 text-xs font-medium flex items-center gap-1.5">
-          <Phone size={12} />
-          {lang === 'ar' ? 'رقم الهاتف (واتساب)' : 'Phone Number (WhatsApp)'}
-        </label>
-        <span className="text-white/25 text-xs flex items-center gap-1">
-          <span>{selectedCountry.flag}</span>
-          <span>{lang === 'ar' ? selectedCountry.nameAr : selectedCountry.name}</span>
-        </span>
-      </div>
+      <label className="text-white/40 text-xs font-medium flex items-center gap-1.5 px-0.5">
+        <Phone size={11} />
+        {lang === 'ar' ? 'رقم الهاتف (واتساب)' : 'Phone Number (WhatsApp)'}
+      </label>
 
-      {/* Country selector */}
-      <CountryPicker selected={selectedCountry} onChange={onCountryChange} lang={lang} fullWidth />
+      {/* Single unified card */}
+      <div className={`rounded-2xl border transition-all duration-200 bg-white/[0.03] overflow-hidden ${borderCls}`}>
 
-      {/* Number input */}
-      <div className={`relative rounded-2xl border transition-all duration-200 bg-white/[0.03] ${
-        isError   ? 'border-red-500/50 ring-1 ring-red-500/15' :
-        isValid   ? 'border-emerald-500/40 ring-1 ring-emerald-500/10' :
-        isPossible ? 'border-brand/30' :
-                    'border-white/10 focus-within:border-brand/50 focus-within:ring-1 focus-within:ring-brand/15'
-      }`}>
-        {/* Dial code prefix */}
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
-          <span className="text-white/60 text-sm font-mono font-semibold">{selectedCountry.dial}</span>
-          <div className="w-px h-4 bg-white/15" />
-        </div>
-        <input
-          type="tel" name="phone" value={value} onChange={onChange} onBlur={onBlur}
-          placeholder={placeholder}
-          maxLength={maxLen}
-          dir="ltr"
-          className="w-full bg-transparent pl-[72px] pr-12 py-4 text-white text-sm font-mono tracking-wider placeholder:text-white/15 focus:outline-none"
-        />
-        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          {isValid   && <CheckCircle size={16} className="text-emerald-400/70" />}
-          {isError   && <AlertCircle size={16} className="text-red-400/70" />}
-          {!isValid && !isError && <Phone size={14} className="text-white/15" />}
-        </div>
+        {/* Country row — top half */}
+        <CountryPicker selected={selectedCountry} onChange={onCountryChange} lang={lang} fullWidth />
 
-        {/* Progress bar */}
-        <div className="absolute bottom-0 left-4 right-4 h-px overflow-hidden rounded-full">
-          <motion.div
-            className={`h-full rounded-full transition-colors ${isError ? 'bg-red-500/60' : isValid ? 'bg-emerald-500/60' : isPossible ? 'bg-brand/60' : 'bg-brand/30'}`}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress * 100}%` }}
-            transition={{ duration: 0.15 }}
+        {/* Thin divider */}
+        <div className="h-px bg-white/[0.06] mx-4" />
+
+        {/* Number input — bottom half */}
+        <div className="relative">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+            <span className="text-white/40 text-xs font-mono">{selectedCountry.dial}</span>
+            <div className="w-px h-3.5 bg-white/10" />
+          </div>
+          <input
+            type="tel" name="phone" value={value}
+            onChange={onChange} onBlur={onBlur}
+            placeholder={placeholder}
+            maxLength={maxLen}
+            dir="ltr"
+            className="w-full bg-transparent pl-16 pr-10 py-3.5 text-white text-sm font-mono tracking-wider placeholder:text-white/15 focus:outline-none"
           />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+            {isValid  && <CheckCircle size={14} className="text-emerald-400/80" />}
+            {isError  && <AlertCircle size={14} className="text-red-400/80" />}
+          </div>
+
+          {/* Progress bar — very subtle, bottom of input */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/[0.04] rounded-b-2xl overflow-hidden">
+            <motion.div
+              className={`h-full ${isError ? 'bg-red-500/50' : isValid ? 'bg-emerald-500/50' : 'bg-brand/50'}`}
+              animate={{ width: `${progress * 100}%` }}
+              transition={{ duration: 0.15 }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Format hint */}
-      <div className="flex items-center gap-2 px-1">
-        <span className="text-white/20 text-xs font-mono">{selectedCountry.dial} {placeholder}</span>
-        <span className="ml-auto text-white/20 text-xs tabular-nums">
-          {digits.length}/{maxLen}
-        </span>
-      </div>
-
-      {/* Error */}
-      {isError && (
-        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-          className="text-red-400 text-xs flex items-center gap-1.5 pl-1">
-          <AlertCircle size={11} />{error}
-        </motion.p>
-      )}
+      {/* Error message */}
+      <AnimatePresence>
+        {isError && (
+          <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="text-red-400 text-xs flex items-center gap-1.5 px-0.5">
+            <AlertCircle size={11} />{error}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
