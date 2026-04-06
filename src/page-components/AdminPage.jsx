@@ -9,7 +9,6 @@ import {
   Building2, Globe, Users, Trophy, ToggleLeft, ToggleRight
 } from 'lucide-react'
 
-const ADMIN_PASSWORD = 'fitzone2025'
 const SESSION_KEY = 'fitzone_admin'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX'
 const EVENT_DEFAULTS = { cart_adds: 0, bundle_upgrades: 0, checkout_starts: 0, purchases: 0 }
@@ -115,10 +114,21 @@ function LoginGate({ onSuccess }) {
   const [error, setError] = useState('')
   const [showPw, setShowPw] = useState(false)
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false)
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (password === ADMIN_PASSWORD) { sessionStorage.setItem(SESSION_KEY, 'true'); onSuccess() }
-    else { setError('Incorrect password.'); setPassword('') }
+    setLoading(true); setError('')
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      const data = await res.json()
+      if (res.ok) { sessionStorage.setItem(SESSION_KEY, 'true'); onSuccess() }
+      else { setError(data.error || 'Invalid password'); setPassword('') }
+    } catch { setError('Server error, try again') }
+    finally { setLoading(false) }
   }
 
   return (
@@ -142,7 +152,7 @@ function LoginGate({ onSuccess }) {
               </button>
             </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <button type="submit" className="w-full bg-brand text-white py-3 rounded-xl font-bold hover:bg-brand-dark transition-colors">Enter Dashboard</button>
+            <button type="submit" className="w-full bg-brand text-white py-3 rounded-xl font-bold hover:bg-brand-dark transition-colors" disabled={loading}>{loading ? String.fromCharCode(83,105,103,110,105,110,103,32,105,110,46,46,46) : String.fromCharCode(69,110,116,101,114,32,68,97,115,104,98,111,97,114,100)}</button>
           </form>
         </div>
       </motion.div>
@@ -1490,12 +1500,26 @@ function Dashboard({ onLogout, initialEvents }) {
   )
 }
 
+
 // ── Main Export ───────────────────────────────────────────────────────────────
 export default function AdminPage({ initialEvents }) {
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => { try { return sessionStorage.getItem(SESSION_KEY) === 'true' } catch { return false } }
   )
-  const handleLogout = () => { sessionStorage.removeItem(SESSION_KEY); setIsAuthenticated(false) }
+
+  useEffect(() => {
+    if (sessionStorage.getItem(SESSION_KEY) === 'true') {
+      fetch('/api/admin/prices').then(r => {
+        if (r.status === 401) { sessionStorage.removeItem(SESSION_KEY); setIsAuthenticated(false) }
+      }).catch(() => {})
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {})
+    sessionStorage.removeItem(SESSION_KEY)
+    setIsAuthenticated(false)
+  }
 
   if (!isAuthenticated) return <LoginGate onSuccess={() => setIsAuthenticated(true)} />
   return <Dashboard onLogout={handleLogout} initialEvents={initialEvents} />
