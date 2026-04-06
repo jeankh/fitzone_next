@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight, ArrowLeft, CreditCard, Smartphone, Building2, Lock,
   Trash2, CheckCircle, ShoppingCart, AlertCircle, ChevronDown,
-  Search, Shield, Zap, User, Mail, Phone, Tag, Gift
+  Search, Shield, Zap, User, Mail, Phone, Tag, Gift, ExternalLink
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { AsYouType, isValidPhoneNumber, isPossiblePhoneNumber, getExampleNumber, parsePhoneNumber } from 'libphonenumber-js'
@@ -177,15 +177,6 @@ function CountryPicker({ selected, onChange, lang }) {
   )
 }
 
-// ── Card Brand Detector ───────────────────────────────────────────────────────
-function detectCardBrand(num) {
-  const n = num.replace(/\s/g, '')
-  if (/^4/.test(n))           return { name: 'Visa',       color: '#1a1f71', pattern: '✦ ✦✦✦✦ ✦✦✦✦ ' }
-  if (/^5[1-5]/.test(n))      return { name: 'Mastercard', color: '#252525', pattern: '✦ ✦✦✦✦ ✦✦✦✦ ' }
-  if (/^3[47]/.test(n))       return { name: 'Amex',       color: '#007b5e', pattern: '✦ ✦✦✦✦✦✦ ' }
-  return null
-}
-
 // ── Floating Label Input ──────────────────────────────────────────────────────
 function FloatingInput({ label, icon: Icon, error, touched, children, hint }) {
   return (
@@ -222,29 +213,6 @@ function FloatingInput({ label, icon: Icon, error, touched, children, hint }) {
     </div>
   )
 }
-
-// ── Validation helpers ────────────────────────────────────────────────────────
-const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)
-const validateCardNumber = (num) => {
-  const d = num.replace(/\s/g, '')
-  if (d.length !== 16 || !/^\d+$/.test(d)) return false
-  let sum = 0
-  for (let i = 0; i < d.length; i++) {
-    let n = parseInt(d[d.length - 1 - i])
-    if (i % 2 === 1) { n *= 2; if (n > 9) n -= 9 }
-    sum += n
-  }
-  return sum % 10 === 0
-}
-const validateExpiry = (exp) => {
-  const m = exp.match(/^(0[1-9]|1[0-2])\/(\d{2})$/)
-  if (!m) return false
-  return new Date(parseInt('20' + m[2]), parseInt(m[1])) > new Date()
-}
-const validateCVV = (cvv) => /^\d{3,4}$/.test(cvv)
-const formatCardNumber = (v) => v.replace(/\D/g, '').slice(0, 16).replace(/(\d{4})(?=\d)/g, '$1 ')
-const formatExpiry = (v) => { const d = v.replace(/\D/g, '').slice(0, 4); return d.length >= 3 ? d.slice(0,2)+'/'+d.slice(2) : d }
-const formatCVV = (v) => v.replace(/\D/g, '').slice(0, 4)
 
 // ── Phone Field ──────────────────────────────────────────────────────────────
 function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur, error, touched, lang }) {
@@ -333,6 +301,7 @@ export default function CheckoutPage() {
   const [paymentMethod,   setPaymentMethod]   = useState('card')
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
   const [bankDetails,     setBankDetails]     = useState(null)
+  const [redirecting,     setRedirecting]     = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/bank').then(r => r.json()).then(setBankDetails).catch(() => {})
@@ -343,27 +312,20 @@ export default function CheckoutPage() {
     const match = COUNTRIES.find(c => c.code === countryCode)
     if (match) { setSelectedCountry(match); setFormData(p => ({ ...p, phone: '' })) }
   }, [countryCode])
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', cardNumber: '', expiry: '', cvv: '' })
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '' })
   const [errors,   setErrors]   = useState({})
   const [touched,  setTouched]  = useState({})
   const [agreed,   setAgreed]   = useState(false)
   const [coupon,   setCoupon]   = useState('')
   const [couponErr,setCouponErr]= useState('')
-  const [processing,setProcessing]=useState(false)
-  const [success,  setSuccess]  = useState(false)
-  const [confirm,  setConfirm]  = useState(false)
   const [showCVV,  setShowCVV]  = useState(false)
 
-  const cardBrand = detectCardBrand(formData.cardNumber)
   const finalTotal = getTotal()
 
   const handleInput = (e) => {
     const { name, value } = e.target
     let v = value
-    if (name === 'cardNumber') v = formatCardNumber(value)
-    else if (name === 'expiry') v = formatExpiry(value)
-    else if (name === 'phone') v = formatAsYouType(value, selectedCountry.code).slice(0, getMaxLen(selectedCountry.code))
-    else if (name === 'cvv') v = formatCVV(value)
+    if (name === 'phone') v = formatAsYouType(value, selectedCountry.code).slice(0, getMaxLen(selectedCountry.code))
     setFormData(p => ({ ...p, [name]: v }))
     if (errors[name]) setErrors(p => ({ ...p, [name]: '' }))
   }
@@ -373,11 +335,8 @@ export default function CheckoutPage() {
     let err = ''
     switch (name) {
       case 'name':       if (!value.trim()) err = req; else if (value.trim().length < 3) err = lang === 'ar' ? 'الاسم قصير جداً' : 'Too short'; break
-      case 'email':      if (!value.trim()) err = req; else if (!validateEmail(value)) err = lang === 'ar' ? 'بريد غير صالح' : 'Invalid email'; break
+      case 'email':      if (!value.trim()) err = req; else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) err = lang === 'ar' ? 'بريد غير صالح' : 'Invalid email'; break
       case 'phone':      if (!value.trim()) err = req; else if (!validatePhone(value, selectedCountry.code)) err = lang === 'ar' ? `رقم غير صالح — مثال: ${getPlaceholder(selectedCountry.code)}` : `Invalid number — e.g. ${getPlaceholder(selectedCountry.code)}`; break
-      case 'cardNumber': if (paymentMethod !== 'card') break; if (!value.trim()) err = req; else if (!validateCardNumber(value)) err = lang === 'ar' ? 'رقم بطاقة غير صالح' : 'Invalid card'; break
-      case 'expiry':     if (paymentMethod !== 'card') break; if (!value.trim()) err = req; else if (!validateExpiry(value)) err = lang === 'ar' ? 'تاريخ منتهي' : 'Expired or invalid'; break
-      case 'cvv':        if (paymentMethod !== 'card') break; if (!value.trim()) err = req; else if (!validateCVV(value)) err = lang === 'ar' ? 'CVV غير صالح' : 'Invalid CVV'; break
     }
     setErrors(p => ({ ...p, [name]: err }))
     return err === ''
@@ -386,31 +345,55 @@ export default function CheckoutPage() {
   const handleBlur = (name) => { setTouched(p => ({ ...p, [name]: true })); validateField(name, formData[name]) }
 
   const validateAll = () => {
-    const fields = ['name', 'email', 'phone', ...(paymentMethod === 'card' ? ['cardNumber', 'expiry', 'cvv'] : [])]
+    const fields = ['name', 'email', 'phone']
     fields.forEach(f => setTouched(p => ({ ...p, [f]: true })))
     return fields.every(f => validateField(f, formData[f]))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateAll()) return
     if (!agreed) { setErrors(p => ({ ...p, terms: lang === 'ar' ? 'يجب الموافقة على الشروط' : 'Please agree to terms' })); return }
-    setConfirm(true)
-  }
 
-  const handleConfirm = async () => {
-    setConfirm(false); setProcessing(true)
-    await new Promise(r => setTimeout(r, 2500))
-    setProcessing(false); setSuccess(true)
-    trackEvent('purchases')
-    if (typeof window.gtag === 'function') window.gtag('event', 'purchase', { value: finalTotal, currency: 'SAR' })
-    clearCart()
+    if (paymentMethod === 'bank') {
+      setRedirecting(false)
+      return
+    }
+
+    setRedirecting(true)
+    try {
+      const phoneDigits = formData.phone.replace(/\D/g, '')
+      const dial = selectedCountry.dial
+      const fullPhone = `${dial}${phoneDigits}`
+
+      const res = await fetch('/api/checkout/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart,
+          email: formData.email,
+          phone: fullPhone,
+          name: formData.name,
+          lang,
+        }),
+      })
+
+      const data = await res.json()
+      if (data.error) {
+        setRedirecting(false)
+        alert(data.error)
+        return
+      }
+      window.location.href = data.url
+    } catch (err) {
+      setRedirecting(false)
+      alert(lang === 'ar' ? 'حدث خطأ، حاول مرة أخرى' : 'Something went wrong, please try again')
+    }
   }
 
   const inputCls = "w-full bg-transparent px-4 py-3.5 text-white text-sm placeholder:text-white/20 focus:outline-none"
 
-  // ── Empty Cart ──
-  if (cart.length === 0 && !success) return (
+  if (cart.length === 0) return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <div className="text-center max-w-sm">
         <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-6">
@@ -424,29 +407,6 @@ export default function CheckoutPage() {
           <ShoppingCart size={16} />{lang === 'ar' ? 'تصفح البرامج' : 'Browse Programs'}<Arrow size={16} />
         </motion.button>
       </div>
-    </div>
-  )
-
-  // ── Success ──
-  if (success) return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center max-w-md">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }}
-          className="w-24 h-24 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
-          <CheckCircle size={44} className="text-emerald-400" />
-        </motion.div>
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <h1 className="text-3xl font-bold text-white mb-3">{lang === 'ar' ? 'تم الشراء بنجاح! 🎉' : 'Purchase Successful! 🎉'}</h1>
-          <p className="text-white/50 mb-8 leading-relaxed text-sm">
-            {lang === 'ar' ? 'سيتم إرسال برامجك إلى بريدك الإلكتروني خلال دقائق. تحقق أيضاً من رسائل الواتساب.' : 'Your programs will be sent to your email within minutes. Also check your WhatsApp.'}
-          </p>
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            onClick={() => router.push('/')}
-            className="inline-flex items-center gap-2 bg-brand text-white px-8 py-3.5 rounded-2xl font-semibold">
-            {lang === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}
-          </motion.button>
-        </motion.div>
-      </motion.div>
     </div>
   )
 
@@ -547,75 +507,32 @@ export default function CheckoutPage() {
               </div>
 
               <AnimatePresence mode="wait">
-                {/* Card Form */}
-                {paymentMethod === 'card' && (
+                {/* Card / Stripe */}
+                {(paymentMethod === 'card' || paymentMethod === 'apple') && (
                   <motion.div key="card" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }} className="space-y-4">
-
-                    {/* Visual Card Widget */}
-                    <div className="relative h-36 rounded-2xl overflow-hidden mb-5"
-                      style={{ background: cardBrand ? `linear-gradient(135deg, ${cardBrand.color}, #0d0d0d)` : 'linear-gradient(135deg, #1a1a2e, #0d0d0d)' }}>
-                      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.05) 10px, rgba(255,255,255,0.05) 20px)' }} />
-                      <div className="absolute top-4 left-5 right-5 flex items-center justify-between">
-                        <div className="w-8 h-6 bg-yellow-400/80 rounded-md" />
-                        {cardBrand && <span className="text-white/60 text-xs font-semibold tracking-widest uppercase">{cardBrand.name}</span>}
-                      </div>
-                      <div className="absolute bottom-4 left-5 right-5">
-                        <p className="text-white/60 font-mono text-base tracking-[0.2em] mb-1">
-                          {formData.cardNumber || '•••• •••• •••• ••••'}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <p className="text-white/40 text-xs font-mono">{formData.expiry || 'MM/YY'}</p>
-                          <p className="text-white/40 text-xs">{formData.name || (lang === 'ar' ? 'اسم حامل البطاقة' : 'CARD HOLDER')}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card Number */}
-                    <FloatingInput icon={CreditCard} error={errors.cardNumber} touched={touched.cardNumber}
-                      hint={cardBrand ? cardBrand.name : undefined}>
-                      <input type="text" name="cardNumber" value={formData.cardNumber} onChange={handleInput} onBlur={() => handleBlur('cardNumber')}
-                        placeholder="1234 5678 9012 3456" maxLength={19} dir="ltr"
-                        className={inputCls} />
-                    </FloatingInput>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {/* Expiry */}
-                      <FloatingInput error={errors.expiry} touched={touched.expiry}>
-                        <input type="text" name="expiry" value={formData.expiry} onChange={handleInput} onBlur={() => handleBlur('expiry')}
-                          placeholder="MM / YY" maxLength={5} dir="ltr"
-                          className={inputCls} />
-                      </FloatingInput>
-
-                      {/* CVV */}
-                      <FloatingInput error={errors.cvv} touched={touched.cvv}>
-                        <div className="relative">
-                          <input type={showCVV ? 'text' : 'password'} name="cvv" value={formData.cvv} onChange={handleInput} onBlur={() => handleBlur('cvv')}
-                            placeholder="CVV" maxLength={4} dir="ltr"
-                            className={inputCls + ' pr-10'} />
-                          <button type="button" onClick={() => setShowCVV(p => !p)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/60 transition-colors text-xs">
-                            {showCVV ? '👁' : '🔒'}
-                          </button>
-                        </div>
-                      </FloatingInput>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Apple Pay */}
-                {paymentMethod === 'apple' && (
-                  <motion.div key="apple" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2 }}
-                    className="flex flex-col items-center justify-center py-10 gap-3">
-                    <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center">
-                      <span className="text-2xl">🍎</span>
+                    className="flex flex-col items-center justify-center py-8 gap-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-7 bg-[#635bff] rounded-md flex items-center justify-center text-white text-[8px] font-bold">VISA</div>
+                      <div className="w-10 h-7 bg-[#252525] rounded-full flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-[#eb001b] absolute -ml-1.5" />
+                        <div className="w-3 h-3 rounded-full bg-[#f79e1b] absolute ml-1.5 opacity-80" />
+                      </div>
+                      <div className="w-10 h-7 bg-white rounded-md flex items-center justify-center text-black text-xs font-bold">Pay</div>
                     </div>
-                    <p className="text-white/50 text-sm text-center">
-                      {lang === 'ar' ? 'سيتم توجيهك إلى Apple Pay لإتمام الدفع بأمان' : "You'll be redirected to Apple Pay to complete payment securely"}
+                    <p className="text-white/50 text-sm text-center max-w-xs">
+                      {lang === 'ar'
+                        ? 'سيتم توجيهك إلى صفحة دفع آمنة من Stripe لإتمام الدفع'
+                        : "You'll be redirected to Stripe's secure checkout to complete payment"}
                     </p>
+                    <div className="flex items-center gap-1.5 text-white/25 text-xs mt-1">
+                      <Lock size={11} />
+                      <span>{lang === 'ar' ? '256-bit SSL مشفر' : '256-bit SSL Encrypted'}</span>
+                    </div>
                   </motion.div>
                 )}
+
+
 
                 {/* Bank Transfer */}
                 {paymentMethod === 'bank' && (
@@ -665,13 +582,15 @@ export default function CheckoutPage() {
               {errors.terms && <p className="text-red-400 text-xs flex items-center gap-1.5 pl-1"><AlertCircle size={11} />{errors.terms}</p>}
 
               {/* Pay Button */}
-              <motion.button type="button" onClick={handleSubmit} disabled={processing}
-                whileHover={{ scale: processing ? 1 : 1.01 }} whileTap={{ scale: processing ? 1 : 0.99 }}
+              <motion.button type="button" onClick={handleSubmit} disabled={redirecting}
+                whileHover={{ scale: redirecting ? 1 : 1.01 }} whileTap={{ scale: redirecting ? 1 : 0.99 }}
                 className="w-full relative overflow-hidden bg-gradient-to-r from-brand to-brand-dark text-white py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 shadow-lg shadow-brand/20 disabled:opacity-60">
                 <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity" />
-                {processing
-                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{lang === 'ar' ? 'جاري المعالجة…' : 'Processing…'}</>
-                  : <><Lock size={16} />{lang === 'ar' ? `ادفع الآن ${formatPrice(finalTotal, lang)}` : `Pay Now ${formatPrice(finalTotal, lang)}`}</>
+                {redirecting
+                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{lang === 'ar' ? 'جاري التحويل…' : 'Redirecting…'}</>
+                  : paymentMethod === 'bank'
+                    ? <><Building2 size={16} />{lang === 'ar' ? 'تأكيد الطلب' : 'Confirm Order'}</>
+                    : <><Lock size={16} />{lang === 'ar' ? `ادفع الآن ${formatPrice(finalTotal, lang)}` : `Pay Now ${formatPrice(finalTotal, lang)}`}</>
                 }
               </motion.button>
 
@@ -810,52 +729,6 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* ── Confirmation Modal ── */}
-      <AnimatePresence>
-        {confirm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
-            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
-            onClick={() => setConfirm(false)}>
-            <motion.div initial={{ scale: 0.92, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }}
-              onClick={e => e.stopPropagation()}
-              className="bg-[#111] border border-white/10 rounded-3xl p-8 max-w-sm w-full">
-              <div className="w-14 h-14 rounded-2xl bg-brand/10 border border-brand/20 flex items-center justify-center mx-auto mb-5">
-                <Lock size={24} className="text-brand" />
-              </div>
-              <h3 className="text-white text-xl font-bold text-center mb-2">{lang === 'ar' ? 'تأكيد الدفع' : 'Confirm Payment'}</h3>
-              <p className="text-white/40 text-sm text-center mb-6">
-                {lang === 'ar' ? `سيتم خصم ${formatPrice(finalTotal, lang)} من وسيلة دفعك` : `${formatPrice(finalTotal, lang)} will be charged to your payment method`}
-              </p>
-
-              {/* Summary lines */}
-              <div className="bg-white/[0.03] rounded-2xl p-4 mb-6 space-y-2">
-                {cart.map(id => { const b = BOOKS_DATA[id]; return b ? (
-                  <div key={id} className="flex items-center justify-between text-sm">
-                    <span className="text-white/60 flex items-center gap-2"><span>{b.icon}</span>{lang === 'ar' ? b.titleAr : b.titleEn}</span>
-                    <span className="text-white font-medium">{formatPrice(b.price, lang)}</span>
-                  </div>
-                ) : null })}
-                <div className="pt-2 border-t border-white/8 flex justify-between font-bold">
-                  <span className="text-white/60">{lang === 'ar' ? 'الإجمالي' : 'Total'}</span>
-                  <span className="text-brand">{formatPrice(finalTotal, lang)}</span>
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button onClick={() => setConfirm(false)}
-                  className="flex-1 py-3 rounded-xl border border-white/10 text-white/50 hover:text-white hover:border-white/20 transition-all text-sm font-medium">
-                  {lang === 'ar' ? 'إلغاء' : 'Cancel'}
-                </button>
-                <button onClick={handleConfirm}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-brand to-brand-dark text-white font-bold text-sm shadow-lg shadow-brand/20">
-                  {lang === 'ar' ? 'تأكيد الدفع' : 'Confirm & Pay'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   )
 }

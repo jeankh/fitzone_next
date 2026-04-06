@@ -3,3 +3,12 @@ node_modules/
 out/
 .env.local
 .env
+
+.vercel
+.env*.local
+
+# Project docs (internal)
+STRIPE_PLAN.md
+STRIPE_SETUP_GUIDE.md
+STRIPE_SETUP_GUIDE.html
+TODO.md
