@@ -94,3 +94,23 @@ export async function addUserPurchase(userId, purchase) {
   const key = `${USER_PURCHASES_PREFIX}${userId}`
   await kv.lpush(key, JSON.stringify(purchase))
 }
+
+export function generatePassword() {
+  const chars = 'abcdefghijkmnpqrstuvwxyz23456789'
+  let pw = ''
+  for (let i = 0; i < 8; i++) pw += chars[Math.floor(Math.random() * chars.length)]
+  return pw
+}
+
+export async function getOrCreateUser({ name, email, phone }) {
+  const normalizedEmail = email.toLowerCase().trim()
+  const existing = await getUserByEmail(normalizedEmail)
+  if (existing) {
+    const user = typeof existing === 'string' ? JSON.parse(existing) : existing
+    return { user, isNew: false }
+  }
+
+  const password = generatePassword()
+  const user = await createUser({ name, email: normalizedEmail, password, phone })
+  return { user, isNew: true, generatedPassword: password }
+}

@@ -218,6 +218,38 @@ export default function SuccessPage() {
           </div>
         </motion.div>
 
+        {/* Account created card */}
+        {order?.accountCreated && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+            className="bg-brand/5 border border-brand/20 rounded-3xl p-5 mb-5"
+          >
+            <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2">
+              <Gift size={14} className="text-brand" />
+              {lang === 'ar' ? 'تم إنشاء حسابك!' : 'Your Account Has Been Created!'}
+            </h3>
+            <p className="text-white/50 text-xs mb-3">
+              {lang === 'ar'
+                ? 'يمكنك الآن متابعة مشترياتك وتحميل برامجك من حسابك.'
+                : 'You can now track your purchases and download your programs from your account.'}
+            </p>
+            <div className="bg-black/30 rounded-xl p-3 space-y-1.5 mb-3">
+              <div className="flex items-center justify-between">
+                <span className="text-white/40 text-xs">{lang === 'ar' ? 'البريد' : 'Email'}</span>
+                <span className="text-white text-xs font-mono">{order.accountCreated.email}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-white/40 text-xs">{lang === 'ar' ? 'كلمة المرور' : 'Password'}</span>
+                <span className="text-brand text-xs font-mono font-bold">{order.accountCreated.password}</span>
+              </div>
+            </div>
+            <button onClick={() => router.push('/account')}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-dark transition-colors">
+              {lang === 'ar' ? 'فتح حسابي' : 'Go to My Account'}
+            </button>
+          </motion.div>
+        )}
+
         {/* What's next timeline */}
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
