@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getStripe } from '../../../../src/lib/stripe'
+import { Redis } from '@upstash/redis'
+
+const kv = Redis.fromEnv()
+const PURCHASES_KEY = 'fitzone_purchases'
 
 function getResend() {
   const { Resend } = require('resend')
@@ -61,6 +65,23 @@ export async function POST(req) {
     const currency = session.currency
 
     console.log('Payment completed:', { email, phone, name, items, amount, currency, lang })
+
+    try {
+      await kv.lpush(PURCHASES_KEY, JSON.stringify({
+        id: session.id,
+        email: email || '',
+        phone: phone || '',
+        name: name || '',
+        items: items || '',
+        amount: amount || 0,
+        currency: currency || 'sar',
+        lang: lang || 'ar',
+        status: session.payment_status || 'paid',
+        createdAt: new Date().toISOString(),
+      }))
+    } catch (e) {
+      console.error('Failed to store purchase:', e.message)
+    }
 
     if (email) {
       try {

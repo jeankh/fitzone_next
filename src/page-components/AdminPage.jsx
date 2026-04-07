@@ -6,7 +6,7 @@ import {
   Copy, LogOut, Lock, BarChart2, Package, Megaphone, RefreshCw,
   Eye, EyeOff, TrendingUp, AlertTriangle, Pencil, X, Save,
   Plus, Trash2, BookOpen, Upload, Link as LinkIcon, ChevronDown, ChevronUp,
-  Building2, Globe, Users, Trophy, ToggleLeft, ToggleRight
+  Building2, Globe, Users, Trophy, ToggleLeft, ToggleRight, DollarSign, Download, Calendar
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -703,6 +703,12 @@ function Dashboard({ onLogout, initialEvents }) {
   // Misc
   const [copied, setCopied] = useState(null)
 
+  // Purchases
+  const [purchases, setPurchases] = useState([])
+  const [purchaseStats, setPurchaseStats] = useState({ total: 0, totalRevenue: 0, revenueByCurrency: {}, itemCounts: {} })
+  const [purchasesExpanded, setPurchasesExpanded] = useState(true)
+  const [purchasesLoading, setPurchasesLoading] = useState(true)
+
   useEffect(() => {
     fetch('/api/admin/prices').then(r => r.json()).then(setPrices).catch(() => {})
     fetch('/api/admin/currency-prices').then(r => r.json()).then(setCurrencyPrices).catch(() => {})
@@ -713,6 +719,10 @@ function Dashboard({ onLogout, initialEvents }) {
       if (data.config) { setGiveaway(data.config); setGiveawayForm(data.config) }
       setGiveawayEntryCount(data.entryCount || 0)
     }).catch(() => {})
+    fetch('/api/admin/purchases').then(r => r.json()).then(data => {
+      setPurchases(data.purchases || [])
+      setPurchaseStats(data.stats || { total: 0, totalRevenue: 0, revenueByCurrency: {}, itemCounts: {} })
+    }).catch(() => {}).finally(() => setPurchasesLoading(false))
   }, [])
 
   const conversionRate = events.cart_adds > 0 ? Math.round((events.purchases / events.cart_adds) * 100) : 0
@@ -1494,6 +1504,95 @@ function Dashboard({ onLogout, initialEvents }) {
               <p className="text-text-muted text-xs">Click "Create Giveaway" to set up a prize draw for your audience.</p>
             </div>
           )}
+        </motion.section>
+
+        {/* ── 7: Purchases ── */}
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.30 }}>
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <DollarSign size={18} className="text-brand" />
+              <h2 className="text-white font-bold text-lg">Purchases</h2>
+              <span className="text-text-muted text-sm">({purchaseStats.total})</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setPurchasesExpanded(e => !e); if (!purchases.length) loadPurchases() }} className="text-text-muted hover:text-white transition-colors p-1.5">
+                {purchasesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <AnimatePresence>
+            {purchasesExpanded && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden space-y-4">
+
+                {/* Stats cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-surface border border-border rounded-xl p-4">
+                    <p className="text-text-muted text-xs mb-1">Total Orders</p>
+                    <p className="text-white text-2xl font-bold">{purchaseStats.total}</p>
+                  </div>
+                  {Object.entries(purchaseStats.revenueByCurrency || {}).map(([cur, amount]) => (
+                    <div key={cur} className="bg-surface border border-border rounded-xl p-4">
+                      <p className="text-text-muted text-xs mb-1">Revenue ({cur})</p>
+                      <p className="text-emerald-400 text-2xl font-bold">{(amount / 100).toFixed(0)} <span className="text-sm">{cur}</span></p>
+                    </div>
+                  ))}
+                  {Object.entries(purchaseStats.itemCounts || {}).map(([id, count]) => (
+                    <div key={id} className="bg-surface border border-border rounded-xl p-4">
+                      <p className="text-text-muted text-xs mb-1 capitalize">{id}</p>
+                      <p className="text-brand text-2xl font-bold">{count}</p>
+                    </div>
+                  ))}
+                  {purchaseStats.total === 0 && !purchasesLoading && (
+                    <div className="col-span-3 bg-surface border border-border rounded-xl p-4 flex items-center justify-center">
+                      <p className="text-text-muted text-sm">No purchases yet</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Purchases table */}
+                {purchases.length > 0 && (
+                  <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+                    <div className="grid grid-cols-6 gap-3 px-5 py-2.5 border-b border-border bg-white/[0.02]">
+                      {['Date', 'Customer', 'Email', 'Items', 'Amount', 'Status'].map(h => (
+                        <span key={h} className="text-text-muted text-xs font-medium">{h}</span>
+                      ))}
+                    </div>
+                    {purchases.map((p, idx) => (
+                      <div key={p.id || idx} className={`grid grid-cols-6 gap-3 px-5 py-3.5 items-center ${idx < purchases.length - 1 ? 'border-b border-border' : ''}`}>
+                        <span className="text-text-secondary text-xs">
+                          {p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-white text-xs truncate">{p.name || '—'}</p>
+                          {p.phone && <p className="text-text-muted text-[10px] font-mono truncate">{p.phone}</p>}
+                        </div>
+                        <span className="text-text-secondary text-xs truncate">{p.email || '—'}</span>
+                        <div className="flex flex-wrap gap-1">
+                          {(p.items || '').split(',').filter(Boolean).map(id => (
+                            <span key={id} className="text-[10px] bg-brand/10 text-brand px-1.5 py-0.5 rounded capitalize">{id}</span>
+                          ))}
+                        </div>
+                        <span className="text-white text-xs font-bold">
+                          {(p.amount / 100).toFixed(0)} {(p.currency || 'sar').toUpperCase()}
+                        </span>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${p.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-yellow-400/10 text-yellow-400'}`}>
+                          {p.status || 'paid'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {purchasesLoading && (
+                  <div className="bg-surface border border-border rounded-2xl p-8 text-center">
+                    <RefreshCw size={20} className="text-text-muted mx-auto animate-spin" />
+                  </div>
+                )}
+
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.section>
 
       </div>
