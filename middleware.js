@@ -4,6 +4,7 @@ import { checkRateLimit } from './src/lib/ratelimit'
 
 const PUBLIC_ADMIN_ROUTES = ['/api/admin/login', '/api/admin/logout']
 const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway']
+const PUBLIC_POST_ROUTES = ['/api/checkout/create-checkout-session', '/api/checkout/success', '/api/giveaway/enter', '/api/webhooks/stripe']
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl
@@ -26,8 +27,13 @@ export async function middleware(request) {
     return NextResponse.next()
   }
 
-  // 4. Auth: Allow public POST to events (analytics tracking)
-  if (pathname === '/api/events' && request.method === 'POST') {
+  // 4. Auth: Allow public POST to events, checkout, giveaway, webhooks
+  if (request.method === 'POST' && PUBLIC_POST_ROUTES.some(r => pathname.startsWith(r))) {
+    return NextResponse.next()
+  }
+
+  // 4b. Auth: Allow public GET on giveaway info
+  if (pathname === '/api/giveaway/info') {
     return NextResponse.next()
   }
 
