@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, UserCircle } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useLanguage } from '../context/LanguageContext'
 import { useCart } from '../context/CartContext'
+import { useUser } from '../context/UserContext'
 import Image from 'next/image'
 
 export default function Header() {
@@ -14,6 +15,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { lang, setLang, t } = useLanguage()
   const { cart, setIsCartOpen } = useCart()
+  const { user } = useUser()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -111,6 +113,11 @@ export default function Header() {
                 EN
               </button>
             </div>
+
+            <button onClick={() => router.push(user ? '/account' : '/account/login')}
+              className="w-10 h-10 bg-white/5 border border-white/15 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+              <UserCircle size={18} />
+            </button>
 
             {cart.length > 0 && (
               <button onClick={() => setIsCartOpen(true)} className="relative w-10 h-10 bg-brand/10 border border-brand/30 rounded-lg flex items-center justify-center text-brand hover:bg-brand/20 transition-colors">

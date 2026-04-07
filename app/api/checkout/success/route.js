@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getStripe } from '../../../../src/lib/stripe'
 import { Redis } from '@upstash/redis'
+import { verifyUserToken, addUserPurchase } from '../../../../src/lib/user-auth'
 
 const kv = Redis.fromEnv()
 const PURCHASES_KEY = 'fitzone_purchases'
@@ -29,7 +30,7 @@ export async function GET(req) {
 
       if (!alreadyStored) {
         const { items, phone, name, lang } = session.metadata || {}
-        await kv.lpush(PURCHASES_KEY, JSON.stringify({
+        const purchase = {
           id: session.id,
           email: session.customer_email || '',
           phone: phone || '',
@@ -40,7 +41,17 @@ export async function GET(req) {
           lang: lang || 'ar',
           status: session.payment_status || 'paid',
           createdAt: new Date().toISOString(),
-        }))
+        }
+        await kv.lpush(PURCHASES_KEY, JSON.stringify(purchase))
+
+        // Also store for user account if logged in
+        const userToken = req.cookies.get('fitzone_user_token')?.value
+        if (userToken) {
+          const payload = await verifyUserToken(userToken)
+          if (payload?.userId) {
+            await addUserPurchase(payload.userId, purchase)
+          }
+        }
       }
     } catch (e) {
       console.error('Failed to store purchase:', e.message)

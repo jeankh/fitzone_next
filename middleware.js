@@ -3,8 +3,8 @@ import { verifyToken, getCookieName } from './src/lib/auth'
 import { checkRateLimit } from './src/lib/ratelimit'
 
 const PUBLIC_ADMIN_ROUTES = ['/api/admin/login', '/api/admin/logout']
-const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway', '/api/checkout/success', '/api/giveaway/info']
-const PUBLIC_POST_ROUTES = ['/api/checkout/create-checkout-session', '/api/checkout/success', '/api/giveaway/enter', '/api/webhooks/stripe']
+const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway', '/api/checkout/success', '/api/giveaway/info', '/api/user/me', '/api/user/purchases']
+const PUBLIC_POST_ROUTES = ['/api/checkout/create-checkout-session', '/api/checkout/success', '/api/giveaway/enter', '/api/webhooks/stripe', '/api/user/signup', '/api/user/login', '/api/user/logout']
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl
