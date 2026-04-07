@@ -230,7 +230,7 @@ export default function SuccessPage() {
           <div className="space-y-4">
             {[
               { icon: Mail, color: 'text-blue-400', bg: 'bg-blue-400/15', text: lang === 'ar' ? 'ستصلك رسالة تأكيد على بريدك الإلكتروني' : 'You\'ll receive a confirmation email shortly', delay: 0 },
-              { icon: MessageCircle, color: 'text-emerald-400', bg: 'bg-emerald-400/15', text: lang === 'ar' ? 'سن التواصل معك عبر الواتساب لتسليم البرامج' : 'We\'ll message you on WhatsApp to deliver your programs', delay: 1 },
+              { icon: MessageCircle, color: 'text-emerald-400', bg: 'bg-emerald-400/15', text: lang === 'ar' ? 'سنتواصل معك عبر الواتساب لتسليم البرامج' : 'We\'ll message you on WhatsApp to deliver your programs', delay: 1 },
               { icon: Clock, color: 'text-amber-400', bg: 'bg-amber-400/15', text: lang === 'ar' ? 'استلم برامجك خلال دقائق وابدأ رحلتك!' : 'Get your programs within minutes and start your journey!', delay: 2 },
             ].map((step, i) => (
               <div key={i} className="flex items-start gap-3">
