@@ -230,22 +230,12 @@ export default function SuccessPage() {
             </h3>
             <p className="text-white/50 text-xs mb-3">
               {lang === 'ar'
-                ? 'يمكنك الآن متابعة مشترياتك وتحميل برامجك من حسابك.'
-                : 'You can now track your purchases and download your programs from your account.'}
+                ? 'أرسلنا رابط الدخول إلى بريدك الإلكتروني. اضغط عليه للدخول إلى حسابك.'
+                : 'We sent a login link to your email. Click it to access your account.'}
             </p>
-            <div className="bg-black/30 rounded-xl p-3 space-y-1.5 mb-3">
-              <div className="flex items-center justify-between">
-                <span className="text-white/40 text-xs">{lang === 'ar' ? 'البريد' : 'Email'}</span>
-                <span className="text-white text-xs font-mono">{order.accountCreated.email}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white/40 text-xs">{lang === 'ar' ? 'كلمة المرور' : 'Password'}</span>
-                <span className="text-brand text-xs font-mono font-bold">{order.accountCreated.password}</span>
-              </div>
-            </div>
-            <button onClick={() => router.push('/account')}
+            <button onClick={() => router.push('/account/login')}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-brand text-white text-sm font-semibold hover:bg-brand-dark transition-colors">
-              {lang === 'ar' ? 'فتح حسابي' : 'Go to My Account'}
+              {lang === 'ar' ? 'تسجيل الدخول' : 'Sign In to Your Account'}
             </button>
           </motion.div>
         )}

@@ -1,25 +1,26 @@
 import { NextResponse } from 'next/server'
 import { createUser, signUserToken, getUserCookieOptions } from '../../../../src/lib/user-auth'
 import { validateOrigin } from '../../../../src/lib/csrf'
+import { apiError } from '../../../../src/lib/api-utils'
 
 export async function POST(request) {
-  if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!validateOrigin(request)) return apiError('Forbidden', 403)
   try {
     const { name, email, password, phone } = await request.json()
 
     if (!name?.trim() || !email?.trim() || !password) {
-      return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+      return apiError('All fields are required', 400)
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+    if (password.length < 8 || !/[0-9]/.test(password) || !/[a-zA-Z]/.test(password)) {
+      return apiError('Password must be 8+ characters with at least one letter and one number', 400)
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ error: 'Invalid email' }, { status: 400 })
+      return apiError('Invalid email', 400)
     }
 
     const user = await createUser({ name: name.trim(), email, password, phone })
     if (!user) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
+      return apiError('Email already registered', 409)
     }
 
     const token = await signUserToken({ userId: user.id, email: user.email, role: 'user' })
@@ -31,6 +32,6 @@ export async function POST(request) {
     return response
   } catch (err) {
     console.error('Signup error:', err.message)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return apiError('Server error', 500)
   }
 }

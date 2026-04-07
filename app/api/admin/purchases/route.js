@@ -1,40 +1,37 @@
-import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { getRedis } from '../../../../src/lib/redis'
 
-const kv = Redis.fromEnv()
 const PURCHASES_KEY = 'fitzone_purchases'
 
-export async function GET() {
+export async function GET(request) {
   try {
-    const raw = await kv.lrange(PURCHASES_KEY, 0, -1)
+    const { searchParams } = new URL(request.url)
+    const page = Number(searchParams.get('page')) || 0
+    const limit = Number(searchParams.get('limit')) || 20
+    const kv = getRedis()
+
+    const raw = await kv.lrange(PURCHASES_KEY, page * limit, page * limit + limit - 1)
     const purchases = raw.map(item => {
       try { return typeof item === 'string' ? JSON.parse(item) : item } catch { return null }
     }).filter(Boolean)
 
-    const totalRevenue = purchases.reduce((sum, p) => sum + (p.amount || 0), 0)
-    const currencies = {}
-    for (const p of purchases) {
-      const c = (p.currency || 'sar').toUpperCase()
-      currencies[c] = (currencies[c] || 0) + (p.amount || 0)
-    }
-
-    const itemCounts = {}
-    for (const p of purchases) {
-      const items = (p.items || '').split(',').filter(Boolean)
-      for (const id of items) {
-        itemCounts[id] = (itemCounts[id] || 0) + 1
+    let stats = { total: 0, totalRevenue: 0, revenueByCurrency: {}, itemCounts: {} }
+    if (page === 0) {
+      const all = await kv.lrange(PURCHASES_KEY, 0, -1)
+      const parsed = all.map(item => { try { return typeof item === 'string' ? JSON.parse(item) : item } catch { return null } }).filter(Boolean)
+      stats.total = parsed.length
+      stats.totalRevenue = parsed.reduce((sum, p) => sum + (p.amount || 0), 0)
+      for (const p of parsed) {
+        const c = (p.currency || 'sar').toUpperCase()
+        stats.revenueByCurrency[c] = (stats.revenueByCurrency[c] || 0) + (p.amount || 0)
+      }
+      for (const p of parsed) {
+        const items = (p.items || '').split(',').filter(Boolean)
+        for (const id of items) stats.itemCounts[id] = (stats.itemCounts[id] || 0) + 1
       }
     }
 
-    return NextResponse.json({
-      purchases,
-      stats: {
-        total: purchases.length,
-        totalRevenue,
-        revenueByCurrency: currencies,
-        itemCounts,
-      },
-    })
+    return NextResponse.json({ purchases, stats })
   } catch {
     return NextResponse.json({ purchases: [], stats: { total: 0, totalRevenue: 0, revenueByCurrency: {}, itemCounts: {} } })
   }

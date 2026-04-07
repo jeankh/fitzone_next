@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { signToken, getCookieOptions } from '../../../../src/lib/auth'
+import { timingSafeEqual } from 'crypto'
 
 export async function POST(req) {
   try {
     const { password } = await req.json()
 
-    if (!password || password !== process.env.ADMIN_PASSWORD) {
+    const adminPw = process.env.ADMIN_PASSWORD || ''
+    if (!password || !timingSafeEqual(Buffer.from(password), Buffer.from(adminPw))) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
     }
 

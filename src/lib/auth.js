@@ -35,7 +35,7 @@ export function getCookieOptions() {
     name: COOKIE_NAME,
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     maxAge: COOKIE_MAX_AGE,
   }
@@ -47,7 +47,7 @@ export function clearCookieOptions() {
     value: '',
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    sameSite: 'strict',
     path: '/',
     maxAge: 0,
   }

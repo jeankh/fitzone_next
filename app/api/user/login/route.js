@@ -1,25 +1,34 @@
 import { NextResponse } from 'next/server'
-import { getUserByEmail, signUserToken, getUserCookieOptions } from '../../../../src/lib/user-auth'
+import { getUserByEmail, verifyPassword, signUserToken, getUserCookieOptions, checkLoginAttempts, resetLoginAttempts } from '../../../../src/lib/user-auth'
 import { validateOrigin } from '../../../../src/lib/csrf'
+import { apiError } from '../../../../src/lib/api-utils'
 
 export async function POST(request) {
-  if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!validateOrigin(request)) return apiError('Forbidden', 403)
   try {
     const { email, password } = await request.json()
 
     if (!email?.trim() || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
+      return apiError('Email and password are required', 400)
+    }
+
+    const allowed = await checkLoginAttempts(email)
+    if (!allowed) {
+      return apiError('Too many attempts. Try again in 15 minutes.', 429)
     }
 
     const raw = await getUserByEmail(email)
     if (!raw) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+      return apiError('Invalid email or password', 401)
     }
 
     const user = typeof raw === 'string' ? JSON.parse(raw) : raw
-    if (user.password !== password) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+    const valid = await verifyPassword(user, password)
+    if (!valid) {
+      return apiError('Invalid email or password', 401)
     }
+
+    await resetLoginAttempts(email)
 
     const token = await signUserToken({ userId: user.id, email: user.email, role: 'user' })
     const response = NextResponse.json({
@@ -30,6 +39,6 @@ export async function POST(request) {
     return response
   } catch (err) {
     console.error('Login error:', err.message)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return apiError('Server error', 500)
   }
 }

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getStripe } from '../../../../src/lib/stripe'
-import { Redis } from '@upstash/redis'
+import { getRedis } from '../../../../src/lib/redis'
 
-const kv = Redis.fromEnv()
 const PURCHASES_KEY = 'fitzone_purchases'
 
 function getResend() {
@@ -67,7 +66,7 @@ export async function POST(req) {
     console.log('Payment completed:', { email, phone, name, items, amount, currency, lang })
 
     try {
-      await kv.lpush(PURCHASES_KEY, JSON.stringify({
+      await getRedis().lpush(PURCHASES_KEY, JSON.stringify({
         id: session.id,
         email: email || '',
         phone: phone || '',
