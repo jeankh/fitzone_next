@@ -18,6 +18,7 @@ export async function GET(req) {
     }
 
     return NextResponse.json({
+      id: session.id,
       customer_email: session.customer_email,
       amount_total: session.amount_total,
       currency: session.currency,
