@@ -709,6 +709,14 @@ function Dashboard({ onLogout, initialEvents }) {
   const [purchasesExpanded, setPurchasesExpanded] = useState(true)
   const [purchasesLoading, setPurchasesLoading] = useState(true)
 
+  const loadPurchases = () => {
+    setPurchasesLoading(true)
+    fetch('/api/admin/purchases').then(r => r.json()).then(data => {
+      setPurchases(data.purchases || [])
+      setPurchaseStats(data.stats || { total: 0, totalRevenue: 0, revenueByCurrency: {}, itemCounts: {} })
+    }).catch(() => {}).finally(() => setPurchasesLoading(false))
+  }
+
   useEffect(() => {
     fetch('/api/admin/prices').then(r => r.json()).then(setPrices).catch(() => {})
     fetch('/api/admin/currency-prices').then(r => r.json()).then(setCurrencyPrices).catch(() => {})
@@ -719,10 +727,7 @@ function Dashboard({ onLogout, initialEvents }) {
       if (data.config) { setGiveaway(data.config); setGiveawayForm(data.config) }
       setGiveawayEntryCount(data.entryCount || 0)
     }).catch(() => {})
-    fetch('/api/admin/purchases').then(r => r.json()).then(data => {
-      setPurchases(data.purchases || [])
-      setPurchaseStats(data.stats || { total: 0, totalRevenue: 0, revenueByCurrency: {}, itemCounts: {} })
-    }).catch(() => {}).finally(() => setPurchasesLoading(false))
+    loadPurchases()
   }, [])
 
   const conversionRate = events.cart_adds > 0 ? Math.round((events.purchases / events.cart_adds) * 100) : 0
@@ -1515,7 +1520,10 @@ function Dashboard({ onLogout, initialEvents }) {
               <span className="text-text-muted text-sm">({purchaseStats.total})</span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { setPurchasesExpanded(e => !e); if (!purchases.length) loadPurchases() }} className="text-text-muted hover:text-white transition-colors p-1.5">
+              <button onClick={loadPurchases} className="text-text-muted hover:text-white transition-colors p-1.5" title="Refresh">
+                <RefreshCw size={14} className={purchasesLoading ? 'animate-spin' : ''} />
+              </button>
+              <button onClick={() => setPurchasesExpanded(e => !e)} className="text-text-muted hover:text-white transition-colors p-1.5">
                 {purchasesExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
             </div>
