@@ -3,7 +3,7 @@ import { verifyToken, getCookieName } from './src/lib/auth'
 import { checkRateLimit } from './src/lib/ratelimit'
 
 const PUBLIC_ADMIN_ROUTES = ['/api/admin/login', '/api/admin/logout']
-const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway']
+const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway', '/api/checkout/success', '/api/giveaway/info']
 const PUBLIC_POST_ROUTES = ['/api/checkout/create-checkout-session', '/api/checkout/success', '/api/giveaway/enter', '/api/webhooks/stripe']
 
 export async function middleware(request) {
@@ -29,11 +29,6 @@ export async function middleware(request) {
 
   // 4. Auth: Allow public POST to events, checkout, giveaway, webhooks
   if (request.method === 'POST' && PUBLIC_POST_ROUTES.some(r => pathname.startsWith(r))) {
-    return NextResponse.next()
-  }
-
-  // 4b. Auth: Allow public GET on giveaway info
-  if (pathname === '/api/giveaway/info') {
     return NextResponse.next()
   }
 
