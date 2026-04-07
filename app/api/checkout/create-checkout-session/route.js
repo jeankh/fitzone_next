@@ -36,7 +36,7 @@ export async function POST(req) {
       },
       success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/checkout`,
-      locale: lang === 'ar' ? 'ar' : 'en',
+      locale: 'auto',
     })
 
     return NextResponse.json({ url: session.url })
