@@ -12,6 +12,7 @@ import examples from 'libphonenumber-js/mobile/examples'
 import { useLanguage } from '../context/LanguageContext'
 import { useCart, trackEvent } from '../context/CartContext'
 import { useCurrency } from '../context/CurrencyContext'
+import Image from 'next/image'
 
 // ── Country list — no manual patterns, libphonenumber-js handles all validation
 const COUNTRIES = [
@@ -646,8 +647,8 @@ export default function CheckoutPage() {
                           </span>
                         </div>
                         <div className="flex items-center gap-3 p-4">
-                          <div className="w-10 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
-                            <img src={missingBookData.image} alt="" className="w-full h-full object-cover" />
+                          <div className="relative w-10 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+                            <Image src={missingBookData.image} alt="" fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-sm font-semibold leading-snug">

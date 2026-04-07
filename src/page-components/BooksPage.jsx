@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCart } from '../context/CartContext'
 import { useLanguage } from '../context/LanguageContext'
 import { useCurrency } from '../context/CurrencyContext'
+import Image from 'next/image'
 
 const books = [
   {
@@ -75,10 +76,10 @@ function WhatsAppBonus({ lang, bookImages }) {
             initial={{ opacity: 0, y: 24, rotate: i === 0 ? -14 : 14 }}
             animate={{ opacity: 1, y: 0, rotate: i === 0 ? -7 : 7 }}
             transition={{ delay: i * 0.1, type: 'spring', stiffness: 200, damping: 18 }}
-            className="flex-shrink-0 rounded-xl overflow-hidden"
+            className="relative flex-shrink-0 rounded-xl overflow-hidden"
             style={{ width: 80, height: 108, boxShadow: '0 10px 28px rgba(0,0,0,0.65), 0 0 0 2px rgba(255,255,255,0.1)' }}
           >
-            <img src={src} alt="" className="w-full h-full object-cover" />
+            <Image src={src} alt="" fill className="object-cover" />
           </motion.div>
         ))}
       </div>
@@ -238,7 +239,7 @@ export default function BooksPage() {
                 <div className="flex gap-3 p-4">
                   {/* Book image */}
                   <div className="relative w-32 flex-shrink-0 rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                    <img src={book.image} alt={book.title[lang]} className="w-full h-full object-cover" />
+                    <Image src={book.image} alt={book.title[lang]} fill className="object-cover" />
                     <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-md">
                       <Star size={9} className="text-yellow-400" fill="currentColor" />
                       <span className="text-white text-[10px] font-bold">{book.rating}</span>
@@ -286,7 +287,7 @@ export default function BooksPage() {
               <div className="hidden md:contents">
                 {/* Cover Image */}
                 <div className="relative md:w-72 lg:w-96 flex-shrink-0 overflow-hidden">
-                  <img src={book.image} alt={book.title[lang]} className="w-full h-full object-cover" />
+                  <Image src={book.image} alt={book.title[lang]} fill className="object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent to-surface" />
                   <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg">
                     <Star size={11} className="text-yellow-400" fill="currentColor" />
@@ -415,7 +416,7 @@ export default function BooksPage() {
                         zIndex: i === 0 ? 1 : 2,
                       }}
                     >
-                      <img src={b.image} alt={b.title[lang]} className="w-full h-full object-cover" />
+                      <Image src={b.image} alt={b.title[lang]} fill className="object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                     </motion.div>
                   ))}

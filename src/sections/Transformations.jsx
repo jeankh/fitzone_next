@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
+import Image from 'next/image'
 
 const transformations = [
   {
@@ -58,7 +59,7 @@ function TransformationPhoto({ photo, emoji, label, accentClass, lang, side }) {
   }
   return (
     <div className="relative h-full overflow-hidden">
-      <img src={photo} alt="" className="w-full h-full object-cover object-top" />
+      <Image src={photo} alt="" fill className="object-cover object-top" />
       <span className={`absolute bottom-3 ${side === 'before' ? (lang === 'ar' ? 'right-3' : 'left-3') : (lang === 'ar' ? 'left-3' : 'right-3')} bg-black/50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg`}>
         {label}
       </span>

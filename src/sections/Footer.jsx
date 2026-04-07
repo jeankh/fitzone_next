@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useLanguage } from '../context/LanguageContext'
 import { useMarketing } from '../context/MarketingContext'
+import Image from 'next/image'
 
 export default function Footer() {
   const { lang } = useLanguage()
@@ -54,7 +55,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-3 mb-5">
-              <img src="/fitzone-logo.jpeg" alt="FitZone" className="w-11 h-11 rounded-xl object-contain" />
+              <Image src="/fitzone-logo.jpeg" alt="FitZone" width={44} height={44} className="w-11 h-11 rounded-xl object-contain" />
               <span className="text-xl font-bold text-white">FitZone</span>
             </Link>
 

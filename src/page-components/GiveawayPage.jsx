@@ -7,6 +7,7 @@ import {
   ExternalLink, Star
 } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
+import Image from 'next/image'
 
 const PRIZE_LABELS = {
   transformation: { ar: 'دليل التنشيف وبناء الجسم', en: 'Shredding & Building Guide' },
@@ -171,7 +172,7 @@ function StoryCard({ config, lang, prizeLabel, cardRef }) {
       <div style={{ position: 'absolute', bottom: -60, right: -40, width: 180, height: 180, background: 'rgba(220,38,38,0.06)', borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none' }} />
 
       {/* Logo */}
-      <img src="/fitzone-logo.jpeg" alt="FitZone" style={{ width: 72, height: 72, borderRadius: 18, objectFit: 'cover', marginBottom: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }} />
+      <Image src="/fitzone-logo.jpeg" alt="FitZone" width={72} height={72} style={{ borderRadius: 18, objectFit: 'cover', marginBottom: 24, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }} />
 
       {/* Entry badge */}
       <div style={{ background: 'rgba(220,38,38,0.18)', border: '1px solid rgba(220,38,38,0.4)', borderRadius: 999, padding: '7px 18px', marginBottom: 20 }}>

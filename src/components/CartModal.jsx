@@ -4,6 +4,7 @@ import { X, ShoppingBag, Trash2, ArrowLeft, ArrowRight, Gift, Zap } from 'lucide
 import { useCart } from '../context/CartContext'
 import { useLanguage } from '../context/LanguageContext'
 import { useCurrency } from '../context/CurrencyContext'
+import Image from 'next/image'
 
 export default function CartModal() {
   const {
@@ -90,12 +91,12 @@ export default function CartModal() {
                       >
                         {bookId === 'bundle' ? (
                           <div className="relative w-16 h-20 flex-shrink-0">
-                            <img src={book.image} alt="" className="absolute top-0 left-0 w-12 h-20 object-cover rounded-lg border border-white/10 shadow-md" style={{ transform: 'rotate(-5deg)' }} />
-                            <img src={book.image2} alt="" className="absolute top-0 right-0 w-12 h-20 object-cover rounded-lg border border-white/10 shadow-md" style={{ transform: 'rotate(5deg)', zIndex: 1 }} />
+                            <Image src={book.image} alt="" width={48} height={80} className="absolute top-0 left-0 w-12 h-20 object-cover rounded-lg border border-white/10 shadow-md" style={{ transform: 'rotate(-5deg)' }} />
+                            <Image src={book.image2} alt="" width={48} height={80} className="absolute top-0 right-0 w-12 h-20 object-cover rounded-lg border border-white/10 shadow-md" style={{ transform: 'rotate(5deg)', zIndex: 1 }} />
                           </div>
                         ) : (
-                          <div className="w-14 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
-                            <img src={book.image} alt="" className="w-full h-full object-cover" />
+                          <div className="relative w-14 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+                            <Image src={book.image} alt="" fill className="object-cover" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -137,8 +138,8 @@ export default function CartModal() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3 p-4">
-                      <div className="w-10 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
-                        <img src={missingBookData.image} alt="" className="w-full h-full object-cover" />
+                      <div className="relative w-10 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+                        <Image src={missingBookData.image} alt="" fill className="object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-semibold leading-snug">

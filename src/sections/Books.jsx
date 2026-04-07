@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '../context/CartContext'
 import { useLanguage } from '../context/LanguageContext'
 import { useCurrency } from '../context/CurrencyContext'
+import Image from 'next/image'
 
 const books = [
   {
@@ -111,7 +112,7 @@ export default function Books() {
                 </div>
                 <div className="flex gap-3 p-4">
                   <div className="relative w-32 flex-shrink-0 rounded-2xl overflow-hidden" style={{ aspectRatio: '3/4' }}>
-                    <img src={book.image} alt={book.title[lang]} className="w-full h-full object-cover" />
+                    <Image src={book.image} alt={book.title[lang]} fill className="object-cover" />
                     <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-md">
                       <Star size={9} className="text-yellow-400" fill="currentColor" />
                       <span className="text-white text-[10px] font-bold">{book.rating}</span>
@@ -154,7 +155,7 @@ export default function Books() {
               {/* ── DESKTOP LAYOUT ── */}
               <div className="hidden md:contents">
                 <div className="relative md:w-72 lg:w-96 flex-shrink-0 overflow-hidden">
-                  <img src={book.image} alt={book.title[lang]} className="w-full h-full object-cover" />
+                  <Image src={book.image} alt={book.title[lang]} fill className="object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent to-surface" />
                   <div className="absolute top-3 left-3 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg">
                     <Star size={11} className="text-yellow-400" fill="currentColor" />
@@ -272,7 +273,7 @@ export default function Books() {
                         zIndex: i === 0 ? 1 : 2,
                       }}
                     >
-                      <img src={b.image} alt={b.title[lang]} className="w-full h-full object-cover" />
+                      <Image src={b.image} alt={b.title[lang]} fill className="object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                     </motion.div>
                   ))}

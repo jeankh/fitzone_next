@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Play, ArrowLeft, ArrowRight, Check, Download, Star, Gift, Plus } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
+import Image from 'next/image'
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -184,7 +185,7 @@ export default function Hero() {
                       zIndex: b.zIndex,
                     }}
                   >
-                    <img src={b.src} alt="" className="w-full h-full object-cover" />
+                    <Image src={b.src} alt="" fill className="object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                   </motion.div>
                 ))}

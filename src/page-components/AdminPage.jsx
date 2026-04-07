@@ -8,6 +8,7 @@ import {
   Plus, Trash2, BookOpen, Upload, Link as LinkIcon, ChevronDown, ChevronUp,
   Building2, Globe, Users, Trophy, ToggleLeft, ToggleRight
 } from 'lucide-react'
+import Image from 'next/image'
 
 const SESSION_KEY = 'fitzone_admin'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX'
@@ -135,7 +136,7 @@ function LoginGate({ onSuccess }) {
     <div className="min-h-screen bg-background flex items-center justify-center px-6" dir="ltr">
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-sm">
         <div className="flex items-center gap-3 mb-8">
-          <img src="/fitzone-logo.jpeg" alt="FitZone" className="w-10 h-10 rounded-xl object-contain" />
+          <Image src="/fitzone-logo.jpeg" alt="FitZone" width={40} height={40} className="w-10 h-10 rounded-xl object-contain" />
           <span className="text-white text-xl font-bold">FitZone Admin</span>
         </div>
         <div className="bg-surface border border-border rounded-2xl p-8">
@@ -588,7 +589,7 @@ function BlogEditor({ post, onSave, onClose }) {
               {/* Preview */}
               {form.image && (
                 <div className="relative rounded-xl overflow-hidden border border-white/8" style={{ aspectRatio: '16/7' }}>
-                  <img src={form.image} alt="Cover preview" className="w-full h-full object-cover" />
+                  <Image src={form.image} alt="Cover preview" fill className="object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
                     <div>
@@ -906,7 +907,7 @@ function Dashboard({ onLogout, initialEvents }) {
       <div className="border-b border-border bg-surface/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/fitzone-logo.jpeg" alt="FitZone" className="w-8 h-8 rounded-lg object-contain" />
+            <Image src="/fitzone-logo.jpeg" alt="FitZone" width={32} height={32} className="w-8 h-8 rounded-lg object-contain" />
             <span className="text-white font-bold">FitZone Admin</span>
             <span className="text-text-muted text-sm hidden sm:block">/ Dashboard</span>
           </div>
@@ -998,7 +999,7 @@ function Dashboard({ onLogout, initialEvents }) {
             {productCards.map((book) => (
               <div key={book.id} className="bg-surface border border-border rounded-2xl p-5">
                 <div className="flex items-start gap-3 mb-4">
-                  <img src={book.image} alt={book.titleEn} className="w-12 h-16 object-cover rounded-lg flex-shrink-0" />
+                  <Image src={book.image} alt={book.titleEn} width={48} height={64} className="w-12 h-16 object-cover rounded-lg flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="text-white font-semibold text-sm leading-snug mb-1">{book.titleEn}</p>
                     <p className="text-text-muted text-xs leading-snug">{book.titleAr}</p>
@@ -1250,7 +1251,7 @@ function Dashboard({ onLogout, initialEvents }) {
                     {blogs.map((post, i) => (
                       <div key={post.id} className={`flex items-center gap-4 px-5 py-3.5 ${i < blogs.length - 1 ? 'border-b border-border' : ''}`}>
                         {post.image && (
-                          <img src={post.image} alt="" className="w-12 h-10 object-cover rounded-lg flex-shrink-0" />
+                          <Image src={post.image} alt="" width={48} height={40} className="w-12 h-10 object-cover rounded-lg flex-shrink-0" />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-white text-sm font-medium truncate">{post.title?.en || post.title?.ar}</p>

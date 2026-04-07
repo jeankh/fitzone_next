@@ -7,6 +7,7 @@ import { ShoppingCart } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { useLanguage } from '../context/LanguageContext'
 import { useCart } from '../context/CartContext'
+import Image from 'next/image'
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false)
@@ -73,7 +74,7 @@ export default function Header() {
       <div className="relative max-w-7xl mx-auto px-6 lg:px-12">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <Link href="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3 group">
-            <img src="/fitzone-logo.jpeg" alt="FitZone" className="w-11 h-11 rounded-xl object-contain" />
+            <Image src="/fitzone-logo.jpeg" alt="FitZone" width={44} height={44} className="w-11 h-11 rounded-xl object-contain" />
             <div className="flex flex-col">
               <span className="text-lg font-bold text-white">FitZone</span>
               <span className="text-[10px] text-text-muted tracking-[2px]">TEAM</span>
