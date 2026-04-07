@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { verifyToken, getCookieName } from './src/lib/auth'
+import { checkRateLimit } from './src/lib/ratelimit'
 
 const PUBLIC_ADMIN_ROUTES = ['/api/admin/login', '/api/admin/logout']
 const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway']
@@ -7,22 +8,30 @@ const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/
 export async function middleware(request) {
   const { pathname } = request.nextUrl
 
-  // Allow login and logout without auth
+  // 1. Rate limiting (all api routes)
+  if (pathname.startsWith('/api/')) {
+    const blocked = await checkRateLimit(request)
+    if (blocked) {
+      return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+    }
+  }
+
+  // 2. Auth: Allow login and logout without auth
   if (PUBLIC_ADMIN_ROUTES.some(r => pathname.startsWith(r))) {
     return NextResponse.next()
   }
 
-  // Allow GET on public data routes (prices, marketing, etc. are read by the storefront)
+  // 3. Auth: Allow GET on public data routes
   if (request.method === 'GET' && PUBLIC_GET_ROUTES.some(r => pathname.startsWith(r))) {
     return NextResponse.next()
   }
 
-  // Allow public POST to events (analytics tracking)
+  // 4. Auth: Allow public POST to events (analytics tracking)
   if (pathname === '/api/events' && request.method === 'POST') {
     return NextResponse.next()
   }
 
-  // Protect everything else under /api/admin/* and DELETE on /api/events
+  // 5. Auth: Protect everything else
   const token = request.cookies.get(getCookieName())?.value
 
   if (!token) {
@@ -38,5 +47,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/api/admin/:path*', '/api/events'],
+  matcher: ['/api/:path*'],
 }
