@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { validateOrigin } from '../../../../src/lib/csrf'
 
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_currency_prices'
@@ -15,6 +16,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const body = await request.json()
     const toSet = {}

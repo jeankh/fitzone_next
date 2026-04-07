@@ -1,5 +1,7 @@
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { sanitizeObject } from '../../../../src/lib/sanitize'
+import { validateOrigin } from '../../../../src/lib/csrf'
 
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_bank'
@@ -22,11 +24,12 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const body = await request.json()
-    const updates = {}
+    const updates = sanitizeObject(body, ALLOWED)
     for (const key of ALLOWED) {
-      if (key in body) updates[key] = String(body[key])
+      if (key in updates) updates[key] = String(updates[key])
     }
     if (Object.keys(updates).length > 0) await kv.hset(KV_KEY, updates)
     return NextResponse.json({ ok: true })

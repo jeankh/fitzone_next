@@ -12,7 +12,6 @@ export default function CartModal() {
     removeFromCart,
     addToCart,
     getTotal,
-    getSavings,
     getMissingBook,
     wasAutoUpgraded,
     isCartOpen,

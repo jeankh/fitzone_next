@@ -1,5 +1,7 @@
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { sanitize } from '../../../../src/lib/sanitize'
+import { validateOrigin } from '../../../../src/lib/csrf'
 
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_blogs'
@@ -126,23 +128,40 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const post = await request.json()
+
+    // Sanitize all string fields in the post
+    const clean = {}
+    for (const [k, v] of Object.entries(post)) {
+      if (typeof v === 'string') clean[k] = sanitize(v)
+      else if (typeof v === 'object' && v !== null) {
+        const nested = {}
+        for (const [nk, nv] of Object.entries(v)) {
+          nested[nk] = typeof nv === 'string' ? sanitize(nv) : nv
+        }
+        clean[k] = nested
+      } else {
+        clean[k] = v
+      }
+    }
+
     const posts = await getBlogs()
 
-    if (post.id) {
+    if (clean.id) {
       // Update existing
-      const idx = posts.findIndex(p => p.id === post.id)
-      if (idx >= 0) posts[idx] = post
-      else posts.unshift(post)
+      const idx = posts.findIndex(p => p.id === clean.id)
+      if (idx >= 0) posts[idx] = clean
+      else posts.unshift(clean)
     } else {
       // Create new — generate id
-      post.id = Date.now().toString()
-      posts.unshift(post)
+      clean.id = Date.now().toString()
+      posts.unshift(clean)
     }
 
     await kv.set(KV_KEY, JSON.stringify(posts))
-    return NextResponse.json({ ok: true, id: post.id })
+    return NextResponse.json({ ok: true, id: clean.id })
   } catch {
     return NextResponse.json({ error: 'Failed' }, { status: 500 })
   }

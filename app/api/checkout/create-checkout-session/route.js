@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getStripe, PRICE_IDS } from '../../../../src/lib/stripe'
+import { validateOrigin } from '../../../../src/lib/csrf'
 
 export async function POST(req) {
+  if (!validateOrigin(req)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const { items, email, phone, name, lang } = await req.json()
 

@@ -63,7 +63,7 @@ export function CartProvider({ children }) {
     }).catch(() => {
       fetch('/api/admin/prices').then(r => r.json())
         .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition) }))
-        .catch(() => {})
+        .catch((e) => console.error('Failed to load prices:', e))
     })
   }, [])
 

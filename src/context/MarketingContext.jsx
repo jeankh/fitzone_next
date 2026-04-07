@@ -26,7 +26,7 @@ export function MarketingProvider({ children }) {
         for (const [k, v] of Object.entries(data || {})) normalized[k] = String(v)
         setMarketing({ ...DEFAULTS, ...normalized })
       })
-      .catch(() => {})
+      .catch((e) => console.error('Failed to load marketing config:', e))
   }, [])
 
   return (

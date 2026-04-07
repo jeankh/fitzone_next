@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight, ArrowLeft, CreditCard, Smartphone, Building2, Lock,
   Trash2, CheckCircle, ShoppingCart, AlertCircle, ChevronDown,
-  Search, Shield, Zap, User, Mail, Phone, Tag, Gift, ExternalLink
+  Search, Shield, Zap, User, Mail, Phone, Gift, ExternalLink
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { AsYouType, isValidPhoneNumber, isPossiblePhoneNumber, getExampleNumber, parsePhoneNumber } from 'libphonenumber-js'
@@ -305,7 +305,7 @@ export default function CheckoutPage() {
   const [redirecting,     setRedirecting]     = useState(false)
 
   useEffect(() => {
-    fetch('/api/admin/bank').then(r => r.json()).then(setBankDetails).catch(() => {})
+    fetch('/api/admin/bank').then(r => r.json()).then(setBankDetails).catch((e) => console.error('Failed to load bank details:', e))
   }, [])
 
   useEffect(() => {
@@ -317,8 +317,6 @@ export default function CheckoutPage() {
   const [errors,   setErrors]   = useState({})
   const [touched,  setTouched]  = useState({})
   const [agreed,   setAgreed]   = useState(false)
-  const [coupon,   setCoupon]   = useState('')
-  const [couponErr,setCouponErr]= useState('')
   const [showCVV,  setShowCVV]  = useState(false)
 
   const finalTotal = getTotal()
@@ -684,24 +682,6 @@ export default function CheckoutPage() {
                   </>
                 )
               })()}
-
-              {/* Coupon */}
-              <div className="mb-4">
-                <div className="flex gap-2">
-                  <div className="flex-1 flex items-center gap-2 bg-black/30 border border-white/8 rounded-xl px-3 focus-within:border-brand/40 transition-colors">
-                    <Tag size={13} className="text-white/25 shrink-0" />
-                    <input value={coupon} onChange={e => { setCoupon(e.target.value); setCouponErr('') }}
-                      placeholder={lang === 'ar' ? 'كود الخصم' : 'Coupon code'}
-                      className="flex-1 bg-transparent py-2.5 text-white text-sm placeholder:text-white/20 focus:outline-none" />
-                  </div>
-                  <button type="button" onClick={() => setCouponErr(lang === 'ar' ? 'كود غير صالح' : 'Invalid code')}
-                    disabled={!coupon.trim()}
-                    className="px-3 py-2 bg-white/5 border border-white/8 rounded-xl text-white/50 hover:text-white text-sm transition-colors disabled:opacity-30">
-                    {lang === 'ar' ? 'تطبيق' : 'Apply'}
-                  </button>
-                </div>
-                {couponErr && <p className="text-red-400 text-xs mt-1.5 pl-1">{couponErr}</p>}
-              </div>
 
               {/* Divider */}
               <div className="border-t border-white/8 pt-4 mb-4">

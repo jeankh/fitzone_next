@@ -1,6 +1,8 @@
 'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
 
+// Fallback rates (SAR-based). Admin can override per-product prices via /api/admin/currency-prices.
+// These are only used when no admin-configured price exists for a currency.
 const RATES = {
   SAR: { symbol: 'ر.س', symbolEn: 'SAR', rate: 1 },
   USD: { symbol: '$',    symbolEn: 'USD', rate: 0.267 },
@@ -70,7 +72,8 @@ export function CurrencyProvider({ children }) {
         setCountryCode(detectedCountry)
         setLoading(false)
       })
-      .catch(() => {
+      .catch((e) => {
+        console.error('Currency detection failed:', e)
         clearTimeout(timeout)
         setCurrency({ code: 'SAR', ...RATES.SAR })
         setCountryCode('SA')
