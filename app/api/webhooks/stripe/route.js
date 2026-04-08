@@ -96,7 +96,7 @@ export async function POST(req) {
     }
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://fitzone.vercel.app'}/api/events`, {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fitzoneapp.com'}/api/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'purchases' }),

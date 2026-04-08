@@ -17,6 +17,9 @@ export async function POST(request) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return apiError('Invalid email', 400)
     }
+    if (phone && !/^\+?[0-9]{7,15}$/.test(phone.replace(/[\s\-()]/g, ''))) {
+      return apiError('Invalid phone number', 400)
+    }
 
     const user = await createUser({ name: name.trim(), email, password, phone })
     if (!user) {

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Mail, Lock, Loader2, ArrowRight, ArrowLeft, User, Phone } from 'lucide-react'
+import { Mail, Lock, Loader2, ArrowRight, ArrowLeft, User, Phone, Shield, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { useLanguage } from '../../../src/context/LanguageContext'
 import { useUser } from '../../../src/context/UserContext'
 import Link from 'next/link'
@@ -18,6 +18,19 @@ export default function SignupPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight
+
+  const getPasswordStrength = (pw) => {
+    if (!pw) return { score: 0, label: '', color: '' }
+    let score = 0
+    if (pw.length >= 8) score++
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++
+    if (/[0-9]/.test(pw)) score++
+    if (/[^a-zA-Z0-9]/.test(pw)) score++
+    if (score <= 1) return { score, label: lang === 'ar' ? 'ضعيفة' : 'Weak', color: 'bg-red-500' }
+    if (score <= 2) return { score, label: lang === 'ar' ? 'متوسطة' : 'Fair', color: 'bg-yellow-500' }
+    return { score, label: lang === 'ar' ? 'قوية' : 'Strong', color: 'bg-emerald-500' }
+  }
+  const pwStrength = getPasswordStrength(password)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -72,6 +85,16 @@ export default function SignupPage() {
               className="flex-1 bg-transparent text-white text-sm placeholder:text-white/20 focus:outline-none"
             />
           </div>
+          {password && (
+            <div className="space-y-1">
+              <div className="flex gap-1">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= pwStrength.score ? pwStrength.color : 'bg-white/10'}`} />
+                ))}
+              </div>
+              <p className={`text-xs ${pwStrength.color.replace('bg-', 'text-')}`}>{pwStrength.label}</p>
+            </div>
+          )}
           <div className="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 focus-within:border-brand/40 transition-colors">
             <Phone size={16} className="text-white/30 shrink-0" />
             <input

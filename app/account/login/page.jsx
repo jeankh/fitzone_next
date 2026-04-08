@@ -89,13 +89,20 @@ export default function LoginPage() {
                   className="flex-1 bg-transparent text-white text-sm placeholder:text-white/20 focus:outline-none"
                 />
               </div>
-              <div className="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 focus-within:border-brand/40 transition-colors">
-                <Lock size={16} className="text-white/30 shrink-0" />
-                <input
-                  type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                  placeholder={lang === 'ar' ? 'كلمة المرور' : 'Password'}
-                  className="flex-1 bg-transparent text-white text-sm placeholder:text-white/20 focus:outline-none"
-                />
+              <div>
+                <div className="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 focus-within:border-brand/40 transition-colors">
+                  <Lock size={16} className="text-white/30 shrink-0" />
+                  <input
+                    type="password" value={password} onChange={e => setPassword(e.target.value)} required
+                    placeholder={lang === 'ar' ? 'كلمة المرور' : 'Password'}
+                    className="flex-1 bg-transparent text-white text-sm placeholder:text-white/20 focus:outline-none"
+                  />
+                </div>
+                <div className="flex justify-end mt-1.5">
+                  <button type="button" onClick={handleMagicLink} disabled={magicSending} className="text-white/30 text-xs hover:text-brand transition-colors disabled:opacity-50">
+                    {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+                  </button>
+                </div>
               </div>
 
               {error && <p className="text-red-400 text-xs text-center">{error}</p>}
