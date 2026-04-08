@@ -4,8 +4,8 @@ import { getRedis } from '../../../../src/lib/redis'
 
 const PURCHASES_KEY = 'fitzone_purchases'
 
-function getResend() {
-  const { Resend } = require('resend')
+async function getResend() {
+  const { default: Resend } = await import('resend')
   return new Resend(process.env.RESEND_API_KEY)
 }
 
@@ -35,7 +35,7 @@ async function sendConfirmationEmail({ email, name, items, lang }) {
         <p style="color:#999;font-size:13px;margin-top:24px">We'll reach out via WhatsApp shortly to deliver your products. Thank you for trusting us! 🙏</p>
       </div>`
 
-  return getResend().emails.send({
+  return (await getResend()).emails.send({
     from: process.env.FROM_EMAIL || 'orders@fitzone.com',
     to: email,
     subject,

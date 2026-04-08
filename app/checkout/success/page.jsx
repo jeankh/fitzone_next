@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { CheckCircle, ArrowRight, ArrowLeft, Mail, Phone, Loader2, MessageCircle, Clock, BookOpen, Gift, Sparkles, Copy, Check } from 'lucide-react'
@@ -41,7 +41,15 @@ function Confetti() {
   )
 }
 
-export default function SuccessPage() {
+export default function SuccessPageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 size={36} className="text-brand animate-spin" /></div>}>
+      <SuccessPage />
+    </Suspense>
+  )
+}
+
+function SuccessPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { lang } = useLanguage()
@@ -51,8 +59,11 @@ export default function SuccessPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showConfetti, setShowConfetti] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [copied, setCopied] = useState(false)
   const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight
+
+  useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id')
@@ -108,7 +119,7 @@ export default function SuccessPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      {showConfetti && <Confetti />}
+      {mounted && showConfetti && <Confetti />}
 
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg">
 

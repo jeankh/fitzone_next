@@ -62,10 +62,10 @@ export async function getUserByEmail(email) {
   return data
 }
 
-export async function createUser({ name, email, password, phone }) {
+export async function createUser({ name, email, password, phone, hasPassword = true }) {
   const kv = getRedis()
   const normalizedEmail = email.toLowerCase().trim()
-  const hashed = await bcrypt.hash(password, 12)
+  const hashed = password ? await bcrypt.hash(password, 12) : ''
 
   const user = {
     id: randomUUID(),
@@ -73,6 +73,7 @@ export async function createUser({ name, email, password, phone }) {
     email: normalizedEmail,
     password: hashed,
     phone: phone || '',
+    hasPassword,
     createdAt: new Date().toISOString(),
   }
 
@@ -81,12 +82,40 @@ export async function createUser({ name, email, password, phone }) {
   return user
 }
 
+async function updateUserInRedis(user) {
+  const kv = getRedis()
+  await kv.hset(USERS_KEY, { [user.email.toLowerCase()]: JSON.stringify(user) })
+}
+
 export async function verifyPassword(user, plainPassword) {
   try {
-    return await bcrypt.compare(plainPassword, user.password)
+    // Try bcrypt first
+    const match = await bcrypt.compare(plainPassword, user.password)
+    if (match) return true
+
+    // Migration: check if stored password is plaintext (old users)
+    if (user.password === plainPassword) {
+      const hashed = await bcrypt.hash(plainPassword, 12)
+      await updateUserInRedis({ ...user, password: hashed })
+      return true
+    }
+
+    return false
   } catch {
     return false
   }
+}
+
+export async function setUserPassword(email, newPassword) {
+  const kv = getRedis()
+  const normalizedEmail = email.toLowerCase()
+  const raw = await kv.hget(USERS_KEY, normalizedEmail)
+  if (!raw) return false
+  const user = typeof raw === 'string' ? JSON.parse(raw) : raw
+  user.password = await bcrypt.hash(newPassword, 12)
+  user.hasPassword = true
+  await kv.hset(USERS_KEY, { [normalizedEmail]: JSON.stringify(user) })
+  return true
 }
 
 export async function getUserPurchases(userId, page = 0, limit = 20) {
@@ -105,10 +134,6 @@ export async function addUserPurchase(userId, purchase) {
   await kv.lpush(key, JSON.stringify(purchase))
 }
 
-export function generatePassword() {
-  return randomBytes(6).toString('hex')
-}
-
 export async function getOrCreateUser({ name, email, phone }) {
   const normalizedEmail = email.toLowerCase().trim()
   const existing = await getUserByEmail(normalizedEmail)
@@ -117,21 +142,19 @@ export async function getOrCreateUser({ name, email, phone }) {
     return { user, isNew: false }
   }
 
-  const password = generatePassword()
-  const user = await createUser({ name, email: normalizedEmail, password, phone })
+  const user = await createUser({ name, email: normalizedEmail, password: '', phone, hasPassword: false })
   if (!user) {
     const existingRetry = await getUserByEmail(normalizedEmail)
     const u = typeof existingRetry === 'string' ? JSON.parse(existingRetry) : existingRetry
     return { user: u, isNew: false }
   }
-  return { user, isNew: true, generatedPassword: password }
+  return { user, isNew: true }
 }
 
-// Magic link tokens
 export async function createMagicToken(userId) {
   const kv = getRedis()
   const token = randomBytes(16).toString('hex')
-  await kv.set(`${MAGIC_LINK_PREFIX}${token}`, userId, { ex: 900 }) // 15 min
+  await kv.set(`${MAGIC_LINK_PREFIX}${token}`, userId, { ex: 900 })
   return token
 }
 
@@ -157,14 +180,13 @@ export async function getUserById(userId) {
   return null
 }
 
-// Login rate limiting
 export async function checkLoginAttempts(email) {
   const kv = getRedis()
   const key = `login_attempts:${email.toLowerCase()}`
   const count = Number(await kv.get(key)) || 0
   if (count >= 5) return false
   await kv.incr(key)
-  await kv.expire(key, 900) // 15 min window
+  await kv.expire(key, 900)
   return true
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getStripe } from '../../../../src/lib/stripe'
 import { getOrCreateUser, addUserPurchase, createMagicToken } from '../../../../src/lib/user-auth'
+import { getRedis } from '../../../../src/lib/redis'
 
 const PURCHASES_KEY = 'fitzone_purchases'
 
@@ -8,8 +9,8 @@ function escapeHtml(str) {
   return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-function getResend() {
-  const { Resend } = require('resend')
+async function getResend() {
+  const { default: Resend } = await import('resend')
   return new Resend(process.env.RESEND_API_KEY)
 }
 
@@ -42,6 +43,9 @@ export async function GET(req) {
 
         const purchase = {
           id: session.id,
+          email: buyerEmail || '',
+          phone: session.metadata?.phone || '',
+          name: session.metadata?.name || '',
           items: session.metadata?.items || '',
           amount: session.amount_total || 0,
           currency: session.currency || 'sar',
@@ -49,6 +53,19 @@ export async function GET(req) {
           createdAt: new Date().toISOString(),
         }
         await addUserPurchase(user.id, purchase)
+
+        // Also store in admin purchases list
+        try {
+          const kv = getRedis()
+          const existing = await kv.lrange(PURCHASES_KEY, 0, -1)
+          const alreadyStored = existing.some(item => {
+            try { return JSON.parse(item).id === session.id } catch { return false }
+          })
+          if (!alreadyStored) {
+            await kv.lpush(PURCHASES_KEY, JSON.stringify(purchase))
+          }
+        } catch {}
+
         accountCreated = isNew
 
         // Send magic link email for new accounts
@@ -74,7 +91,7 @@ export async function GET(req) {
                   <p style="color:#666;font-size:11px;margin-top:12px">This link expires in 15 minutes.</p>
                 </div>`
 
-            getResend().emails.send({
+            (await getResend()).emails.send({
               from: process.env.FROM_EMAIL || 'orders@fitzone.com',
               to: buyerEmail,
               subject,

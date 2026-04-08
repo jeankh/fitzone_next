@@ -67,8 +67,8 @@ export default function SignupPage() {
           <div className="flex items-center gap-3 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 focus-within:border-brand/40 transition-colors">
             <Lock size={16} className="text-white/30 shrink-0" />
             <input
-              type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
-              placeholder={lang === 'ar' ? 'كلمة المرور (6 أحرف على الأقل)' : 'Password (6+ characters)'}
+              type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8}
+              placeholder={lang === 'ar' ? 'كلمة المرور (8 أحرف، حرف + رقم)' : 'Password (8+ chars, letter + number)'}
               className="flex-1 bg-transparent text-white text-sm placeholder:text-white/20 focus:outline-none"
             />
           </div>

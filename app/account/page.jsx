@@ -1,8 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Mail, Phone, LogOut, Loader2, Package, Download, ExternalLink, Clock, BookOpen, RefreshCw, MessageCircle, User } from 'lucide-react'
+import { Mail, Phone, LogOut, Loader2, Package, Download, Clock, RefreshCw, MessageCircle, User, Lock, CheckCircle } from 'lucide-react'
 import { useLanguage } from '../../src/context/LanguageContext'
 import { useUser } from '../../src/context/UserContext'
 import { useMarketing } from '../../src/context/MarketingContext'
@@ -28,24 +28,56 @@ function getBookInfo(id, lang) {
 
 export default function AccountPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isWelcome = searchParams.get('welcome') === 'true'
   const { lang } = useLanguage()
   const { user, loading: userLoading, refetch } = useUser()
   const marketing = useMarketing()
   const [purchases, setPurchases] = useState([])
   const [purchasesLoading, setPurchasesLoading] = useState(true)
+  const [newPassword, setNewPassword] = useState('')
+  const [savingPw, setSavingPw] = useState(false)
+  const [pwSaved, setPwSaved] = useState(false)
+  const [pwError, setPwError] = useState('')
+  const fetchedRef = useRef(false)
+
+  const needsPassword = isWelcome || user?.hasPassword === false
 
   useEffect(() => {
-    if (userLoading) return
+    if (userLoading || fetchedRef.current) return
     if (!user) { router.push('/account/login'); return }
+    fetchedRef.current = true
     fetch('/api/user/purchases').then(r => r.json()).then(data => {
       setPurchases(data.purchases || [])
-    }).catch(() => {}).finally(() => setPurchasesLoading(false))
+    }).catch((e) => console.error('Failed to load purchases:', e)).finally(() => setPurchasesLoading(false))
   }, [user, userLoading, router])
 
   const handleLogout = async () => {
     await fetch('/api/user/logout', { method: 'POST' }).catch(() => {})
     refetch()
     router.push('/')
+  }
+
+  const handleSetPassword = async (e) => {
+    e.preventDefault()
+    if (newPassword.length < 8 || !/[0-9]/.test(newPassword) || !/[a-zA-Z]/.test(newPassword)) {
+      setPwError(lang === 'ar' ? '8 أحرف على الأقل مع حرف ورقم' : '8+ chars with at least one letter and one number')
+      return
+    }
+    setSavingPw(true)
+    setPwError('')
+    try {
+      const res = await fetch('/api/user/set-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+      })
+      if (res.ok) {
+        setPwSaved(true)
+        refetch()
+      }
+    } catch {}
+    setSavingPw(false)
   }
 
   if (userLoading || !user) return (
@@ -59,6 +91,46 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-background px-4 py-12" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="max-w-2xl mx-auto space-y-6">
+
+        {/* Set password card */}
+        {needsPassword && !pwSaved && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-brand/5 border border-brand/20 rounded-3xl p-6">
+            <h2 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+              <Lock size={18} className="text-brand" />
+              {lang === 'ar' ? 'عيّن كلمة مرورك' : 'Set Your Password'}
+            </h2>
+            <p className="text-white/50 text-sm mb-4">
+              {lang === 'ar'
+                ? 'عيّن كلمة مرور لتتمكن من تسجيل الدخول مباشرة في المرة القادمة.'
+                : 'Set a password so you can sign in directly next time.'}
+            </p>
+            <form onSubmit={handleSetPassword} className="flex gap-2">
+              <div className="flex-1 flex items-center gap-2 bg-black/30 border border-white/10 rounded-xl px-3 py-2.5 focus-within:border-brand/40 transition-colors">
+                <Lock size={14} className="text-white/30 shrink-0" />
+                <input
+                  type="password" value={newPassword} onChange={e => { setNewPassword(e.target.value); setPwError('') }}
+                  placeholder={lang === 'ar' ? 'كلمة المرور (8 أحرف، حرف + رقم)' : 'Password (8+ chars, letter + number)'}
+                  className="flex-1 bg-transparent text-white text-sm placeholder:text-white/20 focus:outline-none"
+                  minLength={8}
+                />
+              </div>
+              <button type="submit" disabled={savingPw}
+                className="bg-brand text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-brand-dark transition-colors disabled:opacity-50">
+                {savingPw ? <Loader2 size={16} className="animate-spin" /> : (lang === 'ar' ? 'حفظ' : 'Save')}
+              </button>
+            </form>
+            {pwError && <p className="text-red-400 text-xs mt-2">{pwError}</p>}
+          </motion.div>
+        )}
+
+        {pwSaved && (
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3">
+            <CheckCircle size={18} className="text-emerald-400 shrink-0" />
+            <p className="text-emerald-300 text-sm">{lang === 'ar' ? 'تم حفظ كلمة المرور بنجاح!' : 'Password saved successfully!'}</p>
+          </motion.div>
+        )}
 
         {/* Profile card */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -121,7 +193,6 @@ export default function AccountPage() {
                 const items = (p.items || '').split(',').filter(Boolean)
                 return (
                   <div key={p.id || i} className="p-5 space-y-3">
-                    {/* Date + status */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-white/40 text-xs">
                         <Clock size={11} />
@@ -130,7 +201,6 @@ export default function AccountPage() {
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">{p.status || 'paid'}</span>
                     </div>
 
-                    {/* Items */}
                     <div className="space-y-2">
                       {items.map(id => {
                         const book = getBookInfo(id, lang)
@@ -148,13 +218,11 @@ export default function AccountPage() {
                       })}
                     </div>
 
-                    {/* Total */}
                     <div className="flex items-center justify-between pt-1">
                       <span className="text-white/40 text-xs">{lang === 'ar' ? 'الإجمالي' : 'Total'}</span>
                       <span className="text-white font-bold text-sm">{(p.amount / 100).toFixed(0)} {(p.currency || 'sar').toUpperCase()}</span>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-2 pt-1">
                       <a href={whatsappLink} target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1.5 text-xs text-emerald-400 border border-emerald-400/30 px-3 py-2 rounded-lg hover:bg-emerald-400/5 transition-colors">

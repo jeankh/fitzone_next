@@ -5,7 +5,7 @@ import { verifyUserToken } from './src/lib/user-auth'
 
 const PUBLIC_ADMIN_ROUTES = ['/api/admin/login', '/api/admin/logout']
 const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway', '/api/checkout/success', '/api/giveaway/info']
-const PUBLIC_POST_ROUTES = ['/api/checkout/create-checkout-session', '/api/giveaway/enter', '/api/webhooks/stripe', '/api/user/signup', '/api/user/login', '/api/user/logout']
+const PUBLIC_POST_ROUTES = ['/api/checkout/create-checkout-session', '/api/giveaway/enter', '/api/webhooks/stripe', '/api/user/signup', '/api/user/login', '/api/user/logout', '/api/user/send-magic']
 const USER_GET_ROUTES = ['/api/user/me', '/api/user/purchases', '/api/user/verify-magic']
 
 export async function middleware(request) {
