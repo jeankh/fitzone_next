@@ -89,7 +89,7 @@ export default function AccountPage() {
   const whatsappLink = `https://wa.me/${marketing.whatsapp}`
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-background px-4 pt-28 pb-12" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="max-w-2xl mx-auto space-y-6">
 
         {/* Set password card */}

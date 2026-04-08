@@ -38,7 +38,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen flex items-center justify-center px-4 pt-28 pb-12 bg-background" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
         <h1 className="text-2xl font-extrabold text-white text-center mb-2">
           {lang === 'ar' ? 'إنشاء حساب' : 'Create Account'}

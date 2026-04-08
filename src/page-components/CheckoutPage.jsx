@@ -12,6 +12,7 @@ import examples from 'libphonenumber-js/mobile/examples'
 import { useLanguage } from '../context/LanguageContext'
 import { useCart, trackEvent } from '../context/CartContext'
 import { useCurrency } from '../context/CurrencyContext'
+import { useUser } from '../context/UserContext'
 import Image from 'next/image'
 
 // ── Country list — no manual patterns, libphonenumber-js handles all validation
@@ -318,6 +319,18 @@ export default function CheckoutPage() {
   const [touched,  setTouched]  = useState({})
   const [agreed,   setAgreed]   = useState(false)
   const [showCVV,  setShowCVV]  = useState(false)
+  const { user } = useUser()
+
+  useEffect(() => {
+    if (user && !formData.name && !formData.email) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || '',
+        email: user.email || '',
+        phone: user.phone || prev.phone,
+      }))
+    }
+  }, [user])
 
   const finalTotal = getTotal()
 
