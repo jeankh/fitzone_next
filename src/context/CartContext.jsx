@@ -1,10 +1,11 @@
 'use client'
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useUser } from './UserContext'
 
+const STORAGE_KEY = 'fitzone_cart'
 const INDIVIDUAL_BOOKS = ['transformation', 'nutrition']
 const BUNDLE_ID = 'bundle'
-
 const DEFAULT_PRICES = { transformation: 79, nutrition: 79 }
 
 export const BOOKS_DATA = {
@@ -32,7 +33,6 @@ export const BOOKS_DATA = {
   },
 }
 
-// ── Event tracking ──────────────────────────────────────────────────────────
 export function trackEvent(key) {
   try {
     fetch('/api/events', {
@@ -43,29 +43,91 @@ export function trackEvent(key) {
   } catch {}
 }
 
+function readLocalCart() {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch { return [] }
+}
+
+function writeLocalCart(cart) {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cart)) } catch {}
+}
+
+async function saveServerCart(cart) {
+  try {
+    await fetch('/api/user/cart', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cart }),
+    })
+  } catch {}
+}
+
+async function loadServerCart() {
+  try {
+    const res = await fetch('/api/user/cart')
+    if (res.ok) {
+      const data = await res.json()
+      return Array.isArray(data.cart) ? data.cart : []
+    }
+  } catch {}
+  return null
+}
+
 const CartContext = createContext()
 
 export function CartProvider({ children }) {
   const router = useRouter()
+  const { user } = useUser()
   const [cart, setCart] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [wasAutoUpgraded, setWasAutoUpgraded] = useState(false)
   const [prices, setPrices] = useState(DEFAULT_PRICES)
   const [currencyPrices, setCurrencyPrices] = useState({})
+  const [hydrated, setHydrated] = useState(false)
+  const userRef = useRef(user)
+  userRef.current = user
 
+  // Hydrate cart from localStorage on mount
   useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/prices').then(r => r.json()),
-      fetch('/api/admin/currency-prices').then(r => r.json()),
-    ]).then(([basePrices, cpData]) => {
-      setPrices({ transformation: Number(basePrices.transformation), nutrition: Number(basePrices.nutrition) })
-      setCurrencyPrices(cpData || {})
-    }).catch(() => {
-      fetch('/api/admin/prices').then(r => r.json())
-        .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition) }))
-        .catch((e) => console.error('Failed to load prices:', e))
-    })
+    const local = readLocalCart()
+    setCart(local)
+    setHydrated(true)
   }, [])
+
+  // When user logs in, merge: load server cart, merge with local, persist both
+  useEffect(() => {
+    if (!hydrated) return
+    if (user) {
+      (async () => {
+        const serverCart = await loadServerCart()
+        if (serverCart && serverCart.length > 0) {
+          const local = readLocalCart()
+          const merged = mergeCarts(local, serverCart)
+          setCart(merged)
+          writeLocalCart(merged)
+          await saveServerCart(merged)
+        } else {
+          await saveServerCart(readLocalCart())
+        }
+      })()
+    }
+  }, [hydrated, !!user])
+
+  // Sync cart to localStorage + server whenever it changes (after hydration)
+  const prevCartRef = useRef(cart)
+  useEffect(() => {
+    if (!hydrated) return
+    if (cart === prevCartRef.current) return
+    prevCartRef.current = cart
+    writeLocalCart(cart)
+    if (userRef.current) saveServerCart(cart)
+  }, [cart, hydrated])
 
   const getPrice = (id) => {
     if (id === 'transformation') return prices.transformation
@@ -74,7 +136,6 @@ export function CartProvider({ children }) {
     return 0
   }
 
-  // Returns override price in the given currency code, or null if no override (use formatPrice instead)
   const getCurrencyPrice = (id, currencyCode) => {
     if (!currencyCode) return null
     if (id === 'bundle') {
@@ -95,57 +156,73 @@ export function CartProvider({ children }) {
     bundle: { ...BOOKS_DATA.bundle, price: prices.transformation + prices.nutrition },
   })
 
-  const addToCart = (item) => {
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/admin/prices').then(r => r.json()),
+      fetch('/api/admin/currency-prices').then(r => r.json()),
+    ]).then(([basePrices, cpData]) => {
+      setPrices({ transformation: Number(basePrices.transformation), nutrition: Number(basePrices.nutrition) })
+      setCurrencyPrices(cpData || {})
+    }).catch(() => {
+      fetch('/api/admin/prices').then(r => r.json())
+        .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition) }))
+        .catch((e) => console.error('Failed to load prices:', e))
+    })
+  }, [])
+
+  const addToCart = useCallback((item) => {
     const id = typeof item === 'string' ? item : item.id
-    if (cart.includes(id)) return
 
-    if (id === BUNDLE_ID) {
+    setCart(prev => {
+      if (prev.includes(id)) return prev
+
+      if (id === BUNDLE_ID) {
+        setWasAutoUpgraded(false)
+        trackEvent('cart_adds')
+        if (typeof window.gtag === 'function') window.gtag('event', 'add_to_cart', { item_id: id, value: getPrice(id) })
+        return [BUNDLE_ID]
+      }
+
+      const next = [...prev, id]
+      const hasAll = INDIVIDUAL_BOOKS.every(b => next.includes(b))
+
+      if (hasAll) {
+        setWasAutoUpgraded(true)
+        trackEvent('cart_adds')
+        trackEvent('bundle_upgrades')
+        if (typeof window.gtag === 'function') window.gtag('event', 'add_to_cart', { item_id: BUNDLE_ID, value: getPrice(BUNDLE_ID) })
+        return [BUNDLE_ID]
+      }
+
       setWasAutoUpgraded(false)
-      setCart([BUNDLE_ID])
       trackEvent('cart_adds')
       if (typeof window.gtag === 'function') window.gtag('event', 'add_to_cart', { item_id: id, value: getPrice(id) })
-      return
-    }
+      return next
+    })
+  }, [getPrice])
 
-    const next = [...cart, id]
-    const hasAll = INDIVIDUAL_BOOKS.every(b => next.includes(b))
-
-    if (hasAll) {
-      setWasAutoUpgraded(true)
-      setCart([BUNDLE_ID])
-      trackEvent('cart_adds')
-      trackEvent('bundle_upgrades')
-      if (typeof window.gtag === 'function') window.gtag('event', 'add_to_cart', { item_id: BUNDLE_ID, value: getPrice(BUNDLE_ID) })
-    } else {
-      setWasAutoUpgraded(false)
-      setCart(next)
-      trackEvent('cart_adds')
-      if (typeof window.gtag === 'function') window.gtag('event', 'add_to_cart', { item_id: id, value: getPrice(id) })
-    }
-  }
-
-  const removeFromCart = (id) => {
+  const removeFromCart = useCallback((id) => {
     setWasAutoUpgraded(false)
     setCart(prev => prev.filter(item => item !== id))
-  }
+  }, [])
 
-  const clearCart = () => setCart([])
-  const isInCart = (id) => cart.includes(id)
-  const getTotal = () => cart.reduce((sum, id) => sum + getPrice(id), 0)
+  const clearCart = useCallback(() => setCart([]), [])
+  const isInCart = useCallback((id) => cart.includes(id), [cart])
+  const getTotal = useCallback(() => cart.reduce((sum, id) => sum + getPrice(id), 0), [cart, getPrice])
 
-  const getMissingBook = () => {
+  const getMissingBook = useCallback(() => {
     if (cart.includes(BUNDLE_ID)) return null
     const inCart = INDIVIDUAL_BOOKS.filter(id => cart.includes(id))
     if (inCart.length !== 1) return null
     return INDIVIDUAL_BOOKS.find(id => !cart.includes(id))
-  }
+  }, [cart])
 
-  const openCheckout = () => {
+  const openCheckout = useCallback(() => {
     trackEvent('checkout_starts')
     if (typeof window.gtag === 'function') window.gtag('event', 'begin_checkout', { value: getTotal(), currency: 'SAR' })
     setIsCartOpen(false)
     router.push('/checkout')
-  }
+  }, [getTotal, router])
 
   return (
     <CartContext.Provider value={{
@@ -168,6 +245,13 @@ export function CartProvider({ children }) {
       {children}
     </CartContext.Provider>
   )
+}
+
+function mergeCarts(local, server) {
+  const combined = new Set([...server, ...local])
+  if (combined.has(BUNDLE_ID)) return [BUNDLE_ID]
+  if (combined.has('transformation') && combined.has('nutrition')) return [BUNDLE_ID]
+  return [...combined]
 }
 
 export function useCart() {

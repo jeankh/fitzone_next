@@ -4,7 +4,7 @@ import { checkRateLimit } from './src/lib/ratelimit'
 import { verifyUserToken } from './src/lib/user-auth'
 
 const PUBLIC_ADMIN_ROUTES = ['/api/admin/login', '/api/admin/logout']
-const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway', '/api/checkout/success', '/api/giveaway/info', '/api/user/me', '/api/user/purchases', '/api/user/verify-magic']
+const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/bank', '/api/admin/blogs', '/api/admin/giveaway', '/api/checkout/success', '/api/giveaway/info', '/api/user/me', '/api/user/purchases', '/api/user/verify-magic', '/api/user/cart']
 const PUBLIC_POST_ROUTES = ['/api/checkout/create-checkout-session', '/api/giveaway/enter', '/api/webhooks/stripe', '/api/user/signup', '/api/user/login', '/api/user/logout', '/api/user/send-magic', '/api/user/set-password']
 
 export async function middleware(request) {
@@ -30,6 +30,11 @@ export async function middleware(request) {
 
   // 4. Auth: Allow public POST to checkout, giveaway, webhooks, user signup/login/logout
   if (request.method === 'POST' && PUBLIC_POST_ROUTES.some(r => pathname === r)) {
+    return NextResponse.next()
+  }
+
+  // 4b. Allow user cart PUT (authenticated via user token inside handler)
+  if (pathname === '/api/user/cart' && request.method === 'PUT') {
     return NextResponse.next()
   }
 
