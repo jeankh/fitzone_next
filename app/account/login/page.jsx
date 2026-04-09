@@ -37,6 +37,29 @@ export default function LoginPage() {
     finally { setLoading(false) }
   }
 
+  const [resetSending, setResetSending] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) { setError(lang === 'ar' ? 'أدخل بريدك الإلكتروني أولاً' : 'Enter your email first'); return }
+    setResetSending(true)
+    setError('')
+    try {
+      const res = await fetch('/api/user/send-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (res.ok) {
+        setResetSent(true)
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to send')
+      }
+    } catch { setError('Something went wrong') }
+    finally { setResetSending(false) }
+  }
+
   const handleMagicLink = async () => {
     if (!email.trim()) { setError(lang === 'ar' ? 'أدخل بريدك الإلكتروني أولاً' : 'Enter your email first'); return }
     setMagicSending(true)
@@ -67,14 +90,18 @@ export default function LoginPage() {
           {lang === 'ar' ? 'أدخل بياناتك للوصول إلى حسابك' : 'Enter your credentials to access your account'}
         </p>
 
-        {magicSent ? (
+        {resetSent || magicSent ? (
           <div className="text-center space-y-4">
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6">
               <Mail size={28} className="text-emerald-400 mx-auto mb-3" />
               <p className="text-white font-semibold mb-2">{lang === 'ar' ? 'تم الإرسال!' : 'Email Sent!'}</p>
-              <p className="text-white/50 text-sm">{lang === 'ar' ? 'تحقق من بريدك الإلكتروني للحصول على رابط الدخول' : 'Check your email for a login link'}</p>
+              <p className="text-white/50 text-sm">
+                {resetSent
+                  ? (lang === 'ar' ? 'تحقق من بريدك الإلكتروني للحصول على رابط إعادة التعيين' : 'Check your email for a password reset link')
+                  : (lang === 'ar' ? 'تحقق من بريدك الإلكتروني للحصول على رابط الدخول' : 'Check your email for a login link')}
+              </p>
             </div>
-            <button onClick={() => setMagicSent(false)} className="text-white/40 text-sm hover:text-white transition-colors">
+            <button onClick={() => { setResetSent(false); setMagicSent(false) }} className="text-white/40 text-sm hover:text-white transition-colors">
               {lang === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to sign in'}
             </button>
           </div>
@@ -99,7 +126,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="flex justify-end mt-1.5">
-                  <button type="button" onClick={handleMagicLink} disabled={magicSending} className="text-white/30 text-xs hover:text-brand transition-colors disabled:opacity-50">
+                  <button type="button" onClick={handleForgotPassword} disabled={resetSending} className="text-white/30 text-xs hover:text-brand transition-colors disabled:opacity-50">
                     {lang === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
                   </button>
                 </div>

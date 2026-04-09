@@ -8,6 +8,7 @@ const COOKIE_MAX_AGE = 30 * 24 * 60 * 60
 const USERS_KEY = 'fitzone_users'
 const USER_PURCHASES_PREFIX = 'fitzone_user_purchases_'
 const MAGIC_LINK_PREFIX = 'fitzone_magic_'
+const RESET_PREFIX = 'fitzone_reset_'
 
 function getSecret() {
   const secret = process.env.USER_JWT_SECRET || process.env.JWT_SECRET
@@ -178,6 +179,40 @@ export async function getUserById(userId) {
     } catch {}
   }
   return null
+}
+
+export async function createPasswordResetToken(userId) {
+  const kv = getRedis()
+  const token = randomBytes(16).toString('hex')
+  await kv.set(`${RESET_PREFIX}${token}`, userId, { ex: 900 })
+  return token
+}
+
+export async function consumePasswordResetToken(token) {
+  const kv = getRedis()
+  const key = `${RESET_PREFIX}${token}`
+  const userId = await kv.get(key)
+  if (!userId) return null
+  await kv.del(key)
+  return userId
+}
+
+export async function resetUserPassword(userId, newPassword) {
+  const kv = getRedis()
+  const all = await kv.hgetall(USERS_KEY)
+  if (!all) return false
+  for (const [email, raw] of Object.entries(all)) {
+    try {
+      const user = typeof raw === 'string' ? JSON.parse(raw) : raw
+      if (user.id === userId) {
+        user.password = await bcrypt.hash(newPassword, 12)
+        user.hasPassword = true
+        await kv.hset(USERS_KEY, { [email]: JSON.stringify(user) })
+        return true
+      }
+    } catch {}
+  }
+  return false
 }
 
 export async function checkLoginAttempts(email) {
