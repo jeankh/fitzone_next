@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getUserByEmail, createPasswordResetToken } from '../../../../src/lib/user-auth'
 import { apiError } from '../../../../src/lib/api-utils'
+import { validateOrigin } from '../../../../src/lib/csrf'
 
 export async function POST(request) {
+  if (!validateOrigin(request)) return apiError('Forbidden', 403)
   try {
     const { email } = await request.json()
     if (!email?.trim()) return apiError('Email is required', 400)

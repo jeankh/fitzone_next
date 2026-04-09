@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { verifyUserToken } from '../../../../src/lib/user-auth'
 import { getRedis } from '../../../../src/lib/redis'
+import { validateOrigin } from '../../../../src/lib/csrf'
 
 const CART_PREFIX = 'fitzone_cart_'
 
@@ -22,6 +23,7 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
+  if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const token = request.cookies.get('fitzone_user_token')?.value
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

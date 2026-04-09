@@ -1,6 +1,8 @@
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
+import { validateOrigin } from '../../../../src/lib/csrf'
+import { sanitize } from '../../../../src/lib/sanitize'
 
 const kv = Redis.fromEnv()
 const CONFIG_KEY  = 'fitzone_giveaway'
@@ -12,6 +14,7 @@ function makeCode() {
 }
 
 export async function POST(request) {
+  if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const body = await request.json()
     const { name, email, phone, referredBy, optIn, _hp } = body
@@ -23,7 +26,10 @@ export async function POST(request) {
     if (!name?.trim() || !email?.trim() || !phone?.trim()) {
       return NextResponse.json({ error: 'all_fields_required' }, { status: 400 })
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const cleanName = sanitize(name).slice(0, 100)
+    const cleanEmail = sanitize(email).slice(0, 200)
+    const cleanPhone = sanitize(phone).slice(0, 30)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
       return NextResponse.json({ error: 'invalid_email' }, { status: 400 })
     }
 
@@ -43,7 +49,7 @@ export async function POST(request) {
       }
     }
 
-    const normalizedEmail = email.toLowerCase().trim()
+    const normalizedEmail = cleanEmail.toLowerCase().trim()
 
     const added = await kv.sadd(EMAIL_SET, normalizedEmail)
     if (added === 0) {
@@ -65,9 +71,9 @@ export async function POST(request) {
     const totalEntries = baseEntries + bonusEntries
 
     const entry = {
-      name:         name.trim(),
-      email:        email.trim(),
-      phone:        phone.trim(),
+      name:         cleanName,
+      email:        cleanEmail,
+      phone:        cleanPhone,
       enteredAt:    new Date().toISOString(),
       referralCode,
       referredBy:   referrerEntry?.email || null,

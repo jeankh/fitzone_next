@@ -7,7 +7,10 @@ export async function POST(req) {
     const { password } = await req.json()
 
     const adminPw = process.env.ADMIN_PASSWORD || ''
-    if (!password || !timingSafeEqual(Buffer.from(password), Buffer.from(adminPw))) {
+    if (!password) return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
+    const pwBuf = Buffer.from(String(password))
+    const adminBuf = Buffer.from(adminPw)
+    if (pwBuf.length !== adminBuf.length || !timingSafeEqual(pwBuf, adminBuf)) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
     }
 

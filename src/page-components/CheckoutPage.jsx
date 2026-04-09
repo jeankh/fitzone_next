@@ -7,8 +7,7 @@ import {
   Search, Shield, Zap, User, Mail, Phone, Gift, ExternalLink
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { AsYouType, isValidPhoneNumber, isPossiblePhoneNumber, getExampleNumber, parsePhoneNumber } from 'libphonenumber-js'
-import examples from 'libphonenumber-js/mobile/examples'
+import { AsYouType, isPossiblePhoneNumber } from 'libphonenumber-js'
 import { useLanguage } from '../context/LanguageContext'
 import { useCart, trackEvent } from '../context/CartContext'
 import { useCurrency } from '../context/CurrencyContext'
@@ -55,16 +54,12 @@ const COUNTRIES = [
   { code: 'GR', flag: '🇬🇷', dial: '+30',  name: 'Greece',           nameAr: 'اليونان'          },
 ]
 
-// Get the example national number for a country (used as placeholder)
+const PLACEHOLDERS = { SA: '05X XXX XXXX', AE: '05X XXX XXXX', KW: 'XXXX XXXX', QA: 'XXXX XXXX', BH: 'XXXX XXXX', OM: '9XXX XXXX', JO: '7XXX XXXX', EG: '0XX XXXX XXXX', LB: 'XX XXX XXX', IQ: '7XX XXX XXXX', SY: '9XX XXX XXX', PS: '5X XXX XXXX', YE: '7XX XXX XXX', LY: '09XX XXXXXX', TN: 'XX XXX XXX', DZ: '0XX XX XX XX', MA: '06XX XXXXXX', TR: '5XX XXX XX XX', GB: '07XXX XXXXXX', US: '(XXX) XXX-XXXX', CA: '(XXX) XXX-XXXX', AU: '04XX XXX XXX', FR: '06 XX XX XX XX', DE: '01XX XXXXXXX', IT: '3XX XXX XXXX', ES: '6XX XXX XXX', NL: '06 XXXXXXXX', BE: '04XX XX XX XX', SE: '07X XXX XX XX', NO: 'XXX XX XXX', DK: 'XX XX XX XX', CH: '07X XXX XX XX', AT: '06XX XXXXXX', PL: 'XXX XXX XXX', PT: '9XX XXX XXX', GR: '6XX XXX XXXX' }
+
 function getPlaceholder(countryCode) {
-  try {
-    const ex = getExampleNumber(countryCode, examples)
-    return ex ? ex.formatNational() : ''
-  } catch { return '' }
+  return PLACEHOLDERS[countryCode] || 'XXXXXXXX'
 }
 
-// Validate phone — uses isPossiblePhoneNumber (length-based, more lenient)
-// isValidPhoneNumber is too strict and rejects valid real numbers
 function validatePhone(nationalNumber, countryCode) {
   if (!nationalNumber.trim()) return false
   const digits = nationalNumber.replace(/\D/g, '')
@@ -75,24 +70,18 @@ function validatePhone(nationalNumber, countryCode) {
   } catch { return false }
 }
 
-// Format as user types using AsYouType
 function formatAsYouType(value, countryCode) {
   try {
     const digits = value.replace(/\D/g, '')
     const formatter = new AsYouType(countryCode)
-    // Feed digits one by one to get proper national formatting
     let result = ''
     for (const d of digits) result = formatter.input(d)
     return result
   } catch { return value }
 }
 
-// Get max digit length for a country from example number
 function getMaxLen(countryCode) {
-  try {
-    const ex = getExampleNumber(countryCode, examples)
-    return ex ? ex.nationalNumber.length + 4 : 15 // +4 for spaces/dashes
-  } catch { return 15 }
+  return 15
 }
 
 // ── Country Picker ────────────────────────────────────────────────────────────

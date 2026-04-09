@@ -10,7 +10,7 @@ const legalContent = {
     icon: '🔒',
     sections: {
       ar: [
-        { heading: 'مقدمة', body: 'نحن في HADIDI نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية. توضح هذه السياسة كيفية جمع واستخدام وحماية معلوماتك عند استخدام موقعنا وشراء منتجاتنا.' },
+        { heading: 'مقدمة', body: 'نحن في FitZone نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية. توضح هذه السياسة كيفية جمع واستخدام وحماية معلوماتك عند استخدام موقعنا وشراء منتجاتنا.' },
         { heading: 'المعلومات التي نجمعها', body: 'نجمع المعلومات التالية عند إتمام عملية الشراء:\n• الاسم الكامل\n• البريد الإلكتروني\n• رقم الهاتف (واتساب)\n• معلومات الدفع (تتم معالجتها بشكل آمن عبر مزود الدفع ولا نخزنها)' },
         { heading: 'كيف نستخدم معلوماتك', body: '• إرسال البرامج بعد الشراء\n• التواصل معك بخصوص طلبك\n• إرسال تحديثات المنتجات (يمكنك إلغاء الاشتراك في أي وقت)\n• تحسين خدماتنا ومنتجاتنا' },
         { heading: 'حماية البيانات', body: 'نستخدم تقنيات تشفير متقدمة لحماية بياناتك. لا نشارك معلوماتك الشخصية مع أطراف ثالثة إلا لإتمام عملية الدفع أو بموجب القانون.' },
@@ -19,7 +19,7 @@ const legalContent = {
         { heading: 'تواصل معنا', body: 'لأي استفسارات حول سياسة الخصوصية، تواصل معنا عبر واتساب أو البريد الإلكتروني.' },
       ],
       en: [
-        { heading: 'Introduction', body: 'At HADIDI, we respect your privacy and are committed to protecting your personal data. This policy explains how we collect, use, and protect your information when using our website and purchasing our products.' },
+        { heading: 'Introduction', body: 'At FitZone, we respect your privacy and are committed to protecting your personal data. This policy explains how we collect, use, and protect your information when using our website and purchasing our products.' },
         { heading: 'Information We Collect', body: 'We collect the following information during purchase:\n• Full name\n• Email address\n• Phone number (WhatsApp)\n• Payment information (processed securely through our payment provider — we do not store it)' },
         { heading: 'How We Use Your Information', body: '• Delivering programs after purchase\n• Communicating with you about your order\n• Sending product updates (you can unsubscribe at any time)\n• Improving our services and products' },
         { heading: 'Data Protection', body: 'We use advanced encryption technologies to protect your data. We do not share your personal information with third parties except to complete payment processing or as required by law.' },
@@ -34,7 +34,7 @@ const legalContent = {
     icon: '📋',
     sections: {
       ar: [
-        { heading: 'القبول', body: 'باستخدام موقع HADIDI وشراء منتجاتنا، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي من هذه الشروط، يرجى عدم استخدام الموقع.' },
+        { heading: 'القبول', body: 'باستخدام موقع FitZone وشراء منتجاتنا، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي من هذه الشروط، يرجى عدم استخدام الموقع.' },
         { heading: 'المنتجات', body: 'جميع المنتجات المعروضة هي برامج تدريبية رقمية بصيغة PDF. المحتوى مخصص للأغراض التعليمية والمعلوماتية فقط ولا يعتبر بديلاً عن الاستشارة الطبية المتخصصة.' },
         { heading: 'التسليم', body: 'يتم تسليم البرامج فوراً بعد إتمام الدفع عبر:\n• رابط تحميل على البريد الإلكتروني\n• رسالة واتساب تأكيدية\n\nرابط التحميل متاح مدى الحياة.' },
         { heading: 'الملكية الفكرية', body: 'جميع المحتويات محمية بحقوق الملكية الفكرية. الشراء يمنحك ترخيصاً شخصياً غير قابل للتحويل. يُمنع:\n• إعادة بيع البرامج\n• مشاركتها مع آخرين\n• نسخ أو توزيع المحتوى' },
@@ -43,7 +43,7 @@ const legalContent = {
         { heading: 'التعديلات', body: 'نحتفظ بالحق في تعديل هذه الشروط في أي وقت. سيتم إشعار المستخدمين بأي تغييرات جوهرية.' },
       ],
       en: [
-        { heading: 'Acceptance', body: 'By using the HADIDI website and purchasing our products, you agree to be bound by these terms and conditions. If you do not agree to any of these terms, please do not use the website.' },
+        { heading: 'Acceptance', body: 'By using the FitZone website and purchasing our products, you agree to be bound by these terms and conditions. If you do not agree to any of these terms, please do not use the website.' },
         { heading: 'Products', body: 'All products offered are digital training programs in PDF format. Content is for educational and informational purposes only and is not a substitute for professional medical advice.' },
         { heading: 'Delivery', body: 'Programs are delivered immediately after payment via:\n• Download link sent to your email\n• WhatsApp confirmation message\n\nDownload link is available for life.' },
         { heading: 'Intellectual Property', body: 'All content is protected by intellectual property rights. Purchase grants you a personal, non-transferable license. You may not:\n• Resell the programs\n• Share them with others\n• Copy or distribute the content' },

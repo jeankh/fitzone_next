@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from './UserContext'
 
@@ -129,14 +129,14 @@ export function CartProvider({ children }) {
     if (userRef.current) saveServerCart(cart)
   }, [cart, hydrated])
 
-  const getPrice = (id) => {
+  const getPrice = useCallback((id) => {
     if (id === 'transformation') return prices.transformation
     if (id === 'nutrition') return prices.nutrition
     if (id === 'bundle') return prices.transformation + prices.nutrition
     return 0
-  }
+  }, [prices])
 
-  const getCurrencyPrice = (id, currencyCode) => {
+  const getCurrencyPrice = useCallback((id, currencyCode) => {
     if (!currencyCode) return null
     if (id === 'bundle') {
       const t = getCurrencyPrice('transformation', currencyCode)
@@ -147,14 +147,14 @@ export function CartProvider({ children }) {
     const key = `${currencyCode}_${id}`
     if (key in currencyPrices && currencyPrices[key] !== '') return Number(currencyPrices[key])
     return null
-  }
+  }, [currencyPrices])
 
-  const getBooksData = () => ({
+  const booksData = useMemo(() => ({
     ...BOOKS_DATA,
     transformation: { ...BOOKS_DATA.transformation, price: prices.transformation },
     nutrition: { ...BOOKS_DATA.nutrition, price: prices.nutrition },
     bundle: { ...BOOKS_DATA.bundle, price: prices.transformation + prices.nutrition },
-  })
+  }), [prices])
 
   useEffect(() => {
     Promise.all([
@@ -224,24 +224,26 @@ export function CartProvider({ children }) {
     router.push('/checkout')
   }, [getTotal, router])
 
+  const value = useMemo(() => ({
+    cart,
+    addToCart,
+    removeFromCart,
+    clearCart,
+    isInCart,
+    getTotal,
+    getMissingBook,
+    wasAutoUpgraded,
+    isCartOpen,
+    setIsCartOpen,
+    openCheckout,
+    BOOKS_DATA: booksData,
+    prices,
+    currencyPrices,
+    getCurrencyPrice,
+  }), [cart, addToCart, removeFromCart, clearCart, isInCart, getTotal, getMissingBook, wasAutoUpgraded, isCartOpen, openCheckout, booksData, prices, currencyPrices, getCurrencyPrice])
+
   return (
-    <CartContext.Provider value={{
-      cart,
-      addToCart,
-      removeFromCart,
-      clearCart,
-      isInCart,
-      getTotal,
-      getMissingBook,
-      wasAutoUpgraded,
-      isCartOpen,
-      setIsCartOpen,
-      openCheckout,
-      BOOKS_DATA: getBooksData(),
-      prices,
-      currencyPrices,
-      getCurrencyPrice,
-    }}>
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   )

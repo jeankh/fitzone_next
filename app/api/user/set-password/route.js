@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { verifyUserToken, setUserPassword } from '../../../../src/lib/user-auth'
+import { validateOrigin } from '../../../../src/lib/csrf'
 
 export async function POST(request) {
+  if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const token = request.cookies.get('fitzone_user_token')?.value
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

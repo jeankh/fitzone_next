@@ -9,10 +9,12 @@ const USERS_KEY = 'fitzone_users'
 const USER_PURCHASES_PREFIX = 'fitzone_user_purchases_'
 const MAGIC_LINK_PREFIX = 'fitzone_magic_'
 const RESET_PREFIX = 'fitzone_reset_'
+const USER_ID_INDEX = 'fitzone_user_id_index'
 
 function getSecret() {
-  const secret = process.env.USER_JWT_SECRET || process.env.JWT_SECRET
-  if (!secret) throw new Error('USER_JWT_SECRET or JWT_SECRET is not set')
+  const secret = process.env.USER_JWT_SECRET
+  if (!secret) throw new Error('USER_JWT_SECRET must be set and different from JWT_SECRET')
+  if (secret === process.env.JWT_SECRET) throw new Error('USER_JWT_SECRET must differ from JWT_SECRET')
   return new TextEncoder().encode(secret)
 }
 
@@ -80,6 +82,7 @@ export async function createUser({ name, email, password, phone, hasPassword = t
 
   const wasSet = await kv.hsetnx(USERS_KEY, normalizedEmail, JSON.stringify(user))
   if (!wasSet) return null
+  await kv.hset(USER_ID_INDEX, { [user.id]: normalizedEmail })
   return user
 }
 
@@ -90,18 +93,7 @@ async function updateUserInRedis(user) {
 
 export async function verifyPassword(user, plainPassword) {
   try {
-    // Try bcrypt first
-    const match = await bcrypt.compare(plainPassword, user.password)
-    if (match) return true
-
-    // Migration: check if stored password is plaintext (old users)
-    if (user.password === plainPassword) {
-      const hashed = await bcrypt.hash(plainPassword, 12)
-      await updateUserInRedis({ ...user, password: hashed })
-      return true
-    }
-
-    return false
+    return await bcrypt.compare(plainPassword, user.password)
   } catch {
     return false
   }
@@ -170,15 +162,11 @@ export async function consumeMagicToken(token) {
 
 export async function getUserById(userId) {
   const kv = getRedis()
-  const all = await kv.hgetall(USERS_KEY)
-  if (!all) return null
-  for (const [, raw] of Object.entries(all)) {
-    try {
-      const user = typeof raw === 'string' ? JSON.parse(raw) : raw
-      if (user.id === userId) return user
-    } catch {}
-  }
-  return null
+  const email = await kv.hget(USER_ID_INDEX, userId)
+  if (!email) return null
+  const raw = await kv.hget(USERS_KEY, email)
+  if (!raw) return null
+  try { return typeof raw === 'string' ? JSON.parse(raw) : raw } catch { return null }
 }
 
 export async function createPasswordResetToken(userId) {
@@ -199,29 +187,25 @@ export async function consumePasswordResetToken(token) {
 
 export async function resetUserPassword(userId, newPassword) {
   const kv = getRedis()
-  const all = await kv.hgetall(USERS_KEY)
-  if (!all) return false
-  for (const [email, raw] of Object.entries(all)) {
-    try {
-      const user = typeof raw === 'string' ? JSON.parse(raw) : raw
-      if (user.id === userId) {
-        user.password = await bcrypt.hash(newPassword, 12)
-        user.hasPassword = true
-        await kv.hset(USERS_KEY, { [email]: JSON.stringify(user) })
-        return true
-      }
-    } catch {}
-  }
-  return false
+  const email = await kv.hget(USER_ID_INDEX, userId)
+  if (!email) return false
+  const raw = await kv.hget(USERS_KEY, email)
+  if (!raw) return false
+  try {
+    const user = typeof raw === 'string' ? JSON.parse(raw) : raw
+    user.password = await bcrypt.hash(newPassword, 12)
+    user.hasPassword = true
+    await kv.hset(USERS_KEY, { [email]: JSON.stringify(user) })
+    return true
+  } catch { return false }
 }
 
 export async function checkLoginAttempts(email) {
   const kv = getRedis()
   const key = `login_attempts:${email.toLowerCase()}`
-  const count = Number(await kv.get(key)) || 0
-  if (count >= 5) return false
-  await kv.incr(key)
+  const count = await kv.incr(key)
   await kv.expire(key, 900)
+  if (count > 5) return false
   return true
 }
 

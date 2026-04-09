@@ -1,13 +1,12 @@
-import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
-
-const kv = Redis.fromEnv()
+import { getRedis } from '../../../src/lib/redis'
 
 const VALID_KEYS = ['cart_adds', 'bundle_upgrades', 'checkout_starts', 'purchases']
 const KV_KEY = 'fitzone_events'
 
 export async function GET() {
   try {
+    const kv = getRedis()
     const data = await kv.hgetall(KV_KEY)
     const counts = {}
     for (const key of VALID_KEYS) {
@@ -22,7 +21,12 @@ export async function GET() {
 }
 
 export async function POST(request) {
+  const internalSecret = request.headers.get('x-internal-secret')
+  if (!internalSecret || internalSecret !== process.env.INTERNAL_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   try {
+    const kv = getRedis()
     const { key } = await request.json()
     if (!VALID_KEYS.includes(key)) {
       return NextResponse.json({ error: 'Invalid key' }, { status: 400 })
@@ -36,6 +40,7 @@ export async function POST(request) {
 
 export async function DELETE() {
   try {
+    const kv = getRedis()
     await kv.del(KV_KEY)
     return NextResponse.json({ ok: true })
   } catch {
