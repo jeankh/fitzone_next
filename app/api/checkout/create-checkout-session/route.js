@@ -20,7 +20,7 @@ export async function POST(req) {
       }
     })
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.get('host')}`
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fitzoneapp.com').replace(/\/+$/, '')
 
     const stripe = getStripe()
     const session = await stripe.checkout.sessions.create({
