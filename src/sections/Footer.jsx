@@ -42,10 +42,10 @@ export default function Footer() {
   ].filter(s => isVisible(s.key))
 
   const paymentMethods = [
-    { icon: '🔒', label: lang === 'ar' ? 'دفع آمن' : 'Secure' },
-    { icon: '💳', label: 'Visa / MC' },
-    { icon: '🍎', label: 'Apple Pay' },
-    { icon: '🏦', label: lang === 'ar' ? 'تحويل' : 'Bank' },
+    { icon: '🔒', label: lang === 'ar' ? 'Stripe آمن' : 'Secure Stripe' },
+    { icon: '⚡', label: lang === 'ar' ? 'تسليم فوري' : 'Instant Delivery' },
+    { icon: '🛡️', label: lang === 'ar' ? 'SSL مشفر' : 'SSL Encrypted' },
+    { icon: '💬', label: lang === 'ar' ? 'دعم واتساب' : 'WhatsApp Support' },
   ]
 
   return (
