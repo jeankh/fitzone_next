@@ -7,24 +7,6 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;')
 }
 
-function baseTemplate({ lang = 'ar', title, intro, buttonLabel, buttonUrl, footer, bodyHtml = '' }) {
-  const isAr = lang === 'ar'
-  const direction = isAr ? 'rtl' : 'ltr'
-
-  return `<div dir="${direction}" style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#0b0b0f;border:1px solid rgba(255,255,255,0.08);border-radius:24px;overflow:hidden;color:#ffffff">
-    <div style="padding:28px 28px 20px;background:linear-gradient(135deg,#1a1a22 0%,#0b0b0f 100%);border-bottom:1px solid rgba(255,255,255,0.08)">
-      <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#ff3b72;font-weight:700;margin-bottom:10px">FitZone</div>
-      <h1 style="margin:0;font-size:28px;line-height:1.2;color:#ffffff">${title}</h1>
-    </div>
-    <div style="padding:28px">
-      <p style="margin:0 0 18px;color:#d0d0d5;font-size:15px;line-height:1.8">${intro}</p>
-      ${bodyHtml}
-      ${buttonUrl ? `<div style="margin:26px 0 22px"><a href="${buttonUrl}" style="display:inline-block;background:linear-gradient(90deg,#d30a4a 0%,#b3053d 100%);color:#ffffff;text-decoration:none;padding:14px 24px;border-radius:14px;font-weight:700">${buttonLabel}</a></div>` : ''}
-      <p style="margin:0;color:#7f7f8a;font-size:12px;line-height:1.7">${footer}</p>
-    </div>
-  </div>`
-}
-
 function itemName(id, lang) {
   const isAr = lang === 'ar'
   if (id === 'transformation') return isAr ? 'دليل التنشيف وبناء الجسم' : 'Shredding & Building Guide'
@@ -33,86 +15,187 @@ function itemName(id, lang) {
   return escapeHtml(id)
 }
 
-export function buildResetPasswordEmail({ resetUrl, lang = 'ar' }) {
+function buildFooter({ lang, supportEmail }) {
+  const isAr = lang === 'ar'
+  const safeSupportEmail = escapeHtml(supportEmail)
+
+  return `
+    <div style="margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08)">
+      <p style="margin:0 0 10px;color:#8f919c;font-size:12px;line-height:1.8">
+        ${isAr
+          ? 'هذه رسالة آلية من FitZone. يرجى عدم الرد مباشرة على هذا البريد الإلكتروني.'
+          : 'This is an automated email from FitZone. Please do not reply directly to this message.'}
+      </p>
+      <p style="margin:0 0 10px;color:#8f919c;font-size:12px;line-height:1.8">
+        ${isAr
+          ? `إذا كنت بحاجة إلى مساعدة، تواصل معنا عبر <a href="mailto:${safeSupportEmail}" style="color:#ffffff;text-decoration:none">${safeSupportEmail}</a> أو قم بزيارة <a href="https://www.fitzoneapp.com" style="color:#ffffff;text-decoration:none">fitzoneapp.com</a>.`
+          : `If you need help, contact us at <a href="mailto:${safeSupportEmail}" style="color:#ffffff;text-decoration:none">${safeSupportEmail}</a> or visit <a href="https://www.fitzoneapp.com" style="color:#ffffff;text-decoration:none">fitzoneapp.com</a>.`}
+      </p>
+      <p style="margin:0;color:#666a76;font-size:11px;line-height:1.8">
+        ${isAr
+          ? 'تم إرسال هذه الرسالة بخصوص نشاط على حسابك أو طلبك. للحفاظ على أمانك، لا تشارك هذا البريد أو الروابط الموجودة فيه مع أي شخص.'
+          : 'This message was sent regarding activity on your account or order. For your security, do not share this email or any links inside it with anyone.'}
+      </p>
+    </div>`
+}
+
+function baseTemplate({
+  lang = 'ar',
+  preheader,
+  eyebrow,
+  title,
+  intro,
+  bodyHtml = '',
+  buttonLabel,
+  buttonUrl,
+  note,
+  supportEmail = 'support@fitzoneapp.com',
+}) {
+  const isAr = lang === 'ar'
+  const direction = isAr ? 'rtl' : 'ltr'
+  const align = isAr ? 'right' : 'left'
+  const oppositeAlign = isAr ? 'left' : 'right'
+  const buttonMargin = isAr ? '0 0 0 auto' : '0 auto 0 0'
+  const introFont = isAr ? 17 : 16
+  const introLineHeight = isAr ? 2 : 1.8
+  const bodyLineHeight = isAr ? 1.95 : 1.8
+  const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fitzoneapp.com'}/fitzone-logo.jpeg`
+
+  return `
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;visibility:hidden">${escapeHtml(preheader || '')}</div>
+    <div dir="${direction}" style="margin:0;padding:24px 12px;background:#f5f5f7">
+      <div style="max-width:620px;margin:0 auto;background:#0b0c10;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 60px rgba(0,0,0,0.28);color:#ffffff">
+        <div style="padding:34px 34px 26px;background:radial-gradient(circle at top ${isAr ? 'left' : 'right'}, rgba(211,10,74,0.28), transparent 32%),linear-gradient(180deg,#14161d 0%,#0b0c10 100%);border-bottom:1px solid rgba(255,255,255,0.08);text-align:${align}">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
+            <tr>
+              <td style="text-align:${align};vertical-align:top">
+                <div style="display:inline-flex;align-items:center;gap:12px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
+                  <img src="${logoUrl}" alt="FitZone" width="36" height="36" style="width:36px;height:36px;border-radius:10px;object-fit:cover;display:block" />
+                  <div style="font-size:11px;letter-spacing:2.2px;text-transform:uppercase;color:#ff4d82;font-weight:800">FITZONE</div>
+                </div>
+              </td>
+              <td style="text-align:${oppositeAlign};vertical-align:top;color:#8f919c;font-size:12px;line-height:1.6;padding-${isAr ? 'right' : 'left'}:12px">
+                ${isAr ? 'رسالة معاملة' : 'Transactional email'}
+              </td>
+            </tr>
+          </table>
+          <div style="margin-top:22px;color:#ff4d82;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase">${escapeHtml(eyebrow || '')}</div>
+          <h1 style="margin:10px 0 0;font-size:${isAr ? 35 : 34}px;line-height:${isAr ? 1.45 : 1.2};font-weight:800;color:#ffffff">${title}</h1>
+        </div>
+
+        <div style="padding:34px;text-align:${align}">
+          <p style="margin:0 0 18px;color:#d7d9df;font-size:${introFont}px;line-height:${introLineHeight}">${intro}</p>
+
+          ${bodyHtml ? `<div style="color:#b8bbc5;font-size:14px;line-height:${bodyLineHeight};margin-bottom:18px">${bodyHtml}</div>` : ''}
+
+          ${buttonUrl ? `
+            <div style="margin:26px 0 18px;text-align:${align}">
+              <a href="${buttonUrl}" style="display:inline-block;background:linear-gradient(90deg,#d30a4a 0%,#b3053d 100%);color:#ffffff;text-decoration:none;padding:16px 26px;border-radius:16px;font-weight:800;font-size:15px;letter-spacing:0.2px;box-shadow:0 10px 30px rgba(211,10,74,0.25);margin:${buttonMargin}">${buttonLabel}</a>
+            </div>` : ''}
+
+          ${note ? `
+            <div style="margin-top:18px;padding:16px 18px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:#9ea2ad;font-size:12px;line-height:1.9;text-align:${align}">
+              ${note}
+            </div>` : ''}
+
+          ${buildFooter({ lang, supportEmail })}
+        </div>
+      </div>
+    </div>`
+}
+
+export function buildResetPasswordEmail({ resetUrl, lang = 'ar', supportEmail = 'support@fitzoneapp.com' }) {
   const isAr = lang === 'ar'
   return {
     subject: isAr ? 'إعادة تعيين كلمة المرور - FitZone' : 'Reset Your Password - FitZone',
     html: baseTemplate({
       lang,
+      supportEmail,
+      preheader: isAr ? 'رابط آمن لإعادة تعيين كلمة المرور الخاصة بحسابك.' : 'A secure link to reset your FitZone password.',
+      eyebrow: isAr ? 'أمان الحساب' : 'Account Security',
       title: isAr ? 'إعادة تعيين كلمة المرور' : 'Reset Your Password',
       intro: isAr
-        ? 'تلقينا طلبا لإعادة تعيين كلمة المرور الخاصة بحسابك. اضغط على الزر أدناه لاختيار كلمة مرور جديدة.'
-        : 'We received a request to reset your account password. Use the button below to choose a new password.',
+        ? 'تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك. إذا كان هذا الطلب منك، استخدم الزر أدناه لاختيار كلمة مرور جديدة بشكل آمن.'
+        : 'We received a request to reset your account password. If this was you, use the button below to choose a new password securely.',
       buttonLabel: isAr ? 'إعادة تعيين كلمة المرور' : 'Reset Password',
       buttonUrl: resetUrl,
-      footer: isAr
-        ? 'هذا الرابط صالح لمدة 15 دقيقة. إذا لم تطلب هذا التغيير، يمكنك تجاهل هذه الرسالة.'
-        : 'This link expires in 15 minutes. If you did not request this change, you can ignore this email.',
+      note: isAr
+        ? 'هذا الرابط صالح لمدة 15 دقيقة فقط. إذا لم تطلب هذا التغيير، يمكنك تجاهل الرسالة ولن يتم تعديل حسابك.'
+        : 'This link is valid for 15 minutes only. If you did not request this change, you can safely ignore this message and nothing on your account will be updated.',
     }),
   }
 }
 
-export function buildMagicLinkEmail({ name, magicUrl, lang = 'ar' }) {
+export function buildMagicLinkEmail({ name, magicUrl, lang = 'ar', supportEmail = 'support@fitzoneapp.com' }) {
   const isAr = lang === 'ar'
   const safeName = escapeHtml(name)
   return {
     subject: isAr ? 'رابط الدخول إلى حسابك - FitZone' : 'Your Login Link - FitZone',
     html: baseTemplate({
       lang,
-      title: isAr ? `مرحباً ${safeName}!` : `Hello ${safeName}!`,
+      supportEmail,
+      preheader: isAr ? 'رابط سريع وآمن للدخول إلى حسابك في FitZone.' : 'A fast, secure sign-in link for your FitZone account.',
+      eyebrow: isAr ? 'دخول آمن' : 'Secure Sign In',
+      title: isAr ? `مرحباً ${safeName}` : `Hello ${safeName}`,
       intro: isAr
-        ? 'اضغط على الزر أدناه لتسجيل الدخول مباشرة إلى حسابك.'
-        : 'Use the button below to sign in directly to your account.',
+        ? 'استخدم الزر أدناه للدخول مباشرة إلى حسابك بدون الحاجة إلى إدخال كلمة المرور.'
+        : 'Use the button below to sign in directly to your account without entering your password.',
       buttonLabel: isAr ? 'تسجيل الدخول' : 'Sign In',
       buttonUrl: magicUrl,
-      footer: isAr
-        ? 'هذا الرابط صالح لمدة 15 دقيقة. إذا لم تطلب تسجيل الدخول، تجاهل هذه الرسالة.'
-        : 'This link expires in 15 minutes. If you did not request it, ignore this email.',
+      note: isAr
+        ? 'الرابط صالح لمدة 15 دقيقة فقط ويستخدم مرة واحدة. إذا لم تطلب تسجيل الدخول، تجاهل هذه الرسالة.'
+        : 'This link is valid for 15 minutes and can be used once. If you did not request this sign-in, simply ignore this message.',
     }),
   }
 }
 
-export function buildOrderConfirmationEmail({ emailName, items, lang = 'ar' }) {
+export function buildOrderConfirmationEmail({ emailName, items, lang = 'ar', supportEmail = 'support@fitzoneapp.com' }) {
   const isAr = lang === 'ar'
   const safeName = escapeHtml(emailName)
   const itemList = (items || '')
     .split(',')
     .filter(Boolean)
-    .map(id => `<li style="margin-bottom:8px">${itemName(id, lang)}</li>`)
+    .map(id => `<li style="margin-bottom:10px">${itemName(id, lang)}</li>`)
     .join('')
 
   return {
     subject: isAr ? 'تأكيد طلبك - FitZone' : 'Order Confirmed - FitZone',
     html: baseTemplate({
       lang,
+      supportEmail,
+      preheader: isAr ? 'تم استلام طلبك بنجاح من FitZone.' : 'Your FitZone order has been confirmed successfully.',
+      eyebrow: isAr ? 'تأكيد الطلب' : 'Order Confirmation',
       title: isAr ? 'تم تأكيد طلبك' : 'Your Order Is Confirmed',
       intro: isAr
-        ? `مرحباً ${safeName}، شكراً لطلبك. هذه المنتجات التي قمت بشرائها:`
-        : `Hi ${safeName}, thanks for your purchase. Here are the items you bought:`,
-      bodyHtml: `<ul style="margin:0 0 8px;padding-${isAr ? 'right' : 'left'}:20px;color:#ffffff;font-size:15px;line-height:1.8">${itemList}</ul>`,
-      footer: isAr
-        ? 'سيتم التواصل معك عبر واتساب أو البريد الإلكتروني لتسليم المنتجات إذا لزم الأمر. شكراً لثقتك بنا.'
-        : 'We will reach out via WhatsApp or email if needed for delivery. Thank you for trusting FitZone.',
+        ? `مرحباً ${safeName}، شكراً لثقتك بنا. تم استلام طلبك بنجاح، وهذه المنتجات المرتبطة بطلبك:`
+        : `Hi ${safeName}, thank you for trusting FitZone. Your order has been received successfully, and these are the items included in your purchase:`,
+      bodyHtml: `<ul style="margin:0;padding-${isAr ? 'right' : 'left'}:20px;color:#ffffff;font-size:15px;line-height:${isAr ? 2 : 1.9}">${itemList}</ul>`,
+      note: isAr
+        ? 'إذا احتاج طلبك إلى متابعة إضافية، سيتواصل معك فريقنا عبر واتساب أو البريد الإلكتروني باستخدام البيانات التي أدخلتها أثناء الشراء.'
+        : 'If your order needs any follow-up, our team will contact you through WhatsApp or email using the details you provided during checkout.',
     }),
   }
 }
 
-export function buildAccountCreatedEmail({ name, magicUrl, lang = 'ar' }) {
+export function buildAccountCreatedEmail({ name, magicUrl, lang = 'ar', supportEmail = 'support@fitzoneapp.com' }) {
   const isAr = lang === 'ar'
   const safeName = escapeHtml(name)
   return {
     subject: isAr ? 'حسابك جاهز - FitZone' : 'Your Account Is Ready - FitZone',
     html: baseTemplate({
       lang,
-      title: isAr ? `مرحباً ${safeName}!` : `Welcome ${safeName}!`,
+      supportEmail,
+      preheader: isAr ? 'تم تجهيز حسابك تلقائياً بعد عملية الشراء.' : 'Your account has been created automatically after checkout.',
+      eyebrow: isAr ? 'حسابك الجديد' : 'Your New Account',
+      title: isAr ? `مرحباً ${safeName}` : `Welcome ${safeName}`,
       intro: isAr
-        ? 'تم إنشاء حسابك تلقائياً بعد عملية الشراء. يمكنك الآن متابعة مشترياتك والوصول إلى حسابك من خلال الزر أدناه.'
-        : 'Your account was created automatically after checkout. You can now track your purchases and access your account using the button below.',
+        ? 'قمنا بإنشاء حسابك تلقائياً بعد إتمام عملية الشراء حتى تتمكن من متابعة طلباتك والوصول إلى مشترياتك بسهولة.'
+        : 'We created your account automatically after checkout so you can track your orders and access your purchases more easily.',
       buttonLabel: isAr ? 'فتح حسابي' : 'Open My Account',
       buttonUrl: magicUrl,
-      footer: isAr
-        ? 'هذا الرابط صالح لمدة 15 دقيقة. بعد الدخول يمكنك تعيين كلمة مرور دائمة من صفحة الحساب.'
-        : 'This link expires in 15 minutes. After signing in, you can set a permanent password from your account page.',
+      note: isAr
+        ? 'هذا الرابط صالح لمدة 15 دقيقة. بعد الدخول، يمكنك تعيين كلمة مرور دائمة من صفحة الحساب لسهولة الوصول لاحقاً.'
+        : 'This link stays valid for 15 minutes. After signing in, you can set a permanent password from your account page for easier future access.',
     }),
   }
 }
