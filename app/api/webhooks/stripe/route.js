@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
 import { getStripe } from '../../../../src/lib/stripe'
 import { getRedis } from '../../../../src/lib/redis'
+import { getFromEmail, getResend } from '../../../../src/lib/email'
 
 const PURCHASES_KEY = 'fitzone_purchases'
-
-async function getResend() {
-  const { default: Resend } = await import('resend')
-  return new Resend(process.env.RESEND_API_KEY)
-}
 
 async function sendConfirmationEmail({ email, name, items, lang }) {
   const isAr = lang === 'ar'
@@ -37,7 +33,7 @@ async function sendConfirmationEmail({ email, name, items, lang }) {
       </div>`
 
   return (await getResend()).emails.send({
-    from: process.env.FROM_EMAIL || 'orders@fitzone.com',
+    from: getFromEmail(),
     to: email,
     subject,
     html,

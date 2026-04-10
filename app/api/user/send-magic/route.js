@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { getUserByEmail, createMagicToken } from '../../../../src/lib/user-auth'
 import { apiError } from '../../../../src/lib/api-utils'
 import { validateOrigin } from '../../../../src/lib/csrf'
+import { getFromEmail, getResend } from '../../../../src/lib/email'
 
 async function sendMagicEmail({ email, name, magicUrl, lang }) {
-  const { default: Resend } = await import('resend')
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  const resend = await getResend()
 
   const subject = lang === 'ar' ? 'رابط الدخول إلى حسابك - FitZone' : 'Your Login Link - FitZone'
   const html = lang === 'ar'
@@ -22,7 +22,7 @@ async function sendMagicEmail({ email, name, magicUrl, lang }) {
         <p style="color:#666;font-size:11px;margin-top:12px">This link expires in 15 minutes. If you didn't request this, ignore this email.</p>
       </div>`
 
-  return resend.emails.send({ from: process.env.FROM_EMAIL || 'orders@fitzone.com', to: email, subject, html })
+  return resend.emails.send({ from: getFromEmail(), to: email, subject, html })
 }
 
 export async function POST(request) {
@@ -41,7 +41,7 @@ export async function POST(request) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${request.headers.get('host')}`
     const magicUrl = `${baseUrl}/api/user/verify-magic?token=${token}`
 
-    try { await sendMagicEmail({ email, name: user.name, magicUrl, lang: 'ar' }) } catch (e) { console.error('Magic email error:', e.message) }
+    await sendMagicEmail({ email, name: user.name, magicUrl, lang: 'ar' })
 
     return NextResponse.json({ ok: true })
   } catch (err) {

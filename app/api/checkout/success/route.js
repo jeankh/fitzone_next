@@ -2,16 +2,12 @@ import { NextResponse } from 'next/server'
 import { getStripe } from '../../../../src/lib/stripe'
 import { getOrCreateUser, addUserPurchase, createMagicToken } from '../../../../src/lib/user-auth'
 import { getRedis } from '../../../../src/lib/redis'
+import { getFromEmail, getResend } from '../../../../src/lib/email'
 
 const PURCHASES_KEY = 'fitzone_purchases'
 
 function escapeHtml(str) {
   return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
-
-async function getResend() {
-  const { default: Resend } = await import('resend')
-  return new Resend(process.env.RESEND_API_KEY)
 }
 
 export async function GET(req) {
@@ -91,13 +87,15 @@ export async function GET(req) {
                   <p style="color:#666;font-size:11px;margin-top:12px">This link expires in 15 minutes.</p>
                 </div>`
 
-            (await getResend()).emails.send({
-              from: process.env.FROM_EMAIL || 'orders@fitzone.com',
+            await (await getResend()).emails.send({
+              from: getFromEmail(),
               to: buyerEmail,
               subject,
               html,
-            }).catch(() => {})
-          } catch {}
+            })
+          } catch (emailError) {
+            console.error('Account email error:', emailError.message)
+          }
         }
       }
     } catch (e) {
