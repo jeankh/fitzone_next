@@ -2,9 +2,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowRight, ArrowLeft, CreditCard, Smartphone, Lock,
+  ArrowRight, ArrowLeft, Lock,
   Trash2, CheckCircle, ShoppingCart, AlertCircle, ChevronDown,
-  Search, Shield, Zap, User, Mail, Phone, Gift, ExternalLink
+  Search, Shield, User, Mail, Phone, Gift, ExternalLink
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { AsYouType, isPossiblePhoneNumber } from 'libphonenumber-js'
@@ -289,7 +289,6 @@ export default function CheckoutPage() {
   const { cart, removeFromCart, clearCart, addToCart, getTotal, getMissingBook, wasAutoUpgraded, BOOKS_DATA } = useCart()
   const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight
 
-  const [paymentMethod,   setPaymentMethod]   = useState('card')
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
   const [redirecting,     setRedirecting]     = useState(false)
 
@@ -302,7 +301,6 @@ export default function CheckoutPage() {
   const [errors,   setErrors]   = useState({})
   const [touched,  setTouched]  = useState({})
   const [agreed,   setAgreed]   = useState(false)
-  const [showCVV,  setShowCVV]  = useState(false)
   const { user } = useUser()
 
   useEffect(() => {
@@ -467,61 +465,6 @@ export default function CheckoutPage() {
                   lang={lang}
                 />
               </div>
-            </div>
-
-            {/* Payment Method */}
-            <div className="bg-white/[0.03] border border-white/8 rounded-3xl p-6">
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-7 h-7 rounded-xl bg-brand/15 flex items-center justify-center">
-                  <CreditCard size={13} className="text-brand" />
-                </div>
-                <h2 className="text-white font-semibold text-sm">{lang === 'ar' ? 'طريقة الدفع' : 'Payment Method'}</h2>
-              </div>
-
-              {/* Method Tabs */}
-              <div className="flex gap-2 mb-5 p-1 bg-black/30 rounded-2xl">
-                {[
-                  { id: 'card',  icon: CreditCard,  label: { ar: 'بطاقة', en: 'Card' } },
-                  { id: 'apple', icon: Smartphone,   label: { ar: 'Apple Pay', en: 'Apple Pay' } },
-                ].map(m => (
-                  <button key={m.id} type="button"
-                    onClick={() => { setPaymentMethod(m.id); setErrors(p => ({ ...p, cardNumber: '', expiry: '', cvv: '' })) }}
-                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      paymentMethod === m.id
-                        ? 'bg-brand text-white shadow-lg shadow-brand/25'
-                        : 'text-white/40 hover:text-white/70'
-                    }`}>
-                    <m.icon size={15} />{m.label[lang]}
-                  </button>
-                ))}
-              </div>
-
-              <AnimatePresence mode="wait">
-                {/* Card / Stripe */}
-                {(paymentMethod === 'card' || paymentMethod === 'apple') && (
-                  <motion.div key="card" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex flex-col items-center justify-center py-8 gap-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-7 bg-[#635bff] rounded-md flex items-center justify-center text-white text-[8px] font-bold">VISA</div>
-                      <div className="w-10 h-7 bg-[#252525] rounded-full flex items-center justify-center">
-                        <div className="w-3 h-3 rounded-full bg-[#eb001b] absolute -ml-1.5" />
-                        <div className="w-3 h-3 rounded-full bg-[#f79e1b] absolute ml-1.5 opacity-80" />
-                      </div>
-                      <div className="w-10 h-7 bg-white rounded-md flex items-center justify-center text-black text-xs font-bold">Pay</div>
-                    </div>
-                    <p className="text-white/50 text-sm text-center max-w-xs">
-                      {lang === 'ar'
-                        ? 'سيتم توجيهك إلى صفحة دفع آمنة من Stripe لإتمام الدفع'
-                        : "You'll be redirected to Stripe's secure checkout to complete payment"}
-                    </p>
-                    <div className="flex items-center gap-1.5 text-white/25 text-xs mt-1">
-                      <Lock size={11} />
-                      <span>{lang === 'ar' ? '256-bit SSL مشفر' : '256-bit SSL Encrypted'}</span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
 
             {/* Terms + Submit */}
