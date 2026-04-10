@@ -20,21 +20,16 @@ function buildFooter({ lang, supportEmail }) {
   const safeSupportEmail = escapeHtml(supportEmail)
 
   return `
-    <div style="margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08)">
-      <p style="margin:0 0 10px;color:#8f919c;font-size:12px;line-height:1.8">
+    <div style="margin-top:28px;padding-top:18px;border-top:1px solid rgba(255,255,255,0.08)">
+      <p style="margin:0 0 8px;color:#8f919c;font-size:12px;line-height:1.8">
         ${isAr
           ? 'هذه رسالة آلية من FitZone. يرجى عدم الرد مباشرة على هذا البريد الإلكتروني.'
           : 'This is an automated email from FitZone. Please do not reply directly to this message.'}
       </p>
-      <p style="margin:0 0 10px;color:#8f919c;font-size:12px;line-height:1.8">
+      <p style="margin:0;color:#8f919c;font-size:12px;line-height:1.8">
         ${isAr
           ? `إذا كنت بحاجة إلى مساعدة، تواصل معنا عبر <a href="mailto:${safeSupportEmail}" style="color:#ffffff;text-decoration:none">${safeSupportEmail}</a> أو قم بزيارة <a href="https://www.fitzoneapp.com" style="color:#ffffff;text-decoration:none">fitzoneapp.com</a>.`
           : `If you need help, contact us at <a href="mailto:${safeSupportEmail}" style="color:#ffffff;text-decoration:none">${safeSupportEmail}</a> or visit <a href="https://www.fitzoneapp.com" style="color:#ffffff;text-decoration:none">fitzoneapp.com</a>.`}
-      </p>
-      <p style="margin:0;color:#666a76;font-size:11px;line-height:1.8">
-        ${isAr
-          ? 'تم إرسال هذه الرسالة بخصوص نشاط على حسابك أو طلبك. للحفاظ على أمانك، لا تشارك هذا البريد أو الروابط الموجودة فيه مع أي شخص.'
-          : 'This message was sent regarding activity on your account or order. For your security, do not share this email or any links inside it with anyone.'}
       </p>
     </div>`
 }
@@ -65,12 +60,12 @@ function baseTemplate({
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;visibility:hidden">${escapeHtml(preheader || '')}</div>
     <div dir="${direction}" style="margin:0;padding:24px 12px;background:#f5f5f7">
       <div style="max-width:620px;margin:0 auto;background:#0b0c10;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 60px rgba(0,0,0,0.28);color:#ffffff">
-        <div style="padding:26px 28px 22px;background:radial-gradient(circle at top ${isAr ? 'left' : 'right'}, rgba(211,10,74,0.22), transparent 28%),linear-gradient(180deg,#14161d 0%,#0b0c10 100%);border-bottom:1px solid rgba(255,255,255,0.08);text-align:${align}">
+        <div style="padding:26px 28px 20px;background:radial-gradient(circle at top ${isAr ? 'left' : 'right'}, rgba(211,10,74,0.16), transparent 25%),linear-gradient(180deg,#14161d 0%,#0b0c10 100%);border-bottom:1px solid rgba(255,255,255,0.08);text-align:${align}">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
             <tr>
               <td style="text-align:${align};vertical-align:top">
-                <div style="display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07)">
-                  <img src="${logoUrl}" alt="FitZone" width="28" height="28" style="width:28px;height:28px;border-radius:8px;object-fit:cover;display:block" />
+                <div style="display:inline-flex;align-items:center;gap:10px">
+                  <img src="${logoUrl}" alt="FitZone" width="30" height="30" style="width:30px;height:30px;border-radius:8px;object-fit:cover;display:block" />
                   <div style="font-size:11px;letter-spacing:2.6px;text-transform:uppercase;color:#ff4d82;font-weight:800">FITZONE</div>
                 </div>
               </td>
@@ -79,8 +74,8 @@ function baseTemplate({
               </td>
             </tr>
           </table>
-          <div style="margin-top:18px;color:#ff4d82;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase">${escapeHtml(eyebrow || '')}</div>
-          <h1 style="margin:10px 0 0;font-size:${isAr ? 31 : 32}px;line-height:${isAr ? 1.5 : 1.22};font-weight:800;color:#ffffff">${title}</h1>
+          <div style="margin-top:22px;color:#ff4d82;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase">${escapeHtml(eyebrow || '')}</div>
+          <h1 style="margin:10px 0 0;font-size:${isAr ? 30 : 32}px;line-height:${isAr ? 1.45 : 1.22};font-weight:800;color:#ffffff">${title}</h1>
         </div>
 
         <div style="padding:28px;text-align:${align}">
@@ -94,7 +89,7 @@ function baseTemplate({
             </div>` : ''}
 
           ${note ? `
-            <div style="margin-top:18px;padding:16px 18px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:#9ea2ad;font-size:12px;line-height:1.9;text-align:${align}">
+            <div style="margin-top:18px;padding:0;color:#9094a0;font-size:12px;line-height:1.9;text-align:${align}">
               ${note}
             </div>` : ''}
 
