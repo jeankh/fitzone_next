@@ -436,7 +436,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 items-start">
+        <div className="grid lg:grid-cols-5 gap-6 items-start">
 
           {/* ── Left: Form (3/5) ── */}
           <div className="lg:col-span-3 space-y-5">
