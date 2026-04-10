@@ -8,7 +8,7 @@ FitLife Ebooks / FitZone — Next.js 14 e-commerce platform selling fitness eboo
 
 ## Architecture
 - Next.js 14 App Router with `src/` directory
-- Upstash Redis for all data storage (purchases, users, blogs, marketing, giveaway)
+- Upstash Redis for data storage (purchases, users, blogs, marketing)
 - Stripe Checkout for payments (card only)
 - Resend for transactional emails
 - bcryptjs for password hashing, jose for JWT
@@ -69,6 +69,11 @@ Plaintext migration, signup validation, set-password flow, dynamic imports, clie
 - Reset password + magic link emails now support Arabic/English based on UI language
 - Order confirmation + account-created emails now use the same branded template system
 - Resend sender is required from env (`FROM_EMAIL`) instead of falling back to old domain values
+
+### Session 9 — Feature Removal Cleanup
+- Removed giveaway feature end-to-end: public page, client component, admin management UI, and all giveaway API routes
+- Removed unused admin bank account management route and dashboard section
+- Cleaned middleware, sitemap, and rate-limiting references for removed features
 
 ## Current State
 All known issues resolved. Build passes cleanly. Remaining nice-to-haves:

@@ -6,7 +6,7 @@ import {
   Copy, LogOut, Lock, BarChart2, Package, Megaphone, RefreshCw,
   Eye, EyeOff, TrendingUp, AlertTriangle, Pencil, X, Save,
   Plus, Trash2, BookOpen, Upload, Link as LinkIcon, ChevronDown, ChevronUp,
-  Building2, Globe, Users, Trophy, ToggleLeft, ToggleRight, DollarSign, Download, Calendar
+  Globe, DollarSign, Download, Calendar
 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -675,30 +675,11 @@ function Dashboard({ onLogout, initialEvents }) {
   const [mktInput, setMktInput] = useState('')
   const [savingMkt, setSavingMkt] = useState(false)
 
-  // Bank
-  const [bank, setBank] = useState({ bankName_ar: '', bankName_en: '', iban: '', beneficiaryName_ar: '', beneficiaryName_en: '' })
-  const [editingBank, setEditingBank] = useState(null)
-  const [bankInput, setBankInput] = useState('')
-  const [savingBank, setSavingBank] = useState(false)
-
   // Blogs
   const [blogs, setBlogs] = useState([])
   const [editingBlog, setEditingBlog] = useState(null) // null | 'new' | post object
   const [deletingBlog, setDeletingBlog] = useState(null)
   const [blogsExpanded, setBlogsExpanded] = useState(true)
-
-  // Giveaway
-  const [giveaway, setGiveaway] = useState(null)
-  const [giveawayEntryCount, setGiveawayEntryCount] = useState(0)
-  const [giveawayEntries, setGiveawayEntries] = useState([])
-  const [giveawayEntriesExpanded, setGiveawayEntriesExpanded] = useState(false)
-  const [savingGiveaway, setSavingGiveaway] = useState(false)
-  const [editingGiveaway, setEditingGiveaway] = useState(false)
-  const [giveawayForm, setGiveawayForm] = useState({ title: { ar: '', en: '' }, description: { ar: '', en: '' }, prize: 'bundle', endDate: '', maxEntries: '' })
-  const [pickedWinner, setPickedWinner] = useState(null)
-  const [confirmClearEntries, setConfirmClearEntries] = useState(false)
-  const [deletingEntry, setDeletingEntry] = useState(null)
-  const [giveawayLang, setGiveawayLang] = useState('en')
 
   // Misc
   const [copied, setCopied] = useState(null)
@@ -721,12 +702,7 @@ function Dashboard({ onLogout, initialEvents }) {
     fetch('/api/admin/prices').then(r => r.json()).then(setPrices).catch(() => {})
     fetch('/api/admin/currency-prices').then(r => r.json()).then(setCurrencyPrices).catch(() => {})
     fetch('/api/admin/marketing').then(r => r.json()).then(setMarketing).catch(() => {})
-    fetch('/api/admin/bank').then(r => r.json()).then(setBank).catch(() => {})
     fetch('/api/admin/blogs').then(r => r.json()).then(data => { if (Array.isArray(data)) setBlogs(data) }).catch(() => {})
-    fetch('/api/admin/giveaway').then(r => r.json()).then(data => {
-      if (data.config) { setGiveaway(data.config); setGiveawayForm(data.config) }
-      setGiveawayEntryCount(data.entryCount || 0)
-    }).catch(() => {})
     loadPurchases()
   }, [])
 
@@ -822,66 +798,6 @@ function Dashboard({ onLogout, initialEvents }) {
       setCurrencyPrices(p => ({ ...p, [editingCurrencyCell]: currencyCellInput }))
       setEditingCurrencyCell(null)
     } finally { setSavingCurrency(false) }
-  }
-
-  // Bank handlers
-  const startEditBank = (key, val) => { setEditingBank(key); setBankInput(val) }
-  const saveBank = async () => {
-    setSavingBank(true)
-    try {
-      await fetch('/api/admin/bank', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingBank]: bankInput }) })
-      setBank(b => ({ ...b, [editingBank]: bankInput }))
-      setEditingBank(null)
-    } finally { setSavingBank(false) }
-  }
-
-  // Giveaway handlers
-  const saveGiveaway = async (data) => {
-    setSavingGiveaway(true)
-    try {
-      await fetch('/api/admin/giveaway', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
-      setGiveaway(data)
-      setEditingGiveaway(false)
-    } finally { setSavingGiveaway(false) }
-  }
-  const toggleGiveawayActive = async () => {
-    if (!giveaway) return
-    const updated = { ...giveaway, active: !giveaway.active }
-    await saveGiveaway(updated)
-  }
-  const loadGiveawayEntries = async () => {
-    const data = await fetch('/api/admin/giveaway?entries=1').then(r => r.json())
-    setGiveawayEntries(data.entries || [])
-    setGiveawayEntryCount(data.entryCount || 0)
-    setGiveawayEntriesExpanded(true)
-  }
-  const deleteGiveawayEntry = async (idx) => {
-    await fetch(`/api/admin/giveaway?index=${idx}`, { method: 'DELETE' })
-    const updated = giveawayEntries.filter((_, i) => i !== idx)
-    setGiveawayEntries(updated)
-    setGiveawayEntryCount(updated.length)
-    setDeletingEntry(null)
-  }
-  const clearAllEntries = async () => {
-    await fetch('/api/admin/giveaway?clearEntries=1', { method: 'DELETE' })
-    setGiveawayEntries([])
-    setGiveawayEntryCount(0)
-    setConfirmClearEntries(false)
-    setGiveawayEntriesExpanded(false)
-    setPickedWinner(null)
-  }
-  const pickWinner = () => {
-    if (!giveawayEntries.length) return
-    setPickedWinner(giveawayEntries[Math.floor(Math.random() * giveawayEntries.length)])
-  }
-  const setGiveawayField = (path, value) => {
-    const keys = path.split('.')
-    setGiveawayForm(prev => {
-      const next = { ...prev }
-      if (keys.length === 1) next[keys[0]] = value
-      else next[keys[0]] = { ...prev[keys[0]], [keys[1]]: value }
-      return next
-    })
   }
 
   const mktFields = [
@@ -1188,53 +1104,6 @@ function Dashboard({ onLogout, initialEvents }) {
           </div>
         </motion.section>
 
-        {/* ── 4: Bank Account Details ── */}
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.175 }}>
-          <div className="flex items-center gap-2 mb-5">
-            <Building2 size={18} className="text-brand" />
-            <h2 className="text-white font-bold text-lg">Bank Account Details</h2>
-          </div>
-          <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-            {[
-              { key: 'bankName_ar',        label: 'Bank Name (AR)' },
-              { key: 'bankName_en',        label: 'Bank Name (EN)' },
-              { key: 'iban',               label: 'IBAN / Account' },
-              { key: 'beneficiaryName_ar', label: 'Beneficiary (AR)' },
-              { key: 'beneficiaryName_en', label: 'Beneficiary (EN)' },
-            ].map(({ key, label }, i, arr) => {
-              const val = bank[key] || ''
-              const isEditing = editingBank === key
-              return (
-                <div key={key} className={`px-5 py-3.5 ${i < arr.length - 1 ? 'border-b border-border' : ''}`}>
-                  {isEditing ? (
-                    <div className="flex items-center gap-3">
-                      <span className="text-text-secondary text-sm w-44 flex-shrink-0">{label}</span>
-                      <input value={bankInput} onChange={e => setBankInput(e.target.value)} autoFocus
-                        dir={key.endsWith('_ar') ? 'rtl' : 'ltr'}
-                        className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm font-mono focus:outline-none" />
-                      <SaveBtn saving={savingBank} onClick={saveBank} />
-                      <CancelBtn onClick={() => setEditingBank(null)} />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-text-secondary text-sm w-44 flex-shrink-0">{label}</span>
-                      <span className={`text-white text-sm font-mono flex-1 truncate ${!val ? 'text-text-muted' : ''}`} dir={key === 'iban' ? 'ltr' : undefined}>{val || '—'}</span>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={() => handleCopy(val, key)} className="text-text-muted hover:text-brand transition-colors">
-                          <Copy size={13} />
-                        </button>
-                        <button onClick={() => startEditBank(key, val)} className="text-text-muted hover:text-brand transition-colors">
-                          <Pencil size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </motion.section>
-
         {/* ── 5: Blog Management ── */}
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.22 }}>
           <div className="flex items-center justify-between mb-5">
@@ -1299,216 +1168,6 @@ function Dashboard({ onLogout, initialEvents }) {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.section>
-
-        {/* ── 6: Giveaway ── */}
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.26 }}>
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <Gift size={18} className="text-brand" />
-              <h2 className="text-white font-bold text-lg">Giveaway</h2>
-              {giveaway && (
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${giveaway.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-white/5 text-text-muted'}`}>
-                  {giveaway.active ? 'Active' : 'Inactive'}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {giveaway && (
-                <button onClick={toggleGiveawayActive}
-                  className={`flex items-center gap-1.5 text-sm border px-3 py-1.5 rounded-lg transition-all ${giveaway.active ? 'border-red-400/30 text-red-400 hover:bg-red-400/5' : 'border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/5'}`}>
-                  {giveaway.active ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-                  {giveaway.active ? 'Deactivate' : 'Activate'}
-                </button>
-              )}
-              <button onClick={() => { setEditingGiveaway(v => !v); if (giveaway) setGiveawayForm(giveaway) }}
-                className="flex items-center gap-1.5 text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors">
-                {giveaway ? <><Pencil size={13} />{editingGiveaway ? 'Cancel' : 'Edit Settings'}</> : <><Plus size={13} />Create Giveaway</>}
-              </button>
-            </div>
-          </div>
-
-          {/* Config form */}
-          <AnimatePresence>
-            {editingGiveaway && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden mb-5">
-                <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
-                  <div className="flex items-center gap-2 mb-1">
-                    <button onClick={() => setGiveawayLang('en')} className={`text-xs px-2.5 py-1 rounded-lg ${giveawayLang === 'en' ? 'bg-brand text-white' : 'text-text-muted hover:text-white border border-border'}`}>EN</button>
-                    <button onClick={() => setGiveawayLang('ar')} className={`text-xs px-2.5 py-1 rounded-lg ${giveawayLang === 'ar' ? 'bg-brand text-white' : 'text-text-muted hover:text-white border border-border'}`}>AR</button>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-text-secondary text-xs">Title ({giveawayLang.toUpperCase()})</label>
-                      <input value={giveawayForm.title?.[giveawayLang] || ''} onChange={e => setGiveawayField(`title.${giveawayLang}`, e.target.value)}
-                        dir={giveawayLang === 'ar' ? 'rtl' : 'ltr'}
-                        className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-text-secondary text-xs">Prize</label>
-                      <div className="flex gap-2">
-                        {['transformation', 'nutrition', 'bundle'].map(p => (
-                          <button key={p} type="button" onClick={() => setGiveawayField('prize', p)}
-                            className={`flex-1 text-xs py-2 rounded-lg border capitalize transition-all ${giveawayForm.prize === p ? 'bg-brand/10 border-brand/50 text-brand' : 'border-border text-text-muted hover:text-white'}`}>
-                            {p}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-text-secondary text-xs">Description ({giveawayLang.toUpperCase()})</label>
-                      <textarea value={giveawayForm.description?.[giveawayLang] || ''} onChange={e => setGiveawayField(`description.${giveawayLang}`, e.target.value)}
-                        dir={giveawayLang === 'ar' ? 'rtl' : 'ltr'} rows={2}
-                        className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors resize-none" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <label className="text-text-secondary text-xs">End Date</label>
-                        <DateInput value={giveawayForm.endDate || ''} onChange={v => setGiveawayField('endDate', v)} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-text-secondary text-xs">Max Entries <span className="text-text-muted">(optional)</span></label>
-                        <input type="number" value={giveawayForm.maxEntries || ''} onChange={e => setGiveawayField('maxEntries', e.target.value ? Number(e.target.value) : '')}
-                          className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-brand transition-colors" />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 pt-1">
-                    <button onClick={() => saveGiveaway({ ...giveawayForm, active: giveaway?.active ?? true })} disabled={savingGiveaway}
-                      className="flex items-center gap-1.5 text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50">
-                      <Save size={13} />{savingGiveaway ? 'Saving…' : 'Save Giveaway'}
-                    </button>
-                    <button onClick={() => setEditingGiveaway(false)} className="text-sm text-text-muted hover:text-white border border-border px-4 py-2 rounded-lg transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Giveaway stats + entries */}
-          {giveaway ? (
-            <div className="space-y-3">
-              <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-                {[
-                  { label: 'Prize', value: giveaway.prize },
-                  { label: 'End Date', value: giveaway.endDate || '—' },
-                  { label: 'Max Entries', value: giveaway.maxEntries ? String(giveaway.maxEntries) : 'Unlimited' },
-                  { label: 'Total Entries', value: String(giveawayEntryCount) },
-                ].map(({ label, value }, i, arr) => (
-                  <div key={label} className={`flex items-center justify-between px-5 py-3 ${i < arr.length - 1 ? 'border-b border-border' : ''}`}>
-                    <span className="text-text-secondary text-sm">{label}</span>
-                    <span className="text-white text-sm font-mono capitalize">{value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                {!giveawayEntriesExpanded ? (
-                  <button onClick={loadGiveawayEntries}
-                    className="flex items-center gap-1.5 text-sm border border-border text-text-secondary hover:text-white px-3 py-1.5 rounded-lg transition-all">
-                    <Users size={13} />View Entries ({giveawayEntryCount})
-                  </button>
-                ) : (
-                  <button onClick={() => setGiveawayEntriesExpanded(false)}
-                    className="flex items-center gap-1.5 text-sm border border-border text-text-secondary hover:text-white px-3 py-1.5 rounded-lg transition-all">
-                    <ChevronUp size={13} />Hide Entries
-                  </button>
-                )}
-                {giveawayEntriesExpanded && giveawayEntries.length > 0 && (
-                  <button onClick={pickWinner}
-                    className="flex items-center gap-1.5 text-sm bg-yellow-400/10 border border-yellow-400/30 text-yellow-400 hover:bg-yellow-400/20 px-3 py-1.5 rounded-lg transition-all">
-                    <Trophy size={13} />Pick Winner
-                  </button>
-                )}
-                {giveawayEntryCount > 0 && (
-                  confirmClearEntries ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-text-secondary text-xs flex items-center gap-1"><AlertTriangle size={12} className="text-yellow-400" />Clear all entries?</span>
-                      <button onClick={clearAllEntries} className="text-xs text-red-400 hover:text-red-300 border border-red-400/30 px-3 py-1.5 rounded-lg">Yes, clear</button>
-                      <button onClick={() => setConfirmClearEntries(false)} className="text-xs text-text-muted border border-border px-3 py-1.5 rounded-lg">Cancel</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setConfirmClearEntries(true)}
-                      className="flex items-center gap-1.5 text-sm border border-red-400/20 text-red-400/60 hover:text-red-400 hover:border-red-400/40 px-3 py-1.5 rounded-lg transition-all">
-                      <Trash2 size={13} />Clear All Entries
-                    </button>
-                  )
-                )}
-              </div>
-
-              {/* Picked winner */}
-              <AnimatePresence>
-                {pickedWinner && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                    className="bg-yellow-400/10 border border-yellow-400/30 rounded-2xl p-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Trophy size={16} className="text-yellow-400" />
-                      <span className="text-yellow-400 font-semibold text-sm">Winner Picked!</span>
-                      <button onClick={() => setPickedWinner(null)} className="ml-auto text-text-muted hover:text-white"><X size={14} /></button>
-                    </div>
-                    <div className="grid sm:grid-cols-3 gap-3">
-                      {[['Name', pickedWinner.name], ['Email', pickedWinner.email], ['Phone', pickedWinner.phone]].map(([l, v]) => (
-                        <div key={l}>
-                          <p className="text-text-muted text-xs mb-0.5">{l}</p>
-                          <p className="text-white text-sm font-mono">{v}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Entries list */}
-              <AnimatePresence>
-                {giveawayEntriesExpanded && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                    {giveawayEntries.length === 0 ? (
-                      <div className="bg-surface border border-border rounded-2xl p-6 text-center">
-                        <p className="text-text-muted text-sm">No entries yet.</p>
-                      </div>
-                    ) : (
-                      <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-                        <div className="grid grid-cols-5 gap-3 px-5 py-2.5 border-b border-border bg-white/[0.02]">
-                          {['Name', 'Email', 'Phone', 'Entries', 'Date'].map(h => (
-                            <span key={h} className="text-text-muted text-xs font-medium">{h}</span>
-                          ))}
-                        </div>
-                        {giveawayEntries.map((entry, idx) => (
-                          <div key={idx} className={`flex items-center gap-3 px-5 py-3 ${idx < giveawayEntries.length - 1 ? 'border-b border-border' : ''}`}>
-                            <div className="grid grid-cols-5 gap-3 flex-1">
-                              <span className="text-white text-xs truncate">{entry.name}</span>
-                              <span className="text-text-secondary text-xs truncate">{entry.email}</span>
-                              <span className="text-text-secondary text-xs font-mono">{entry.phone}</span>
-                              <span className="text-white text-xs font-bold">{entry.entries || 1}{entry.referrals > 0 && <span className="text-brand/70 font-normal ml-1">({entry.referrals} refs)</span>}</span>
-                              <span className="text-text-muted text-xs">{entry.enteredAt ? new Date(entry.enteredAt).toLocaleDateString() : '—'}</span>
-                            </div>
-                            {deletingEntry === idx ? (
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <button onClick={() => deleteGiveawayEntry(idx)} className="text-xs text-red-400 border border-red-400/30 px-2 py-0.5 rounded">Delete</button>
-                                <button onClick={() => setDeletingEntry(null)} className="text-xs text-text-muted border border-border px-2 py-0.5 rounded">Cancel</button>
-                              </div>
-                            ) : (
-                              <button onClick={() => setDeletingEntry(idx)} className="text-text-muted hover:text-red-400 transition-colors flex-shrink-0">
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <div className="bg-surface border border-border rounded-2xl p-8 text-center">
-              <Gift size={28} className="text-text-muted mx-auto mb-3" />
-              <p className="text-white text-sm font-medium mb-1">No giveaway created yet</p>
-              <p className="text-text-muted text-xs">Click "Create Giveaway" to set up a prize draw for your audience.</p>
-            </div>
-          )}
         </motion.section>
 
         {/* ── 7: Purchases ── */}

@@ -7,7 +7,6 @@ export default function sitemap() {
     '/results',
     '/blog',
     '/checkout',
-    '/giveaway',
     '/terms',
     '/privacy',
     '/refund',

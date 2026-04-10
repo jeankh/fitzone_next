@@ -17,7 +17,6 @@ function getLimiters() {
     if (!r) return null
     rateLimiters = {
       login: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(5, '15 m'), prefix: 'rl:login' }),
-      giveaway: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(3, '1 h'), prefix: 'rl:giveaway' }),
       checkout: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(10, '15 m'), prefix: 'rl:checkout' }),
       events: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(60, '1 m'), prefix: 'rl:events' }),
       general: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(30, '10 s'), prefix: 'rl:general' }),
@@ -35,7 +34,6 @@ export async function checkRateLimit(request) {
 
   let limiter
   if (pathname === '/api/admin/login') limiter = limiters.login
-  else if (pathname.startsWith('/api/giveaway/enter')) limiter = limiters.giveaway
   else if (pathname.startsWith('/api/checkout/')) limiter = limiters.checkout
   else if (pathname === '/api/events' && request.method === 'POST') limiter = limiters.events
   else limiter = limiters.general
