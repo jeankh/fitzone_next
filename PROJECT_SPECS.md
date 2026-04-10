@@ -75,6 +75,15 @@ Plaintext migration, signup validation, set-password flow, dynamic imports, clie
 - Removed unused admin bank account management route and dashboard section
 - Cleaned middleware, sitemap, and rate-limiting references for removed features
 
+### Session 10 — Marketing Model Simplification
+- Replaced fixed marketing fields + visible/hidden toggles with a simpler model:
+  - permanent WhatsApp number
+  - list-based social buttons (`socials`) managed from admin
+- Admin can now add/delete social buttons by platform and URL
+- Footer now renders social icons from the `socials` list instead of hardcoded Twitter/Instagram/YouTube fields
+- Marketing API transparently migrates legacy stored values into the new list format
+- Shared marketing helpers moved normalization/migration logic into `src/lib/marketing.js`
+
 ## Current State
 All known issues resolved. Build passes cleanly. Remaining nice-to-haves:
 - Download links in account dashboard (currently WhatsApp-only delivery)

@@ -1,17 +1,11 @@
 'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
-import { MARKETING_DEFAULTS, normalizeMarketingValue } from '../lib/marketing'
+import { MARKETING_DEFAULTS, normalizeMarketingData } from '../lib/marketing'
 
 const DEFAULTS = {
   ...MARKETING_DEFAULTS,
   whatsapp: '',
-  twitter: '',
-  instagram: '',
-  youtube: '',
-  whatsapp_visible: 'false',
-  twitter_visible: 'false',
-  instagram_visible: 'false',
-  youtube_visible: 'false',
+  socials: [],
   loaded: false,
 }
 
@@ -24,8 +18,7 @@ export function MarketingProvider({ children }) {
     fetch('/api/admin/marketing', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
-        const normalized = {}
-        for (const [k, v] of Object.entries(data || {})) normalized[k] = normalizeMarketingValue(k, v)
+        const normalized = normalizeMarketingData(data || {})
         setMarketing({ ...DEFAULTS, ...normalized, loaded: true })
       })
       .catch((e) => {

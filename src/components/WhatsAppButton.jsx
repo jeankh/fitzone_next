@@ -3,14 +3,14 @@ import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 import { useMarketing } from '../context/MarketingContext'
-import { getMarketingHref, isMarketingVisible } from '../lib/marketing'
+import { getMarketingHref } from '../lib/marketing'
 
 export default function WhatsAppButton() {
   const { lang } = useLanguage()
-  const { whatsapp, whatsapp_visible, loaded } = useMarketing()
+  const { whatsapp, loaded } = useMarketing()
 
   const whatsappHref = getMarketingHref('whatsapp', whatsapp)
-  if (!loaded || !isMarketingVisible(whatsapp_visible) || !whatsappHref) return null
+  if (!loaded || !whatsappHref) return null
 
   return (
     <motion.a
