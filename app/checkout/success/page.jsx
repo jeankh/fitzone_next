@@ -7,7 +7,6 @@ import { useLanguage } from '../../../src/context/LanguageContext'
 import { useCurrency } from '../../../src/context/CurrencyContext'
 import { BOOKS, BUNDLE } from '../../../src/lib/books'
 import { useMarketing } from '../../../src/context/MarketingContext'
-import { getMarketingHref } from '../../../src/lib/marketing'
 import Image from 'next/image'
 
 function getBookInfo(id, lang) {
@@ -90,7 +89,7 @@ function SuccessPage() {
 
   const items = order?.metadata?.items ? JSON.parse(order.metadata.items) : []
   const isBundle = items.includes('bundle')
-  const whatsappLink = `${getMarketingHref('whatsapp', marketing.whatsapp)}?text=${encodeURIComponent(
+  const whatsappLink = `https://wa.me/${marketing.whatsapp}?text=${encodeURIComponent(
     lang === 'ar' ? 'مرحباً، قمت بشراء البرامج من موقعكم وأريد استلامها.' : 'Hi, I just purchased your programs and would like to receive them.'
   )}`
 

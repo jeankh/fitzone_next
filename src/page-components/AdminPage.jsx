@@ -9,7 +9,6 @@ import {
   Globe, DollarSign, Download, Calendar
 } from 'lucide-react'
 import Image from 'next/image'
-import { getMarketingDisplayValue, getMarketingHref, getSocialPlatformLabel, normalizeSocialItem, normalizeWhatsApp, SOCIAL_PLATFORM_OPTIONS } from '../lib/marketing'
 
 const SESSION_KEY = 'fitzone_admin'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX'
@@ -671,10 +670,9 @@ function Dashboard({ onLogout, initialEvents }) {
   const [currencyCellInput, setCurrencyCellInput] = useState('')
 
   // Marketing
-  const [marketing, setMarketing] = useState({ whatsapp: '', socials: [] })
+  const [marketing, setMarketing] = useState({ whatsapp: '', twitter: '', instagram: '', youtube: '', whatsapp_visible: 'true', twitter_visible: 'true', instagram_visible: 'true', youtube_visible: 'true' })
   const [editingMkt, setEditingMkt] = useState(null)
   const [mktInput, setMktInput] = useState('')
-  const [newSocial, setNewSocial] = useState({ platform: 'x', url: '' })
   const [savingMkt, setSavingMkt] = useState(false)
 
   // Blogs
@@ -703,7 +701,7 @@ function Dashboard({ onLogout, initialEvents }) {
   useEffect(() => {
     fetch('/api/admin/prices').then(r => r.json()).then(setPrices).catch(() => {})
     fetch('/api/admin/currency-prices').then(r => r.json()).then(setCurrencyPrices).catch(() => {})
-    fetch('/api/admin/marketing', { cache: 'no-store' }).then(r => r.json()).then(setMarketing).catch(() => {})
+    fetch('/api/admin/marketing').then(r => r.json()).then(setMarketing).catch(() => {})
     fetch('/api/admin/blogs').then(r => r.json()).then(data => { if (Array.isArray(data)) setBlogs(data) }).catch(() => {})
     loadPurchases()
   }, [])
@@ -751,35 +749,13 @@ function Dashboard({ onLogout, initialEvents }) {
   }
 
   const startEditMkt = (key, val) => { setEditingMkt(key); setMktInput(val) }
-  const saveWhatsApp = async () => {
+  const saveMkt = async () => {
     setSavingMkt(true)
     try {
-      const normalized = normalizeWhatsApp(mktInput)
-      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ whatsapp: normalized }) })
-      setMarketing(m => ({ ...m, whatsapp: normalized }))
+      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingMkt]: mktInput }) })
+      setMarketing(m => ({ ...m, [editingMkt]: mktInput }))
       setEditingMkt(null)
     } finally { setSavingMkt(false) }
-  }
-
-  const saveSocials = async (nextSocials) => {
-    setSavingMkt(true)
-    try {
-      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ socials: nextSocials }) })
-      setMarketing(m => ({ ...m, socials: nextSocials }))
-    } finally { setSavingMkt(false) }
-  }
-
-  const addSocial = async () => {
-    const item = normalizeSocialItem({ platform: newSocial.platform, url: newSocial.url }, `${newSocial.platform}-${Date.now()}`)
-    if (!item) return
-    const nextSocials = [...(marketing.socials || []), item]
-    await saveSocials(nextSocials)
-    setNewSocial({ platform: 'x', url: '' })
-  }
-
-  const deleteSocial = async (id) => {
-    const nextSocials = (marketing.socials || []).filter(item => item.id !== id)
-    await saveSocials(nextSocials)
   }
 
   const handleBlogSave = (saved) => {
@@ -822,6 +798,21 @@ function Dashboard({ onLogout, initialEvents }) {
       setCurrencyPrices(p => ({ ...p, [editingCurrencyCell]: currencyCellInput }))
       setEditingCurrencyCell(null)
     } finally { setSavingCurrency(false) }
+  }
+
+  const mktFields = [
+    { key: 'whatsapp', label: 'WhatsApp Number' },
+    { key: 'twitter',  label: 'Twitter / X' },
+    { key: 'instagram',label: 'Instagram' },
+    { key: 'youtube',  label: 'YouTube' },
+  ]
+
+  const toggleMktVisible = async (key) => {
+    const visKey = `${key}_visible`
+    const current = marketing[visKey] === 'true'
+    const next = current ? 'false' : 'true'
+    await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [visKey]: next }) })
+    setMarketing(m => ({ ...m, [visKey]: next }))
   }
 
   const productCards = [
@@ -1057,117 +1048,51 @@ function Dashboard({ onLogout, initialEvents }) {
             <h2 className="text-white font-bold text-lg">Marketing Info</h2>
           </div>
           <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-            <div className="px-5 py-3 bg-white/[0.02] border-b border-border">
-              <p className="text-white text-sm font-medium mb-1">Site Connection</p>
-              <p className="text-text-muted text-xs">WhatsApp is always enabled across the public site. Social media buttons are managed as a simple list below and shown in the footer.</p>
-            </div>
-
-            <div className="px-5 py-3.5 border-b border-border">
-              {editingMkt === 'whatsapp' ? (
-                <div className="flex items-start gap-3">
-                  <div className="w-44 flex-shrink-0 pt-2">
-                    <span className="text-text-secondary text-sm">WhatsApp Number</span>
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    <input value={mktInput} onChange={e => setMktInput(e.target.value)} autoFocus placeholder="9665XXXXXXXX"
-                      className="w-full bg-background border border-brand/40 rounded-lg px-3 py-2 text-white text-sm focus:outline-none" />
-                    <p className="text-text-muted text-xs">Digits only. This powers the footer contact link, floating WhatsApp button, account page, and success page.</p>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <SaveBtn saving={savingMkt} onClick={saveWhatsApp} />
-                    <CancelBtn onClick={() => setEditingMkt(null)} />
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between gap-4">
-                  <div className="w-44 flex-shrink-0">
-                    <span className="text-text-secondary text-sm">WhatsApp Number</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <a href={getMarketingHref('whatsapp', marketing.whatsapp) || undefined}
-                      target="_blank" rel="noopener noreferrer"
-                      className="text-sm font-mono truncate block text-white hover:text-brand transition-colors">
-                      {getMarketingDisplayValue('whatsapp', marketing.whatsapp)}
-                    </a>
-                    <p className="text-text-muted text-[11px] truncate mt-1">Always shown across the site.</p>
-                    <p className="text-brand/70 text-[11px] truncate mt-1">Public URL: {getMarketingHref('whatsapp', marketing.whatsapp)}</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button onClick={() => handleCopy(marketing.whatsapp, 'whatsapp')} className="text-text-muted hover:text-brand transition-colors p-1">
-                      <Copy size={13} />
-                    </button>
-                    <button onClick={() => startEditMkt('whatsapp', marketing.whatsapp)} className="text-text-muted hover:text-brand transition-colors p-1">
-                      <Pencil size={13} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="px-5 py-3.5 border-b border-border">
-              <div className="flex items-center justify-between gap-4 mb-3">
-                <div>
-                  <p className="text-white text-sm font-medium">Social Media Buttons</p>
-                  <p className="text-text-muted text-xs mt-1">These buttons appear in the footer. Add, remove, and reorder by editing the list.</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {(marketing.socials || []).length === 0 ? (
-                  <div className="bg-background border border-border rounded-xl px-4 py-4 text-text-muted text-sm">No social buttons added yet.</div>
-                ) : (
-                  (marketing.socials || []).map((item) => (
-                    <div key={item.id} className="bg-background border border-border rounded-xl px-4 py-3 flex items-center gap-4">
-                      <div className="w-36 flex-shrink-0">
-                        <span className="text-white text-sm">{getSocialPlatformLabel(item.platform)}</span>
+            {mktFields.map(({ key, label }, i) => {
+              const val = marketing[key] || ''
+              const isEditing = editingMkt === key
+              const isVisible = marketing[`${key}_visible`] !== 'false'
+              return (
+                <div key={key} className={`px-5 py-3.5 ${i < mktFields.length - 1 ? 'border-b border-border' : ''} ${!isVisible ? 'opacity-50' : ''} transition-opacity`}>
+                  {isEditing ? (
+                    <div className="flex items-center gap-3">
+                      <span className="text-text-secondary text-sm w-40 flex-shrink-0">{label}</span>
+                      <input value={mktInput} onChange={e => setMktInput(e.target.value)} autoFocus
+                        className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none" />
+                      <SaveBtn saving={savingMkt} onClick={saveMkt} />
+                      <CancelBtn onClick={() => setEditingMkt(null)} />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 w-40 flex-shrink-0">
+                        <span className="text-text-secondary text-sm">{label}</span>
+                        {!isVisible && <span className="text-xs text-text-muted bg-white/5 px-1.5 py-0.5 rounded">hidden</span>}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-sm font-mono truncate block text-white hover:text-brand transition-colors">
-                          {item.url}
-                        </a>
-                      </div>
+                      <a href={val.startsWith('http') ? val : val ? `https://wa.me/${val}` : undefined}
+                        target="_blank" rel="noopener noreferrer"
+                        className={`text-sm font-mono flex-1 truncate transition-colors ${!isVisible ? 'text-text-muted' : val.startsWith('http') || val ? 'text-white hover:text-brand' : 'text-text-muted'}`}>
+                        {val || '—'}
+                      </a>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <button onClick={() => handleCopy(item.url, item.id)} className="text-text-muted hover:text-brand transition-colors p-1">
+                        {/* Visible / Hidden toggle */}
+                        <button onClick={() => toggleMktVisible(key)}
+                          title={isVisible ? 'Hide from site' : 'Show on site'}
+                          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-all ${isVisible ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/5' : 'border-border text-text-muted hover:text-white hover:border-white/20'}`}>
+                          {isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
+                          {isVisible ? 'Visible' : 'Hidden'}
+                        </button>
+                        <button onClick={() => handleCopy(val, key)} className="text-text-muted hover:text-brand transition-colors p-1">
                           <Copy size={13} />
                         </button>
-                        <button onClick={() => deleteSocial(item.id)} className="text-text-muted hover:text-red-400 transition-colors p-1">
-                          <Trash2 size={13} />
+                        <button onClick={() => startEditMkt(key, val)} className="text-text-muted hover:text-brand transition-colors p-1">
+                          <Pencil size={13} />
                         </button>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="px-5 py-3.5 border-b border-border">
-              <p className="text-white text-sm font-medium mb-3">Add Social Button</p>
-              <div className="grid md:grid-cols-[220px_1fr_auto] gap-3 items-center">
-                <select
-                  value={newSocial.platform}
-                  onChange={e => setNewSocial(s => ({ ...s, platform: e.target.value }))}
-                  className="bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none"
-                >
-                  {SOCIAL_PLATFORM_OPTIONS.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-                <input
-                  value={newSocial.url}
-                  onChange={e => setNewSocial(s => ({ ...s, url: e.target.value }))}
-                  placeholder="@fitzone or full URL"
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none"
-                />
-                <button
-                  onClick={addSocial}
-                  disabled={savingMkt || !newSocial.url.trim()}
-                  className="flex items-center justify-center gap-1.5 text-sm bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50"
-                >
-                  <Plus size={14} />Add
-                </button>
-              </div>
-            </div>
-
+                  )}
+                </div>
+              )
+            })}
             {/* GA4 ID — read only */}
             <div className="px-5 py-3.5 flex items-center justify-between gap-4">
               <span className="text-text-secondary text-sm w-40 flex-shrink-0">GA4 Measurement ID</span>
