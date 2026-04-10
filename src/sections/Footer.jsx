@@ -1,17 +1,25 @@
 'use client'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { Instagram, MessageCircle, Youtube } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 import { useMarketing } from '../context/MarketingContext'
 import Image from 'next/image'
 import { getMarketingHref, isMarketingVisible } from '../lib/marketing'
 
+function XIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      <path d="M4 4l16 16" />
+      <path d="M20 4L4 20" />
+    </svg>
+  )
+}
+
 export default function Footer() {
   const { lang } = useLanguage()
   const { whatsapp, twitter, instagram, youtube,
           whatsapp_visible, twitter_visible, instagram_visible, youtube_visible, loaded } = useMarketing()
-
-  if (!loaded) return null
 
   const isVisible = (key) => {
     const map = { whatsapp: whatsapp_visible, twitter: twitter_visible, instagram: instagram_visible, youtube: youtube_visible }
@@ -27,7 +35,7 @@ export default function Footer() {
     links: [
       { label: lang === 'ar' ? 'قصص النجاح' : 'Success Stories', href: '/results' },
       { label: lang === 'ar' ? 'المدونة' : 'Blog', href: '/blog' },
-      ...(isVisible('whatsapp') ? [{ label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: getMarketingHref('whatsapp', whatsapp), external: true }] : []),
+      ...(loaded && isVisible('whatsapp') ? [{ label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: getMarketingHref('whatsapp', whatsapp), external: true }] : []),
     ],
     legal: [
       { label: lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy', href: '/privacy' },
@@ -37,11 +45,11 @@ export default function Footer() {
   }
 
   const socialLinks = [
-    { key: 'twitter',   icon: '𝕏',  label: 'Twitter / X', href: getMarketingHref('twitter', twitter) },
-    { key: 'instagram', icon: '📷', label: 'Instagram',    href: getMarketingHref('instagram', instagram) },
-    { key: 'youtube',   icon: '▶️', label: 'YouTube',      href: getMarketingHref('youtube', youtube) },
-    { key: 'whatsapp',  icon: '💬', label: 'WhatsApp',     href: getMarketingHref('whatsapp', whatsapp), isWhatsapp: true },
-  ].filter(s => isVisible(s.key) && s.href)
+    { key: 'twitter',   icon: XIcon,         label: 'Twitter / X', href: getMarketingHref('twitter', twitter) },
+    { key: 'instagram', icon: Instagram,     label: 'Instagram',   href: getMarketingHref('instagram', instagram) },
+    { key: 'youtube',   icon: Youtube,       label: 'YouTube',     href: getMarketingHref('youtube', youtube) },
+    { key: 'whatsapp',  icon: MessageCircle, label: 'WhatsApp',    href: getMarketingHref('whatsapp', whatsapp) },
+  ].filter(s => loaded && isVisible(s.key) && s.href)
 
   const paymentMethods = [
     { icon: '🔒', label: lang === 'ar' ? 'Stripe آمن' : 'Secure Stripe' },
@@ -77,13 +85,9 @@ export default function Footer() {
                   rel="noopener noreferrer"
                   title={social.label}
                   whileHover={{ scale: 1.05, y: -2 }}
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg transition-all ${
-                    social.isWhatsapp
-                      ? 'bg-[#25d366] text-white hover:bg-[#20bd5a]'
-                      : 'bg-white/[0.04] border border-border text-text-secondary hover:bg-brand/10 hover:border-brand/30 hover:text-brand'
-                  }`}
+                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all bg-white/[0.04] border border-border text-text-secondary hover:bg-brand/10 hover:border-brand/30 hover:text-brand"
                 >
-                  {social.icon}
+                  <social.icon className="w-[19px] h-[19px]" />
                 </motion.a>
               ))}
             </div>
