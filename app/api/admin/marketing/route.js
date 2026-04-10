@@ -1,10 +1,9 @@
-import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
 import { sanitizeObject } from '../../../../src/lib/sanitize'
 import { validateOrigin } from '../../../../src/lib/csrf'
 import { MARKETING_DEFAULTS, normalizeMarketingValue } from '../../../../src/lib/marketing'
+import { getRedis } from '../../../../src/lib/redis'
 
-const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_marketing'
 
 const DEFAULTS = MARKETING_DEFAULTS
@@ -14,6 +13,7 @@ const ALLOWED = ['whatsapp', 'twitter', 'instagram', 'youtube',
 
 export async function GET() {
   try {
+    const kv = getRedis()
     const data = await kv.hgetall(KV_KEY)
     // Upstash hgetall returns booleans for 'true'/'false' strings — normalize back to strings
     const normalized = {}
@@ -27,6 +27,7 @@ export async function GET() {
 export async function POST(request) {
   if (!validateOrigin(request)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
+    const kv = getRedis()
     const body = await request.json()
     const updates = sanitizeObject(body, ALLOWED)
     for (const key of ALLOWED) {
