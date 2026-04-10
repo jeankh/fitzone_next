@@ -48,7 +48,7 @@ export default function LoginPage() {
       const res = await fetch('/api/user/send-reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, lang }),
       })
       if (res.ok) {
         setResetSent(true)
@@ -68,7 +68,7 @@ export default function LoginPage() {
       const res = await fetch('/api/user/send-magic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, lang }),
       })
       if (res.ok) {
         setMagicSent(true)

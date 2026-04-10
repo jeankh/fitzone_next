@@ -63,6 +63,13 @@ Plaintext migration, signup validation, set-password flow, dynamic imports, clie
 - **Password strength:** Visual 3-bar indicator on signup (Weak/Fair/Strong) based on length, mixed case, digits, special chars
 - **SEO:** Added `robots.txt` (blocks admin/api/account, allows all else) and `sitemap.xml` (all public routes) via Next.js metadata API
 
+### Session 8 — Email System Cleanup
+- Centralized all transactional email templates in `src/lib/emails.js`
+- Added shared Resend helpers in `src/lib/email.js`
+- Reset password + magic link emails now support Arabic/English based on UI language
+- Order confirmation + account-created emails now use the same branded template system
+- Resend sender is required from env (`FROM_EMAIL`) instead of falling back to old domain values
+
 ## Current State
 All known issues resolved. Build passes cleanly. Remaining nice-to-haves:
 - Download links in account dashboard (currently WhatsApp-only delivery)
@@ -70,3 +77,4 @@ All known issues resolved. Build passes cleanly. Remaining nice-to-haves:
 - Blog post images (currently placeholder)
 - Phone number in E.164 format enforcement
 - Vercel SSO protection on preview deployment
+- Marketing polish for email templates (logo/brand imagery/preheader text)

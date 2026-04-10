@@ -2,41 +2,18 @@ import { NextResponse } from 'next/server'
 import { getStripe } from '../../../../src/lib/stripe'
 import { getRedis } from '../../../../src/lib/redis'
 import { getFromEmail, getResend } from '../../../../src/lib/email'
+import { buildOrderConfirmationEmail } from '../../../../src/lib/emails'
 
 const PURCHASES_KEY = 'fitzone_purchases'
 
 async function sendConfirmationEmail({ email, name, items, lang }) {
-  const isAr = lang === 'ar'
-  const safeName = (name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const itemNames = (items || '').split(',').map(id => {
-    if (id === 'transformation') return isAr ? 'دليل التنشيف وبناء الجسم' : 'Shredding & Building Guide'
-    if (id === 'nutrition') return isAr ? 'دليل خسارة الدهون' : 'Fat Loss Guide'
-    if (id === 'bundle') return isAr ? 'الباقة الكاملة' : 'Complete Bundle'
-    return id
-  })
-
-  const subject = isAr ? 'تأكيد طلبك - FitZone' : 'Order Confirmed - FitZone'
-  const html = isAr
-    ? `<div dir="rtl" style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#fff;background:#0a0a0a;border-radius:16px">
-        <h2 style="color:#ef4444;margin-bottom:16px">✅ تم تأكيد طلبك!</h2>
-        <p style="color:#ccc">مرحباً ${safeName}،</p>
-        <p style="color:#ccc">شكراً لطلبك. منتجاتك:</p>
-        <ul style="color:#eee">${itemNames.map(n => `<li>${n}</li>`).join('')}</ul>
-        <p style="color:#999;font-size:13px;margin-top:24px">سيتم التواصل معك عبر الواتساب قريباً لتسليم المنتجات. شكراً لثقتك بنا! 🙏</p>
-      </div>`
-    : `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#fff;background:#0a0a0a;border-radius:16px">
-        <h2 style="color:#ef4444;margin-bottom:16px">✅ Order Confirmed!</h2>
-        <p style="color:#ccc">Hi ${safeName},</p>
-        <p style="color:#ccc">Thanks for your purchase! Your items:</p>
-        <ul style="color:#eee">${itemNames.map(n => `<li>${n}</li>`).join('')}</ul>
-        <p style="color:#999;font-size:13px;margin-top:24px">We'll reach out via WhatsApp shortly to deliver your products. Thank you for trusting us! 🙏</p>
-      </div>`
+  const template = buildOrderConfirmationEmail({ emailName: name, items, lang })
 
   return (await getResend()).emails.send({
     from: getFromEmail(),
     to: email,
-    subject,
-    html,
+    subject: template.subject,
+    html: template.html,
   })
 }
 

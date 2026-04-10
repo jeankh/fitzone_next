@@ -3,11 +3,12 @@ import { getUserByEmail, createPasswordResetToken } from '../../../../src/lib/us
 import { apiError } from '../../../../src/lib/api-utils'
 import { validateOrigin } from '../../../../src/lib/csrf'
 import { getFromEmail, getResend } from '../../../../src/lib/email'
+import { buildResetPasswordEmail } from '../../../../src/lib/emails'
 
 export async function POST(request) {
   if (!validateOrigin(request)) return apiError('Forbidden', 403)
   try {
-    const { email } = await request.json()
+    const { email, lang } = await request.json()
     if (!email?.trim()) return apiError('Email is required', 400)
 
     const raw = await getUserByEmail(email)
@@ -21,19 +22,13 @@ export async function POST(request) {
     const resetUrl = `${baseUrl}/account/reset-password?token=${token}`
 
     const resend = await getResend()
-    const subject = 'إعادة تعيين كلمة المرور - FitZone'
-    const html = `<div dir="rtl" style="font-family:system-ui;max-width:480px;margin:0 auto;padding:24px;color:#fff;background:#0a0a0a;border-radius:16px">
-      <h2 style="color:#ef4444;margin-bottom:16px">إعادة تعيين كلمة المرور</h2>
-      <p style="color:#ccc">لقد تلقينا طلباً لإعادة تعيين كلمة مرورك. اضغط على الزر أدناه لاختيار كلمة مرور جديدة:</p>
-      <a href="${resetUrl}" style="display:inline-block;background:#ef4444;color:#fff;padding:14px 28px;border-radius:12px;text-decoration:none;font-weight:bold;margin:20px 0">إعادة تعيين كلمة المرور</a>
-      <p style="color:#666;font-size:11px;margin-top:12px">هذا الرابط صالح لمدة 15 دقيقة. إذا لم تطلب هذا التغيير، تجاهل هذه الرسالة.</p>
-    </div>`
+    const template = buildResetPasswordEmail({ resetUrl, lang: lang === 'en' ? 'en' : 'ar' })
 
     await resend.emails.send({
       from: getFromEmail(),
       to: email,
-      subject,
-      html,
+      subject: template.subject,
+      html: template.html,
     })
 
     return NextResponse.json({ ok: true })
