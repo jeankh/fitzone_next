@@ -29,7 +29,7 @@ export default function Footer() {
     links: [
       { label: lang === 'ar' ? 'قصص النجاح' : 'Success Stories', href: '/results' },
       { label: lang === 'ar' ? 'المدونة' : 'Blog', href: '/blog' },
-      ...(loaded && whatsapp ? [{ label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: getMarketingHref('whatsapp', whatsapp), external: true }] : []),
+      ...(whatsapp ? [{ label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: getMarketingHref('whatsapp', whatsapp), external: true }] : []),
     ],
     legal: [
       { label: lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy', href: '/privacy' },
@@ -95,7 +95,7 @@ export default function Footer() {
                   <social.icon className="w-[19px] h-[19px]" />
                 </motion.a>
               ))}
-              {loaded && whatsapp && (
+              {whatsapp && (
                 <motion.a
                   href={getMarketingHref('whatsapp', whatsapp)}
                   target="_blank"

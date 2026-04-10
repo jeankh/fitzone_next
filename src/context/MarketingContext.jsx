@@ -4,7 +4,7 @@ import { MARKETING_DEFAULTS, normalizeMarketingData } from '../lib/marketing'
 
 const DEFAULTS = {
   ...MARKETING_DEFAULTS,
-  whatsapp: '',
+  whatsapp: MARKETING_DEFAULTS.whatsapp,
   socials: [],
   loaded: false,
 }
