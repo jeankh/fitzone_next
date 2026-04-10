@@ -53,7 +53,7 @@ function baseTemplate({
   const introFont = isAr ? 17 : 16
   const introLineHeight = isAr ? 2 : 1.8
   const bodyLineHeight = isAr ? 1.95 : 1.8
-  const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fitzoneapp.com'}/fitzone-logo-zoom.jpeg`
+  const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fitzoneapp.com'}/fitzone-logo.jpeg`
 
   return `
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;visibility:hidden">${escapeHtml(preheader || '')}</div>
