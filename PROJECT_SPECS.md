@@ -75,6 +75,11 @@ Plaintext migration, signup validation, set-password flow, dynamic imports, clie
 - Removed unused admin bank account management route and dashboard section
 - Cleaned middleware, sitemap, and rate-limiting references for removed features
 
+### Session 10 — Admin UX Update
+- Converted the admin dashboard from a long scrolling page into tabbed sections
+- Added tabs for Traffic, Products, Marketing, Blogs, and Purchases
+- Kept all existing admin tools/logic intact while reducing scroll and making each area easier to manage
+
 ## Current State
 All known issues resolved. Build passes cleanly. Remaining nice-to-haves:
 - Download links in account dashboard (currently WhatsApp-only delivery)

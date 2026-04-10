@@ -91,6 +91,14 @@ const eventCards = [
   { key: 'purchases',       label: 'Purchases',       icon: CheckCircle,  color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
 ]
 
+const ADMIN_TABS = [
+  { id: 'traffic', label: 'Traffic', icon: BarChart2 },
+  { id: 'products', label: 'Products', icon: Package },
+  { id: 'marketing', label: 'Marketing', icon: Megaphone },
+  { id: 'blogs', label: 'Blogs', icon: BookOpen },
+  { id: 'purchases', label: 'Purchases', icon: DollarSign },
+]
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function SaveBtn({ saving, onClick }) {
   return (
@@ -637,6 +645,7 @@ function BlogEditor({ post, onSave, onClose }) {
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function Dashboard({ onLogout, initialEvents }) {
+  const [activeTab, setActiveTab] = useState('traffic')
   // Traffic
   const [events, setEvents] = useState(initialEvents ?? EVENT_DEFAULTS)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -856,7 +865,29 @@ function Dashboard({ onLogout, initialEvents }) {
 
       <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
 
+        <div className="flex flex-wrap gap-2">
+          {ADMIN_TABS.map(tab => {
+            const Icon = tab.icon
+            const active = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+                  active
+                    ? 'bg-brand/10 border-brand/40 text-brand'
+                    : 'bg-surface border-border text-text-secondary hover:text-white hover:border-brand/30'
+                }`}
+              >
+                <Icon size={14} />
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+
         {/* ── 1: Traffic & Funnel ── */}
+        {activeTab === 'traffic' && (
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -913,8 +944,10 @@ function Dashboard({ onLogout, initialEvents }) {
           </div>
           <FunnelChart events={events} />
         </motion.section>
+        )}
 
         {/* ── 2: Products (editable prices) ── */}
+        {activeTab === 'products' && (
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
           <div className="flex items-center justify-between gap-2 mb-5">
             <div className="flex items-center gap-2">
@@ -1040,8 +1073,10 @@ function Dashboard({ onLogout, initialEvents }) {
             )}
           </AnimatePresence>
         </motion.section>
+        )}
 
         {/* ── 3: Marketing Info (editable) ── */}
+        {activeTab === 'marketing' && (
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
           <div className="flex items-center gap-2 mb-5">
             <Megaphone size={18} className="text-brand" />
@@ -1103,8 +1138,10 @@ function Dashboard({ onLogout, initialEvents }) {
             </div>
           </div>
         </motion.section>
+        )}
 
         {/* ── 5: Blog Management ── */}
+        {activeTab === 'blogs' && (
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.22 }}>
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -1169,8 +1206,10 @@ function Dashboard({ onLogout, initialEvents }) {
             )}
           </AnimatePresence>
         </motion.section>
+        )}
 
         {/* ── 7: Purchases ── */}
+        {activeTab === 'purchases' && (
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.30 }}>
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -1261,6 +1300,7 @@ function Dashboard({ onLogout, initialEvents }) {
             )}
           </AnimatePresence>
         </motion.section>
+        )}
 
       </div>
     </div>
