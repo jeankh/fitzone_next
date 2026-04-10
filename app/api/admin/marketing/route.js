@@ -2,20 +2,12 @@ import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
 import { sanitizeObject } from '../../../../src/lib/sanitize'
 import { validateOrigin } from '../../../../src/lib/csrf'
+import { MARKETING_DEFAULTS, normalizeMarketingValue } from '../../../../src/lib/marketing'
 
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_marketing'
 
-const DEFAULTS = {
-  whatsapp: '966500000000',
-  twitter: 'https://x.com/',
-  instagram: 'https://instagram.com/',
-  youtube: 'https://youtube.com/',
-  whatsapp_visible: 'true',
-  twitter_visible:  'true',
-  instagram_visible:'true',
-  youtube_visible:  'true',
-}
+const DEFAULTS = MARKETING_DEFAULTS
 
 const ALLOWED = ['whatsapp', 'twitter', 'instagram', 'youtube',
                  'whatsapp_visible', 'twitter_visible', 'instagram_visible', 'youtube_visible']
@@ -25,7 +17,7 @@ export async function GET() {
     const data = await kv.hgetall(KV_KEY)
     // Upstash hgetall returns booleans for 'true'/'false' strings — normalize back to strings
     const normalized = {}
-    for (const [k, v] of Object.entries(data || {})) normalized[k] = String(v)
+    for (const [k, v] of Object.entries(data || {})) normalized[k] = normalizeMarketingValue(k, v)
     return NextResponse.json({ ...DEFAULTS, ...normalized })
   } catch {
     return NextResponse.json(DEFAULTS)
@@ -38,7 +30,7 @@ export async function POST(request) {
     const body = await request.json()
     const updates = sanitizeObject(body, ALLOWED)
     for (const key of ALLOWED) {
-      if (updates[key] !== undefined) updates[key] = String(updates[key])
+      if (updates[key] !== undefined) updates[key] = normalizeMarketingValue(key, updates[key])
     }
     if (Object.keys(updates).length > 0) {
       await kv.hset(KV_KEY, updates)

@@ -1,16 +1,8 @@
 'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
+import { MARKETING_DEFAULTS, normalizeMarketingValue } from '../lib/marketing'
 
-const DEFAULTS = {
-  whatsapp: '966500000000',
-  twitter: 'https://x.com/',
-  instagram: 'https://instagram.com/',
-  youtube: 'https://youtube.com/',
-  whatsapp_visible:  'true',
-  twitter_visible:   'true',
-  instagram_visible: 'true',
-  youtube_visible:   'true',
-}
+const DEFAULTS = MARKETING_DEFAULTS
 
 const MarketingContext = createContext(DEFAULTS)
 
@@ -21,9 +13,8 @@ export function MarketingProvider({ children }) {
     fetch('/api/admin/marketing')
       .then(r => r.json())
       .then(data => {
-        // Normalize boolean false → string 'false' (Upstash may return booleans)
         const normalized = {}
-        for (const [k, v] of Object.entries(data || {})) normalized[k] = String(v)
+        for (const [k, v] of Object.entries(data || {})) normalized[k] = normalizeMarketingValue(k, v)
         setMarketing({ ...DEFAULTS, ...normalized })
       })
       .catch((e) => console.error('Failed to load marketing config:', e))

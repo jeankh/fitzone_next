@@ -7,6 +7,7 @@ import { useLanguage } from '../../src/context/LanguageContext'
 import { useUser } from '../../src/context/UserContext'
 import { useMarketing } from '../../src/context/MarketingContext'
 import Image from 'next/image'
+import { getMarketingHref } from '../../src/lib/marketing'
 
 function getBookInfo(id, lang) {
   const books = {
@@ -86,7 +87,7 @@ export default function AccountPage() {
     </div>
   )
 
-  const whatsappLink = `https://wa.me/${marketing.whatsapp}`
+  const whatsappLink = getMarketingHref('whatsapp', marketing.whatsapp)
 
   return (
     <div className="min-h-screen bg-background px-4 pt-28 pb-12" dir={lang === 'ar' ? 'rtl' : 'ltr'}>

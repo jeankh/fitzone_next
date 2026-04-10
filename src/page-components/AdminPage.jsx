@@ -9,6 +9,7 @@ import {
   Globe, DollarSign, Download, Calendar
 } from 'lucide-react'
 import Image from 'next/image'
+import { getMarketingDisplayValue, getMarketingHref, normalizeMarketingValue } from '../lib/marketing'
 
 const SESSION_KEY = 'fitzone_admin'
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-XXXXXXXXXX'
@@ -752,8 +753,9 @@ function Dashboard({ onLogout, initialEvents }) {
   const saveMkt = async () => {
     setSavingMkt(true)
     try {
-      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingMkt]: mktInput }) })
-      setMarketing(m => ({ ...m, [editingMkt]: mktInput }))
+      const normalized = normalizeMarketingValue(editingMkt, mktInput)
+      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingMkt]: normalized }) })
+      setMarketing(m => ({ ...m, [editingMkt]: normalized }))
       setEditingMkt(null)
     } finally { setSavingMkt(false) }
   }
@@ -801,10 +803,10 @@ function Dashboard({ onLogout, initialEvents }) {
   }
 
   const mktFields = [
-    { key: 'whatsapp', label: 'WhatsApp Number' },
-    { key: 'twitter',  label: 'Twitter / X' },
-    { key: 'instagram',label: 'Instagram' },
-    { key: 'youtube',  label: 'YouTube' },
+    { key: 'whatsapp', label: 'WhatsApp Number', placeholder: '9665XXXXXXXX', hint: 'Digits only. We convert it to wa.me automatically.', usage: 'Footer + floating WhatsApp button + account page + success page' },
+    { key: 'twitter',  label: 'Twitter / X', placeholder: '@fitzone or https://x.com/fitzone', hint: 'You can paste a handle or full URL.', usage: 'Footer social icons' },
+    { key: 'instagram',label: 'Instagram', placeholder: '@fitzone or https://instagram.com/fitzone', hint: 'You can paste a handle or full URL.', usage: 'Footer social icons' },
+    { key: 'youtube',  label: 'YouTube', placeholder: 'channel name or full URL', hint: 'We normalize it to a valid YouTube URL.', usage: 'Footer social icons' },
   ]
 
   const toggleMktVisible = async (key) => {
@@ -1048,19 +1050,34 @@ function Dashboard({ onLogout, initialEvents }) {
             <h2 className="text-white font-bold text-lg">Marketing Info</h2>
           </div>
           <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-            {mktFields.map(({ key, label }, i) => {
+            <div className="px-5 py-3 bg-white/[0.02] border-b border-border">
+              <p className="text-white text-sm font-medium mb-1">Site Connection</p>
+              <p className="text-text-muted text-xs">These values power the public site directly. Footer social icons, the floating WhatsApp button, the account page, and the checkout success page all read from this same marketing config.</p>
+            </div>
+
+            {mktFields.map(({ key, label, placeholder, hint, usage }, i) => {
               const val = marketing[key] || ''
+              const href = getMarketingHref(key, val)
+              const display = getMarketingDisplayValue(key, val)
               const isEditing = editingMkt === key
               const isVisible = marketing[`${key}_visible`] !== 'false'
               return (
                 <div key={key} className={`px-5 py-3.5 ${i < mktFields.length - 1 ? 'border-b border-border' : ''} ${!isVisible ? 'opacity-50' : ''} transition-opacity`}>
                   {isEditing ? (
-                    <div className="flex items-center gap-3">
-                      <span className="text-text-secondary text-sm w-40 flex-shrink-0">{label}</span>
-                      <input value={mktInput} onChange={e => setMktInput(e.target.value)} autoFocus
-                        className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none" />
+                    <div className="flex items-start gap-3">
+                      <div className="w-44 flex-shrink-0 pt-2">
+                        <span className="text-text-secondary text-sm">{label}</span>
+                      </div>
+                      <div className="flex-1 space-y-1.5">
+                        <input value={mktInput} onChange={e => setMktInput(e.target.value)} autoFocus placeholder={placeholder}
+                          className="w-full bg-background border border-brand/40 rounded-lg px-3 py-2 text-white text-sm focus:outline-none" />
+                        <p className="text-text-muted text-xs">{hint}</p>
+                        <p className="text-brand/80 text-xs">Used in: {usage}</p>
+                      </div>
+                      <div className="flex items-center gap-2 pt-1">
                       <SaveBtn saving={savingMkt} onClick={saveMkt} />
                       <CancelBtn onClick={() => setEditingMkt(null)} />
+                      </div>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-4">
@@ -1068,11 +1085,14 @@ function Dashboard({ onLogout, initialEvents }) {
                         <span className="text-text-secondary text-sm">{label}</span>
                         {!isVisible && <span className="text-xs text-text-muted bg-white/5 px-1.5 py-0.5 rounded">hidden</span>}
                       </div>
-                      <a href={val.startsWith('http') ? val : val ? `https://wa.me/${val}` : undefined}
-                        target="_blank" rel="noopener noreferrer"
-                        className={`text-sm font-mono flex-1 truncate transition-colors ${!isVisible ? 'text-text-muted' : val.startsWith('http') || val ? 'text-white hover:text-brand' : 'text-text-muted'}`}>
-                        {val || '—'}
-                      </a>
+                      <div className="flex-1 min-w-0">
+                        <a href={href || undefined}
+                          target="_blank" rel="noopener noreferrer"
+                          className={`text-sm font-mono truncate block transition-colors ${!isVisible ? 'text-text-muted' : href ? 'text-white hover:text-brand' : 'text-text-muted'}`}>
+                          {display || '—'}
+                        </a>
+                        <p className="text-text-muted text-[11px] truncate mt-1">Used in: {usage}</p>
+                      </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {/* Visible / Hidden toggle */}
                         <button onClick={() => toggleMktVisible(key)}

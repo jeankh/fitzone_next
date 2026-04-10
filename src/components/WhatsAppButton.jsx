@@ -3,16 +3,18 @@ import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 import { useMarketing } from '../context/MarketingContext'
+import { getMarketingHref, isMarketingVisible } from '../lib/marketing'
 
 export default function WhatsAppButton() {
   const { lang } = useLanguage()
   const { whatsapp, whatsapp_visible } = useMarketing()
 
-  if (whatsapp_visible === 'false' || whatsapp_visible === false) return null
+  const whatsappHref = getMarketingHref('whatsapp', whatsapp)
+  if (!isMarketingVisible(whatsapp_visible) || !whatsappHref) return null
 
   return (
     <motion.a
-      href={`https://wa.me/${whatsapp}`}
+      href={whatsappHref}
       target="_blank"
       rel="noopener noreferrer"
       initial={{ scale: 0, opacity: 0 }}
