@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ArrowRight, ArrowLeft, CreditCard, Smartphone, Building2, Lock,
+  ArrowRight, ArrowLeft, CreditCard, Smartphone, Lock,
   Trash2, CheckCircle, ShoppingCart, AlertCircle, ChevronDown,
   Search, Shield, Zap, User, Mail, Phone, Gift, ExternalLink
 } from 'lucide-react'
@@ -291,12 +291,7 @@ export default function CheckoutPage() {
 
   const [paymentMethod,   setPaymentMethod]   = useState('card')
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
-  const [bankDetails,     setBankDetails]     = useState(null)
   const [redirecting,     setRedirecting]     = useState(false)
-
-  useEffect(() => {
-    fetch('/api/admin/bank').then(r => r.json()).then(setBankDetails).catch((e) => console.error('Failed to load bank details:', e))
-  }, [])
 
   useEffect(() => {
     if (!countryCode) return
@@ -355,11 +350,6 @@ export default function CheckoutPage() {
     e.preventDefault()
     if (!validateAll()) return
     if (!agreed) { setErrors(p => ({ ...p, terms: lang === 'ar' ? 'يجب الموافقة على الشروط' : 'Please agree to terms' })); return }
-
-    if (paymentMethod === 'bank') {
-      setRedirecting(false)
-      return
-    }
 
     setRedirecting(true)
     try {
@@ -493,7 +483,6 @@ export default function CheckoutPage() {
                 {[
                   { id: 'card',  icon: CreditCard,  label: { ar: 'بطاقة', en: 'Card' } },
                   { id: 'apple', icon: Smartphone,   label: { ar: 'Apple Pay', en: 'Apple Pay' } },
-                  { id: 'bank',  icon: Building2,    label: { ar: 'تحويل', en: 'Bank' } },
                 ].map(m => (
                   <button key={m.id} type="button"
                     onClick={() => { setPaymentMethod(m.id); setErrors(p => ({ ...p, cardNumber: '', expiry: '', cvv: '' })) }}
@@ -532,32 +521,6 @@ export default function CheckoutPage() {
                     </div>
                   </motion.div>
                 )}
-
-
-
-                {/* Bank Transfer */}
-                {paymentMethod === 'bank' && (
-                  <motion.div key="bank" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.2 }}
-                    className="rounded-2xl bg-black/30 border border-white/8 p-4 space-y-3">
-                    <p className="text-white/60 text-xs font-semibold uppercase tracking-wider">{lang === 'ar' ? 'معلومات الحساب البنكي' : 'Bank Account Details'}</p>
-                    {[
-                      { label: lang === 'ar' ? 'البنك' : 'Bank',      value: lang === 'ar' ? (bankDetails?.bankName_ar || '—') : (bankDetails?.bankName_en || '—') },
-                      { label: lang === 'ar' ? 'رقم الحساب' : 'IBAN', value: bankDetails?.iban || '—', mono: true },
-                      { label: lang === 'ar' ? 'الاسم' : 'Name',      value: lang === 'ar' ? (bankDetails?.beneficiaryName_ar || '—') : (bankDetails?.beneficiaryName_en || '—') },
-                    ].map(row => (
-                      <div key={row.label} className="flex items-center justify-between">
-                        <span className="text-white/30 text-sm">{row.label}</span>
-                        <span className={`text-white text-sm ${row.mono ? 'font-mono' : 'font-medium'}`} dir="ltr">{row.value}</span>
-                      </div>
-                    ))}
-                    <div className="pt-2 border-t border-white/8">
-                      <p className="text-brand text-xs flex items-center gap-1.5">
-                        <Zap size={11} />{lang === 'ar' ? 'أرسل إيصال التحويل عبر واتساب بعد الدفع' : 'Send transfer receipt via WhatsApp after payment'}
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
               </AnimatePresence>
             </div>
 
@@ -589,9 +552,7 @@ export default function CheckoutPage() {
                 <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity" />
                 {redirecting
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{lang === 'ar' ? 'جاري التحويل…' : 'Redirecting…'}</>
-                  : paymentMethod === 'bank'
-                    ? <><Building2 size={16} />{lang === 'ar' ? 'تأكيد الطلب' : 'Confirm Order'}</>
-                    : <><Lock size={16} />{lang === 'ar' ? `ادفع الآن ${formatPrice(finalTotal, lang)}` : `Pay Now ${formatPrice(finalTotal, lang)}`}</>
+                  : <><Lock size={16} />{lang === 'ar' ? `ادفع الآن ${formatPrice(finalTotal, lang)}` : `Pay Now ${formatPrice(finalTotal, lang)}`}</>
                 }
               </motion.button>
 
