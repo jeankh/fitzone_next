@@ -1092,6 +1092,7 @@ function Dashboard({ onLogout, initialEvents }) {
                           {display || '—'}
                         </a>
                         <p className="text-text-muted text-[11px] truncate mt-1">Used in: {usage}</p>
+                        {href && <p className="text-brand/70 text-[11px] truncate mt-1">Public URL: {href}</p>}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {/* Visible / Hidden toggle */}

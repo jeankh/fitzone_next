@@ -9,7 +9,9 @@ import { getMarketingHref, isMarketingVisible } from '../lib/marketing'
 export default function Footer() {
   const { lang } = useLanguage()
   const { whatsapp, twitter, instagram, youtube,
-          whatsapp_visible, twitter_visible, instagram_visible, youtube_visible } = useMarketing()
+          whatsapp_visible, twitter_visible, instagram_visible, youtube_visible, loaded } = useMarketing()
+
+  if (!loaded) return null
 
   const isVisible = (key) => {
     const map = { whatsapp: whatsapp_visible, twitter: twitter_visible, instagram: instagram_visible, youtube: youtube_visible }

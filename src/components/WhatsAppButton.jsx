@@ -7,10 +7,10 @@ import { getMarketingHref, isMarketingVisible } from '../lib/marketing'
 
 export default function WhatsAppButton() {
   const { lang } = useLanguage()
-  const { whatsapp, whatsapp_visible } = useMarketing()
+  const { whatsapp, whatsapp_visible, loaded } = useMarketing()
 
   const whatsappHref = getMarketingHref('whatsapp', whatsapp)
-  if (!isMarketingVisible(whatsapp_visible) || !whatsappHref) return null
+  if (!loaded || !isMarketingVisible(whatsapp_visible) || !whatsappHref) return null
 
   return (
     <motion.a
