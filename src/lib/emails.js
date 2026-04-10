@@ -50,7 +50,6 @@ function baseTemplate({
   const direction = isAr ? 'rtl' : 'ltr'
   const align = isAr ? 'right' : 'left'
   const oppositeAlign = isAr ? 'left' : 'right'
-  const buttonMargin = isAr ? '0 0 0 auto' : '0 auto 0 0'
   const introFont = isAr ? 17 : 16
   const introLineHeight = isAr ? 2 : 1.8
   const bodyLineHeight = isAr ? 1.95 : 1.8
@@ -64,10 +63,7 @@ function baseTemplate({
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
             <tr>
               <td style="text-align:${align};vertical-align:top">
-                <div style="display:inline-flex;align-items:center;gap:10px">
-                  <img src="${logoUrl}" alt="FitZone" width="30" height="30" style="width:30px;height:30px;border-radius:8px;object-fit:cover;display:block" />
-                  <div style="font-size:11px;letter-spacing:2.6px;text-transform:uppercase;color:#ff4d82;font-weight:800">FITZONE</div>
-                </div>
+                <img src="${logoUrl}" alt="FitZone" width="34" height="34" style="width:34px;height:34px;border-radius:8px;object-fit:cover;display:block" />
               </td>
               <td style="text-align:${oppositeAlign};vertical-align:middle;color:#8f919c;font-size:11px;line-height:1.6;padding-${isAr ? 'right' : 'left'}:12px;letter-spacing:0.2px">
                 ${isAr ? 'رسالة معاملة' : 'Transactional email'}
@@ -84,8 +80,8 @@ function baseTemplate({
           ${bodyHtml ? `<div style="color:#b8bbc5;font-size:14px;line-height:${bodyLineHeight};margin-bottom:18px">${bodyHtml}</div>` : ''}
 
           ${buttonUrl ? `
-            <div style="margin:24px 0 18px;text-align:${align}">
-              <a href="${buttonUrl}" style="display:inline-block;background:linear-gradient(90deg,#d30a4a 0%,#b3053d 100%);color:#ffffff;text-decoration:none;padding:16px 26px;border-radius:16px;font-weight:800;font-size:15px;letter-spacing:0.2px;box-shadow:0 10px 30px rgba(211,10,74,0.25);margin:${buttonMargin}">${buttonLabel}</a>
+            <div style="margin:24px 0 18px;text-align:center">
+              <a href="${buttonUrl}" style="display:inline-block;background:linear-gradient(90deg,#d30a4a 0%,#b3053d 100%);color:#ffffff;text-decoration:none;padding:16px 26px;border-radius:16px;font-weight:800;font-size:15px;letter-spacing:0.2px;box-shadow:0 10px 30px rgba(211,10,74,0.25)">${buttonLabel}</a>
             </div>` : ''}
 
           ${note ? `
