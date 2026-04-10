@@ -59,37 +59,37 @@ function baseTemplate({
   const introFont = isAr ? 17 : 16
   const introLineHeight = isAr ? 2 : 1.8
   const bodyLineHeight = isAr ? 1.95 : 1.8
-  const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fitzoneapp.com'}/fitzone-logo.jpeg`
+  const logoUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fitzoneapp.com'}/fitzone-logo-zoom.jpeg`
 
   return `
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;visibility:hidden">${escapeHtml(preheader || '')}</div>
     <div dir="${direction}" style="margin:0;padding:24px 12px;background:#f5f5f7">
       <div style="max-width:620px;margin:0 auto;background:#0b0c10;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);box-shadow:0 24px 60px rgba(0,0,0,0.28);color:#ffffff">
-        <div style="padding:34px 34px 26px;background:radial-gradient(circle at top ${isAr ? 'left' : 'right'}, rgba(211,10,74,0.28), transparent 32%),linear-gradient(180deg,#14161d 0%,#0b0c10 100%);border-bottom:1px solid rgba(255,255,255,0.08);text-align:${align}">
+        <div style="padding:26px 28px 22px;background:radial-gradient(circle at top ${isAr ? 'left' : 'right'}, rgba(211,10,74,0.22), transparent 28%),linear-gradient(180deg,#14161d 0%,#0b0c10 100%);border-bottom:1px solid rgba(255,255,255,0.08);text-align:${align}">
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse">
             <tr>
               <td style="text-align:${align};vertical-align:top">
-                <div style="display:inline-flex;align-items:center;gap:12px;padding:10px 14px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08)">
-                  <img src="${logoUrl}" alt="FitZone" width="36" height="36" style="width:36px;height:36px;border-radius:10px;object-fit:cover;display:block" />
-                  <div style="font-size:11px;letter-spacing:2.2px;text-transform:uppercase;color:#ff4d82;font-weight:800">FITZONE</div>
+                <div style="display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07)">
+                  <img src="${logoUrl}" alt="FitZone" width="28" height="28" style="width:28px;height:28px;border-radius:8px;object-fit:cover;display:block" />
+                  <div style="font-size:11px;letter-spacing:2.6px;text-transform:uppercase;color:#ff4d82;font-weight:800">FITZONE</div>
                 </div>
               </td>
-              <td style="text-align:${oppositeAlign};vertical-align:top;color:#8f919c;font-size:12px;line-height:1.6;padding-${isAr ? 'right' : 'left'}:12px">
+              <td style="text-align:${oppositeAlign};vertical-align:middle;color:#8f919c;font-size:11px;line-height:1.6;padding-${isAr ? 'right' : 'left'}:12px;letter-spacing:0.2px">
                 ${isAr ? 'رسالة معاملة' : 'Transactional email'}
               </td>
             </tr>
           </table>
-          <div style="margin-top:22px;color:#ff4d82;font-size:12px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase">${escapeHtml(eyebrow || '')}</div>
-          <h1 style="margin:10px 0 0;font-size:${isAr ? 35 : 34}px;line-height:${isAr ? 1.45 : 1.2};font-weight:800;color:#ffffff">${title}</h1>
+          <div style="margin-top:18px;color:#ff4d82;font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase">${escapeHtml(eyebrow || '')}</div>
+          <h1 style="margin:10px 0 0;font-size:${isAr ? 31 : 32}px;line-height:${isAr ? 1.5 : 1.22};font-weight:800;color:#ffffff">${title}</h1>
         </div>
 
-        <div style="padding:34px;text-align:${align}">
-          <p style="margin:0 0 18px;color:#d7d9df;font-size:${introFont}px;line-height:${introLineHeight}">${intro}</p>
+        <div style="padding:28px;text-align:${align}">
+          <p style="margin:0 0 18px;color:#d7d9df;font-size:${introFont}px;line-height:${introLineHeight};max-width:${isAr ? '100%' : '500px'}">${intro}</p>
 
           ${bodyHtml ? `<div style="color:#b8bbc5;font-size:14px;line-height:${bodyLineHeight};margin-bottom:18px">${bodyHtml}</div>` : ''}
 
           ${buttonUrl ? `
-            <div style="margin:26px 0 18px;text-align:${align}">
+            <div style="margin:24px 0 18px;text-align:${align}">
               <a href="${buttonUrl}" style="display:inline-block;background:linear-gradient(90deg,#d30a4a 0%,#b3053d 100%);color:#ffffff;text-decoration:none;padding:16px 26px;border-radius:16px;font-weight:800;font-size:15px;letter-spacing:0.2px;box-shadow:0 10px 30px rgba(211,10,74,0.25);margin:${buttonMargin}">${buttonLabel}</a>
             </div>` : ''}
 
