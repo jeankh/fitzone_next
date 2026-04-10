@@ -401,37 +401,50 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen pt-24 pb-20" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* ── Page Header ── */}
         <div className="mb-8">
           <button onClick={() => router.push('/programs')}
-            className="flex items-center gap-2 text-white/40 hover:text-white/80 transition-colors text-sm mb-5 group">
+            className="inline-flex items-center gap-2 text-white/40 hover:text-white/80 transition-colors text-sm mb-5 group px-4 py-2 rounded-full border border-white/10 bg-white/[0.03]">
             <ArrowLeft size={15} className={`transition-transform group-hover:-translate-x-0.5 ${lang === 'en' ? 'rotate-180' : ''}`} />
             {lang === 'ar' ? 'العودة للبرامج' : 'Back to Programs'}
           </button>
 
-          <div className="flex items-end justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-xl px-6 py-6 shadow-[0_10px_40px_rgba(0,0,0,0.22)]">
             <div>
               <p className="text-brand text-xs font-semibold tracking-widest uppercase mb-1">{lang === 'ar' ? 'إتمام الشراء' : 'Checkout'}</p>
               <h1 className="text-2xl sm:text-3xl font-bold text-white">{lang === 'ar' ? 'أكمل طلبك' : 'Complete Your Order'}</h1>
+              <p className="text-white/35 text-sm mt-2 max-w-xl">
+                {lang === 'ar'
+                  ? 'أدخل معلوماتك وسيتم تحويلك مباشرة إلى صفحة Stripe الآمنة لإتمام الدفع.'
+                  : 'Enter your details and continue to Stripe to complete your payment securely.'}
+              </p>
             </div>
-            <div className="flex items-center gap-1.5 text-white/30 text-xs">
-              <Shield size={13} className="text-emerald-400/70" />
-              <span className="text-emerald-400/70">{lang === 'ar' ? 'دفع آمن' : 'Secure checkout'}</span>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {[
+                lang === 'ar' ? 'Stripe آمن' : 'Secure Stripe',
+                lang === 'ar' ? 'تسليم فوري' : 'Instant delivery',
+                'SSL',
+              ].map(item => (
+                <div key={item} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3.5 py-2 text-white/55">
+                  <Shield size={12} className="text-emerald-400/70" />
+                  <span>{item}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-5 gap-6">
+        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-6 items-start">
 
           {/* ── Left: Form (3/5) ── */}
           <div className="lg:col-span-3 space-y-5">
 
             {/* Contact Info */}
-            <div className="bg-white/[0.03] border border-white/8 rounded-3xl p-6">
+            <div className="bg-white/[0.03] border border-white/10 rounded-[32px] p-6 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.18)]">
               <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-7 h-7 rounded-xl bg-brand/15 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-full bg-brand/15 border border-brand/20 flex items-center justify-center">
                   <User size={13} className="text-brand" />
                 </div>
                 <h2 className="text-white font-semibold text-sm">{lang === 'ar' ? 'معلومات التواصل' : 'Contact Information'}</h2>
@@ -471,15 +484,15 @@ export default function CheckoutPage() {
             <div className="space-y-4">
               {/* Terms */}
               <button type="button" onClick={() => { setAgreed(p => !p); setErrors(p => ({ ...p, terms: '' })) }}
-                className={`w-full flex items-center gap-3 p-4 rounded-2xl border transition-all ${
-                  agreed ? 'bg-emerald-500/8 border-emerald-500/25' : 'bg-white/[0.02] border-white/8 hover:border-white/15'
+                className={`w-full flex items-center gap-3 p-4 rounded-[26px] border transition-all backdrop-blur-xl ${
+                  agreed ? 'bg-emerald-500/8 border-emerald-500/25' : 'bg-white/[0.03] border-white/10 hover:border-white/20'
                 }`}>
                 <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
                   agreed ? 'bg-emerald-500 border-emerald-500' : 'border-white/20'
                 }`}>
                   {agreed && <CheckCircle size={12} className="text-white" />}
                 </div>
-                <p className="text-white/50 text-xs text-left">
+                <p className="text-white/50 text-xs text-left leading-6">
                   {lang === 'ar'
                     ? <span>أوافق على <a href="/terms" target="_blank" onClick={e => e.stopPropagation()} className="text-brand hover:underline">الشروط والأحكام</a> و<a href="/refund" target="_blank" onClick={e => e.stopPropagation()} className="text-brand hover:underline">سياسة الاسترداد</a></span>
                     : <span>I agree to the <a href="/terms" target="_blank" onClick={e => e.stopPropagation()} className="text-brand hover:underline">Terms & Conditions</a> and <a href="/refund" target="_blank" onClick={e => e.stopPropagation()} className="text-brand hover:underline">Refund Policy</a></span>
@@ -491,7 +504,7 @@ export default function CheckoutPage() {
               {/* Pay Button */}
               <motion.button type="button" onClick={handleSubmit} disabled={redirecting}
                 whileHover={{ scale: redirecting ? 1 : 1.01 }} whileTap={{ scale: redirecting ? 1 : 0.99 }}
-                className="w-full relative overflow-hidden bg-gradient-to-r from-brand to-brand-dark text-white py-4 rounded-2xl font-bold text-base flex items-center justify-center gap-2.5 shadow-lg shadow-brand/20 disabled:opacity-60">
+                className="w-full relative overflow-hidden bg-gradient-to-r from-brand to-brand-dark text-white py-4 rounded-[26px] font-bold text-base flex items-center justify-center gap-2.5 shadow-lg shadow-brand/20 disabled:opacity-60">
                 <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity" />
                 {redirecting
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{lang === 'ar' ? 'جاري التحويل…' : 'Redirecting…'}</>
@@ -500,9 +513,13 @@ export default function CheckoutPage() {
               </motion.button>
 
               {/* Trust row */}
-              <div className="flex items-center justify-center gap-4 pt-1">
-                {['256-bit SSL', lang === 'ar' ? 'دفع آمن' : 'Secure', lang === 'ar' ? 'مشفر' : 'Encrypted'].map(t => (
-                  <div key={t} className="flex items-center gap-1 text-white/20 text-xs">
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                {[
+                  lang === 'ar' ? 'Stripe محمي' : 'Protected by Stripe',
+                  '256-bit SSL',
+                  lang === 'ar' ? 'دعم فوري' : 'Fast support',
+                ].map(t => (
+                  <div key={t} className="flex items-center gap-1.5 text-white/35 text-xs rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
                     <Shield size={10} />{t}
                   </div>
                 ))}
@@ -512,7 +529,7 @@ export default function CheckoutPage() {
 
           {/* ── Right: Order Summary (2/5) ── */}
           <div className="lg:col-span-2">
-            <div className="bg-white/[0.03] border border-white/8 rounded-3xl p-5 sticky top-28">
+            <div className="bg-white/[0.03] border border-white/10 rounded-[32px] p-5 sticky top-28 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.18)]">
               <h2 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-4">{lang === 'ar' ? 'ملخص الطلب' : 'Order Summary'}</h2>
 
               {/* Items */}
@@ -520,7 +537,7 @@ export default function CheckoutPage() {
                 {cart.map(bookId => {
                   const book = BOOKS_DATA[bookId]; if (!book) return null
                   return (
-                    <div key={bookId} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/6 group">
+                    <div key={bookId} className="flex items-center gap-3 p-3 rounded-[24px] bg-black/20 border border-white/10 group backdrop-blur-sm">
                       <span className="text-2xl shrink-0">{book.icon}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">{lang === 'ar' ? book.titleAr : book.titleEn}</p>
@@ -543,7 +560,7 @@ export default function CheckoutPage() {
                   <>
                     {missingBookData && !cart.includes('bundle') && (
                       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                        className="rounded-2xl overflow-hidden border border-[#25d366]/30 bg-[#25d366]/5 mb-4">
+                        className="rounded-[26px] overflow-hidden border border-[#25d366]/30 bg-[#25d366]/5 mb-4 backdrop-blur-sm">
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-[#25d366]/10 border-b border-[#25d366]/20">
                           <Gift size={13} className="text-[#25d366] flex-shrink-0" />
                           <span className="text-[#25d366] text-xs font-bold">
@@ -571,7 +588,7 @@ export default function CheckoutPage() {
                     )}
                     {wasAutoUpgraded && (
                       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                        className="flex items-center gap-3 rounded-2xl bg-[#25d366]/10 border border-[#25d366]/30 px-4 py-3 mb-4">
+                        className="flex items-center gap-3 rounded-[26px] bg-[#25d366]/10 border border-[#25d366]/30 px-4 py-3 mb-4 backdrop-blur-sm">
                         <div className="w-8 h-8 bg-[#25d366]/20 rounded-xl flex items-center justify-center flex-shrink-0">
                           <Gift size={16} className="text-[#25d366]" />
                         </div>
@@ -607,7 +624,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Security badge */}
-              <div className="mt-4 flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
+              <div className="mt-4 flex items-center justify-center gap-2 py-3 rounded-full bg-emerald-500/5 border border-emerald-500/15">
                 <Shield size={13} className="text-emerald-400/70" />
                 <span className="text-emerald-400/70 text-xs">{lang === 'ar' ? 'مدفوعات مشفرة وآمنة 100%' : '100% Secure & Encrypted'}</span>
               </div>
