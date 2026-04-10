@@ -702,7 +702,7 @@ function Dashboard({ onLogout, initialEvents }) {
   useEffect(() => {
     fetch('/api/admin/prices').then(r => r.json()).then(setPrices).catch(() => {})
     fetch('/api/admin/currency-prices').then(r => r.json()).then(setCurrencyPrices).catch(() => {})
-    fetch('/api/admin/marketing').then(r => r.json()).then(setMarketing).catch(() => {})
+    fetch('/api/admin/marketing', { cache: 'no-store' }).then(r => r.json()).then(setMarketing).catch(() => {})
     fetch('/api/admin/blogs').then(r => r.json()).then(data => { if (Array.isArray(data)) setBlogs(data) }).catch(() => {})
     loadPurchases()
   }, [])

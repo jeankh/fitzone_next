@@ -21,7 +21,7 @@ export function MarketingProvider({ children }) {
   const [marketing, setMarketing] = useState(DEFAULTS)
 
   useEffect(() => {
-    fetch('/api/admin/marketing')
+    fetch('/api/admin/marketing', { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
         const normalized = {}

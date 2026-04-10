@@ -11,6 +11,10 @@ const DEFAULTS = MARKETING_DEFAULTS
 const ALLOWED = ['whatsapp', 'twitter', 'instagram', 'youtube',
                  'whatsapp_visible', 'twitter_visible', 'instagram_visible', 'youtube_visible']
 
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+}
+
 export async function GET() {
   try {
     const kv = getRedis()
@@ -18,9 +22,9 @@ export async function GET() {
     // Upstash hgetall returns booleans for 'true'/'false' strings — normalize back to strings
     const normalized = {}
     for (const [k, v] of Object.entries(data || {})) normalized[k] = normalizeMarketingValue(k, v)
-    return NextResponse.json({ ...DEFAULTS, ...normalized })
+    return NextResponse.json({ ...DEFAULTS, ...normalized }, { headers: NO_STORE_HEADERS })
   } catch {
-    return NextResponse.json(DEFAULTS)
+    return NextResponse.json(DEFAULTS, { headers: NO_STORE_HEADERS })
   }
 }
 
