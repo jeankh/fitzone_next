@@ -30,9 +30,9 @@ export async function POST(request) {
   try {
     const kv = getRedis()
     const body = await request.json()
-    const updates = sanitizeObject(body, ALLOWED)
+    const updates = sanitizeObject(body, ['whatsapp'])
     if (updates.whatsapp !== undefined) updates.whatsapp = normalizeWhatsApp(updates.whatsapp)
-    if (updates.socials !== undefined) updates.socials = JSON.stringify(parseStoredSocials(updates.socials))
+    if (body.socials !== undefined) updates.socials = JSON.stringify(parseStoredSocials(body.socials))
     if (Object.keys(updates).length > 0) {
       await kv.hset(KV_KEY, updates)
     }
