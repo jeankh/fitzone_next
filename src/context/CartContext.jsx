@@ -152,13 +152,13 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/admin/prices', { cache: 'no-store' }).then(r => r.json()),
-      fetch('/api/admin/currency-prices', { cache: 'no-store' }).then(r => r.json()),
+      fetch('/api/admin/prices', { next: { tags: ['prices'] } }).then(r => r.json()),
+      fetch('/api/admin/currency-prices', { next: { tags: ['currency-prices'] } }).then(r => r.json()),
     ]).then(([basePrices, cpData]) => {
       setPrices({ transformation: Number(basePrices.transformation), nutrition: Number(basePrices.nutrition), bundle: Number(basePrices.bundle) })
       setCurrencyPrices(cpData || {})
     }).catch(() => {
-      fetch('/api/admin/prices', { cache: 'no-store' }).then(r => r.json())
+      fetch('/api/admin/prices', { next: { tags: ['prices'] } }).then(r => r.json())
         .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition), bundle: Number(data.bundle) }))
         .catch((e) => console.error('Failed to load prices:', e))
     })

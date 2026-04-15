@@ -1,17 +1,20 @@
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { validateOrigin } from '../../../../src/lib/csrf'
-
-export const dynamic = 'force-dynamic'
 
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_currency_prices'
+const CACHE_TAG = 'currency-prices'
 const VALID_KEY = /^(SAR|USD|EUR|GBP|AED|KWD|QAR|BHD|EGP)_(transformation|nutrition|bundle)$/
 
 export async function GET() {
   try {
     const data = await kv.hgetall(KV_KEY)
-    return NextResponse.json(data || {})
+    return NextResponse.json(
+      data || {},
+      { headers: { 'Cache-Control': 's-maxage=3600, stale-while-revalidate=86400' } }
+    )
   } catch {
     return NextResponse.json({})
   }
@@ -33,6 +36,7 @@ export async function POST(request) {
     }
     if (Object.keys(toSet).length > 0) await kv.hset(KV_KEY, toSet)
     for (const k of toDelete) await kv.hdel(KV_KEY, k)
+    revalidateTag(CACHE_TAG)
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Failed to save' }, { status: 500 })

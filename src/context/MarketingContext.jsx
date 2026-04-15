@@ -13,7 +13,7 @@ export function MarketingProvider({ children }) {
   const [marketing, setMarketing] = useState(DEFAULTS)
 
   useEffect(() => {
-    fetch('/api/admin/marketing', { cache: 'no-store' })
+    fetch('/api/admin/marketing', { next: { tags: ['marketing'] } })
       .then(r => r.json())
       .then(data => {
         const normalized = {}

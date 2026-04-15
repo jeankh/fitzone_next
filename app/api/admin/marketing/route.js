@@ -1,12 +1,12 @@
 import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
 import { sanitizeObject } from '../../../../src/lib/sanitize'
 import { validateOrigin } from '../../../../src/lib/csrf'
 
-export const dynamic = 'force-dynamic'
-
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_marketing'
+const CACHE_TAG = 'marketing'
 
 const DEFAULTS = {
   whatsapp: '966500000000',
@@ -22,7 +22,10 @@ export async function GET() {
     // Upstash hgetall returns booleans for 'true'/'false' strings — normalize back to strings
     const normalized = {}
     for (const [k, v] of Object.entries(data || {})) normalized[k] = String(v)
-    return NextResponse.json({ ...DEFAULTS, ...normalized })
+    return NextResponse.json(
+      { ...DEFAULTS, ...normalized },
+      { headers: { 'Cache-Control': 's-maxage=3600, stale-while-revalidate=86400' } }
+    )
   } catch {
     return NextResponse.json(DEFAULTS)
   }
@@ -39,6 +42,7 @@ export async function POST(request) {
     if (Object.keys(updates).length > 0) {
       await kv.hset(KV_KEY, updates)
     }
+    revalidateTag(CACHE_TAG)
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Failed' }, { status: 500 })
