@@ -139,14 +139,18 @@ export default function BlogPage({ initialPosts }) {
                   }`}
                 >
                   {/* Image */}
-                  <div className={`overflow-hidden ${
-                    index === 0 ? 'h-64 lg:h-80' : 'h-48'
-                  }`}>
-                    <img
-                      src={post.image}
-                      alt={post.title[lang]}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                  <div className={`overflow-hidden ${index === 0 ? 'h-64 lg:h-80' : 'h-48'}`}>
+                    {post.image ? (
+                      <img
+                        src={post.image}
+                        alt={post.title[lang]}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center">
+                        <span className="text-5xl opacity-30">💪</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Content */}
@@ -202,11 +206,17 @@ export default function BlogPage({ initialPosts }) {
                   >
                     {/* Image */}
                     <div className="h-40 overflow-hidden">
-                      <img
-                        src={post.image}
-                        alt={post.title[lang]}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
+                      {post.image ? (
+                        <img
+                          src={post.image}
+                          alt={post.title[lang]}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-brand/20 to-brand/5 flex items-center justify-center">
+                          <span className="text-4xl opacity-30">💪</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Content */}

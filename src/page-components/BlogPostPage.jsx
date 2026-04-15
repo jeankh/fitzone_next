@@ -690,13 +690,15 @@ export default function BlogPostPage({ initialPost, postId }) {
           transition={{ duration: 0.6 }}
         >
           {/* Image */}
-          <div className="h-64 sm:h-80 rounded-3xl overflow-hidden mb-8">
-            <img
-              src={post.image}
-              alt={post.title[lang]}
-              className="w-full h-full object-cover"
-            />
-          </div>
+          {post.image && (
+            <div className="h-64 sm:h-80 rounded-3xl overflow-hidden mb-8">
+              <img
+                src={post.image}
+                alt={post.title[lang]}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
           {/* Meta */}
           <div className="flex items-center gap-4 mb-6">
