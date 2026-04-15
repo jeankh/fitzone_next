@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
+
 import { getStripe } from '../../../../src/lib/stripe'
 import { getOrCreateUser, addUserPurchase, createMagicToken } from '../../../../src/lib/user-auth'
 import { getRedis } from '../../../../src/lib/redis'

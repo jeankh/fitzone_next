@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
+
 import { consumeMagicToken, getUserById, signUserToken, getUserCookieOptions } from '../../../../src/lib/user-auth'
 
 export async function GET(request) {
