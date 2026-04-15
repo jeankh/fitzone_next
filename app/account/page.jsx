@@ -203,7 +203,11 @@ export default function AccountPage() {
           ) : (
             <div className="divide-y divide-border">
               {purchases.map((p, i) => {
-                const items = (p.items || '').split(',').filter(Boolean)
+                const rawItems = (p.items || '').split(',').filter(Boolean)
+                // Expand bundle into both individual books for download
+                const items = rawItems.includes('bundle')
+                  ? ['transformation', 'nutrition']
+                  : rawItems
                 return (
                   <div key={p.id || i} className="p-5 space-y-3">
                     <div className="flex items-center justify-between">
