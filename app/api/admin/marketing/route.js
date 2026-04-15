@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { sanitizeObject } from '../../../../src/lib/sanitize'
 import { validateOrigin } from '../../../../src/lib/csrf'
 
+export const dynamic = 'force-dynamic'
+
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_marketing'
 

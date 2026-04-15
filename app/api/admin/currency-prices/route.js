@@ -2,6 +2,8 @@ import { Redis } from '@upstash/redis'
 import { NextResponse } from 'next/server'
 import { validateOrigin } from '../../../../src/lib/csrf'
 
+export const dynamic = 'force-dynamic'
+
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_currency_prices'
 const VALID_KEY = /^(SAR|USD|EUR|GBP|AED|KWD|QAR|BHD|EGP)_(transformation|nutrition|bundle)$/
