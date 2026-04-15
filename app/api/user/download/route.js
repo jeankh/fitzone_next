@@ -35,7 +35,21 @@ export async function GET(request) {
 
     if (!url) return NextResponse.json({ error: 'File not available yet' }, { status: 404 })
 
-    return NextResponse.json({ url })
+    // Proxy the file — never expose the Blob URL to the client
+    const fileRes = await fetch(url)
+    if (!fileRes.ok) return NextResponse.json({ error: 'File unavailable' }, { status: 502 })
+
+    const fileName = productId === 'transformation'
+      ? 'FitZone-Transformation-Guide.pdf'
+      : 'FitZone-Nutrition-Guide.pdf'
+
+    return new Response(fileRes.body, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Cache-Control': 'no-store',
+      },
+    })
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }

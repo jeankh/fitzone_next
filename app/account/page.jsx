@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Mail, Phone, LogOut, Loader2, Package, Download, Clock, RefreshCw, User, Lock, CheckCircle } from 'lucide-react'
+import { Mail, Phone, LogOut, Package, Download, Clock, RefreshCw, User, Lock, CheckCircle } from 'lucide-react'
 import { useLanguage } from '../../src/context/LanguageContext'
 import { useUser } from '../../src/context/UserContext'
 import Image from 'next/image'
@@ -33,7 +33,6 @@ export default function AccountPage() {
   const { user, loading: userLoading, refetch } = useUser()
   const [purchases, setPurchases] = useState([])
   const [purchasesLoading, setPurchasesLoading] = useState(true)
-  const [downloading, setDownloading] = useState(null) // productId | null
   const [newPassword, setNewPassword] = useState('')
   const [savingPw, setSavingPw] = useState(false)
   const [pwSaved, setPwSaved] = useState(false)
@@ -51,20 +50,10 @@ export default function AccountPage() {
     }).catch((e) => console.error('Failed to load purchases:', e)).finally(() => setPurchasesLoading(false))
   }, [user, userLoading, router])
 
-  const handleDownload = async (productId, title) => {
-    setDownloading(productId)
-    try {
-      const res = await fetch(`/api/user/download?product=${productId}`)
-      const data = await res.json()
-      if (data.url) {
-        const a = document.createElement('a')
-        a.href = data.url
-        a.download = `${title}.pdf`
-        a.target = '_blank'
-        a.click()
-      }
-    } catch {}
-    setDownloading(null)
+  const handleDownload = (productId) => {
+    const a = document.createElement('a')
+    a.href = `/api/user/download?product=${productId}`
+    a.click()
   }
 
   const handleLogout = async () => {
@@ -230,13 +219,10 @@ export default function AccountPage() {
                               <p className="text-white text-sm font-semibold truncate">{book.title[lang]}</p>
                             </div>
                             <button
-                              onClick={() => handleDownload(id, book.title['en'])}
-                              disabled={downloading === id}
-                              className="flex items-center gap-1.5 text-xs bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50 shrink-0"
+                              onClick={() => handleDownload(id)}
+                              className="flex items-center gap-1.5 text-xs bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors shrink-0"
                             >
-                              {downloading === id
-                                ? <Loader2 size={12} className="animate-spin" />
-                                : <Download size={12} />}
+                              <Download size={12} />
                               {lang === 'ar' ? 'تحميل' : 'Download'}
                             </button>
                           </div>
