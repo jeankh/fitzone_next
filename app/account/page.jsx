@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Mail, Phone, LogOut, Package, Download, Clock, RefreshCw, User, Lock, CheckCircle } from 'lucide-react'
+import { Mail, Phone, LogOut, Loader2, Package, Download, Clock, RefreshCw, User, Lock, CheckCircle } from 'lucide-react'
 import { useLanguage } from '../../src/context/LanguageContext'
 import { useUser } from '../../src/context/UserContext'
 import Image from 'next/image'
