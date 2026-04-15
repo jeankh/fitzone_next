@@ -11,7 +11,6 @@ export const BOOKS = [
       ar: ['برنامج تدريبي كامل بالشرح', 'التمارين مع فيديوهات توضيحية', 'الكارديو: متى وكيف وكم؟', 'تحدي 30 يوم للتنشيف السريع', 'السر الذي يخفيه المدربون'],
       en: ['Full training program explained', 'Exercises with tutorial videos', 'Cardio: when, how & how much?', '30-day rapid shredding challenge', "The secret trainers don't share"],
     },
-    price: 79,
     rating: 4.9,
     downloads: '1500+',
   },
@@ -27,7 +26,6 @@ export const BOOKS = [
       ar: ['القاعدة الذهبية لخسارة الدهون', 'خطة وجبات (3، 4، أو 5 وجبات)', 'تنظيم الأسبوع وقائمة التسوق', 'وجبة الشيت: استمتع بدون ما تخرب'],
       en: ['The golden rule of fat loss', 'Meal plan (3, 4, or 5 meals/day)', 'Weekly meal plan & shopping list', 'Cheat meal guide — enjoy without guilt'],
     },
-    price: 79,
     rating: 4.8,
     downloads: '2000+',
   },
@@ -41,7 +39,6 @@ export const BUNDLE = {
     ar: ['كل محتوى دليل التنشيف وبناء الجسم', 'كل محتوى دليل خسارة الدهون', 'تحدي 30 يوم للتنشيف السريع', 'متابعة شخصية عبر الواتساب لمدة شهر', 'خطوات واضحة من البداية للنهاية'],
     en: ['Full shredding & building guide content', 'Full fat loss guide content', '30-day rapid shredding challenge', 'Personal WhatsApp follow-up for 1 month', 'Clear step-by-step roadmap'],
   },
-  price: 158,
   rating: 4.9,
   downloads: '3000+',
 }

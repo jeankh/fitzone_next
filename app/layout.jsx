@@ -3,6 +3,30 @@ import './globals.css'
 import ClientLayout from '../src/components/ClientLayout'
 import { Analytics } from '@vercel/analytics/next'
 
+const PRICE_DEFAULTS = { transformation: 79, nutrition: 79, bundle: 158 }
+const MARKETING_DEFAULTS = { whatsapp: '966500000000', whatsapp_visible: 'true', social_buttons: '[]' }
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+
+async function fetchPrices() {
+  try {
+    const [prices, currencyPrices] = await Promise.all([
+      fetch(`${BASE_URL}/api/admin/prices`, { next: { tags: ['prices'] } }).then(r => r.json()),
+      fetch(`${BASE_URL}/api/admin/currency-prices`, { next: { tags: ['currency-prices'] } }).then(r => r.json()),
+    ])
+    return { prices, currencyPrices }
+  } catch {
+    return { prices: PRICE_DEFAULTS, currencyPrices: {} }
+  }
+}
+
+async function fetchMarketing() {
+  try {
+    return await fetch(`${BASE_URL}/api/admin/marketing`, { next: { tags: ['marketing'] } }).then(r => r.json())
+  } catch {
+    return MARKETING_DEFAULTS
+  }
+}
+
 export const metadata = {
   title: 'FitZone | برامج التنشيف وخسارة الدهون',
   description: 'برامج تدريبية متخصصة في التنشيف وبناء الجسم وخسارة الدهون من فريق FitZone. تدريب + تغذية + متابعة شخصية عبر الواتساب.',
@@ -28,7 +52,12 @@ export const metadata = {
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const [{ prices, currencyPrices }, marketing] = await Promise.all([
+    fetchPrices(),
+    fetchMarketing(),
+  ])
+
   return (
     <html lang="ar" dir="rtl">
       <head>
@@ -48,7 +77,7 @@ export default function RootLayout({ children }) {
         )}
       </head>
       <body>
-        <ClientLayout>
+        <ClientLayout prices={prices} currencyPrices={currencyPrices} marketing={marketing}>
           {children}
         </ClientLayout>
         <Analytics />

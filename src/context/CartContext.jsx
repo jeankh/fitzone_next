@@ -7,6 +7,7 @@ const STORAGE_KEY = 'fitzone_cart'
 const INDIVIDUAL_BOOKS = ['transformation', 'nutrition']
 const BUNDLE_ID = 'bundle'
 const DEFAULT_PRICES = { transformation: 79, nutrition: 79, bundle: 158 }
+const DEFAULT_CURRENCY_PRICES = {}
 
 export const BOOKS_DATA = {
   transformation: {
@@ -81,14 +82,14 @@ async function loadServerCart() {
 
 const CartContext = createContext()
 
-export function CartProvider({ children }) {
+export function CartProvider({ children, initialPrices, initialCurrencyPrices }) {
   const router = useRouter()
   const { user } = useUser()
   const [cart, setCart] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [wasAutoUpgraded, setWasAutoUpgraded] = useState(false)
-  const [prices, setPrices] = useState(DEFAULT_PRICES)
-  const [currencyPrices, setCurrencyPrices] = useState({})
+  const [prices] = useState(initialPrices || DEFAULT_PRICES)
+  const [currencyPrices] = useState(initialCurrencyPrices || DEFAULT_CURRENCY_PRICES)
   const [hydrated, setHydrated] = useState(false)
   const userRef = useRef(user)
   userRef.current = user
@@ -149,20 +150,6 @@ export function CartProvider({ children }) {
     nutrition: { ...BOOKS_DATA.nutrition, price: prices.nutrition },
     bundle: { ...BOOKS_DATA.bundle, price: prices.bundle },
   }), [prices])
-
-  useEffect(() => {
-    Promise.all([
-      fetch('/api/admin/prices', { next: { tags: ['prices'] } }).then(r => r.json()),
-      fetch('/api/admin/currency-prices', { next: { tags: ['currency-prices'] } }).then(r => r.json()),
-    ]).then(([basePrices, cpData]) => {
-      setPrices({ transformation: Number(basePrices.transformation), nutrition: Number(basePrices.nutrition), bundle: Number(basePrices.bundle) })
-      setCurrencyPrices(cpData || {})
-    }).catch(() => {
-      fetch('/api/admin/prices', { next: { tags: ['prices'] } }).then(r => r.json())
-        .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition), bundle: Number(data.bundle) }))
-        .catch((e) => console.error('Failed to load prices:', e))
-    })
-  }, [])
 
   const addToCart = useCallback((item) => {
     const id = typeof item === 'string' ? item : item.id
