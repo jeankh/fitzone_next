@@ -245,30 +245,6 @@ export default function BlogPage({ initialPosts }) {
           )}
         </motion.div>
 
-        {/* Newsletter CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mt-20 bg-gradient-to-r from-brand/15 to-brand/5 border border-brand/20 rounded-3xl p-8 lg:p-12 text-center"
-        >
-          <span className="text-4xl mb-4 block">📬</span>
-          <h2 className="text-2xl lg:text-3xl font-bold mb-4">{t('blogPage.newsletter')}</h2>
-          <p className="text-text-secondary mb-8 max-w-xl mx-auto">
-            {t('blogPage.newsletterDesc')}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder={t('blogPage.emailPlaceholder')}
-              className="flex-1 bg-surface border border-border rounded-xl py-3 px-4 text-white placeholder:text-text-muted focus:outline-none focus:border-brand/50"
-            />
-            <button className="bg-brand text-white px-6 py-3 rounded-xl font-bold hover:bg-brand-dark transition-colors">
-              {t('blogPage.subscribe')}
-            </button>
-          </div>
-        </motion.div>
       </div>
     </div>
   )
