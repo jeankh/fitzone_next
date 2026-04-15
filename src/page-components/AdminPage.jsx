@@ -929,28 +929,30 @@ function Dashboard({ onLogout, initialEvents }) {
                         <span className="text-red-400 text-xs">Not found</span>
                       )}
                     </div>
-                    {/* Ebook PDF */}
-                    <div className="border-t border-border pt-3">
-                      <p className="text-text-muted text-xs mb-2">PDF File</p>
-                      {ebooks[book.id] ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-emerald-400 text-xs flex items-center gap-1 flex-1 truncate">
-                            <CheckCircle size={11} />Uploaded
-                          </span>
-                          <label className="cursor-pointer text-xs text-brand hover:underline">
-                            Replace
+                    {/* Ebook PDF — not for bundle */}
+                    {book.id !== 'bundle' && (
+                      <div className="border-t border-border pt-3">
+                        <p className="text-text-muted text-xs mb-2">PDF File</p>
+                        {ebooks[book.id] ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-emerald-400 text-xs flex items-center gap-1 flex-1 truncate">
+                              <CheckCircle size={11} />Uploaded
+                            </span>
+                            <label className="cursor-pointer text-xs text-brand hover:underline">
+                              Replace
+                              <input type="file" accept=".pdf,application/pdf" className="hidden"
+                                onChange={e => e.target.files?.[0] && uploadEbook(book.id, e.target.files[0])} />
+                            </label>
+                          </div>
+                        ) : (
+                          <label className={`flex items-center justify-center gap-1.5 border border-dashed border-border rounded-lg py-2 cursor-pointer hover:border-brand/40 hover:text-brand transition-colors text-text-muted text-xs ${uploadingEbook === book.id ? 'opacity-50 pointer-events-none' : ''}`}>
+                            {uploadingEbook === book.id ? <><RefreshCw size={12} className="animate-spin" />Uploading...</> : <><Upload size={12} />Upload PDF</>}
                             <input type="file" accept=".pdf,application/pdf" className="hidden"
                               onChange={e => e.target.files?.[0] && uploadEbook(book.id, e.target.files[0])} />
                           </label>
-                        </div>
-                      ) : (
-                        <label className={`flex items-center justify-center gap-1.5 border border-dashed border-border rounded-lg py-2 cursor-pointer hover:border-brand/40 hover:text-brand transition-colors text-text-muted text-xs ${uploadingEbook === book.id ? 'opacity-50 pointer-events-none' : ''}`}>
-                          {uploadingEbook === book.id ? <><RefreshCw size={12} className="animate-spin" />Uploading...</> : <><Upload size={12} />Upload PDF</>}
-                          <input type="file" accept=".pdf,application/pdf" className="hidden"
-                            onChange={e => e.target.files?.[0] && uploadEbook(book.id, e.target.files[0])} />
-                        </label>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                     {book.id === 'bundle' && (
                       <p className="text-[#25d366] text-xs flex items-center gap-1">
                         <Gift size={11} />Includes WhatsApp support
