@@ -57,7 +57,7 @@ export default function Footer() {
             </p>
 
             {socialLinks.length > 0 && (
-              <div className="flex flex-wrap gap-2.5">
+              <div className="flex flex-wrap gap-2">
                 {socialLinks.map((social, i) => (
                   <motion.a
                     key={i}
@@ -65,10 +65,16 @@ export default function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     title={social.label}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    className="h-11 px-4 rounded-xl flex items-center justify-center text-sm font-medium transition-all bg-white/[0.04] border border-border text-text-secondary hover:bg-brand/10 hover:border-brand/30 hover:text-brand"
+                    whileHover={{ scale: 1.08, y: -2 }}
+                    className="group w-11 h-11 rounded-xl flex items-center justify-center transition-all bg-white/[0.05] border border-border hover:bg-brand/15 hover:border-brand/40"
                   >
-                    {social.label}
+                    {social.icon ? (
+                      <span className="text-xl leading-none">{social.icon}</span>
+                    ) : (
+                      <span className="text-xs font-bold text-text-secondary group-hover:text-brand transition-colors leading-tight text-center px-1">
+                        {social.label.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
                   </motion.a>
                 ))}
               </div>

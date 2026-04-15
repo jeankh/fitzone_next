@@ -678,7 +678,7 @@ function Dashboard({ onLogout, initialEvents }) {
   // Social buttons
   const [socialButtons, setSocialButtons] = useState([])
   const [editingSocial, setEditingSocial] = useState(null) // null | 'new' | index
-  const [socialForm, setSocialForm] = useState({ label: '', url: '' })
+  const [socialForm, setSocialForm] = useState({ label: '', url: '', icon: '' })
   const [savingSocial, setSavingSocial] = useState(false)
   const [deletingSocial, setDeletingSocial] = useState(null)
 
@@ -788,9 +788,9 @@ function Dashboard({ onLogout, initialEvents }) {
     if (!socialForm.label.trim() || !socialForm.url.trim()) return
     let updated
     if (editingSocial === 'new') {
-      updated = [...socialButtons, { label: socialForm.label.trim(), url: socialForm.url.trim() }]
+      updated = [...socialButtons, { label: socialForm.label.trim(), url: socialForm.url.trim(), icon: socialForm.icon.trim() }]
     } else {
-      updated = socialButtons.map((b, i) => i === editingSocial ? { label: socialForm.label.trim(), url: socialForm.url.trim() } : b)
+      updated = socialButtons.map((b, i) => i === editingSocial ? { label: socialForm.label.trim(), url: socialForm.url.trim(), icon: socialForm.icon.trim() } : b)
     }
     await saveSocialButtons(updated)
     setEditingSocial(null)
@@ -1040,7 +1040,7 @@ function Dashboard({ onLogout, initialEvents }) {
                 <h2 className="text-white font-bold text-lg">Social Buttons</h2>
                 <span className="text-text-muted text-sm">({socialButtons.length})</span>
               </div>
-              <button onClick={() => { setEditingSocial('new'); setSocialForm({ label: '', url: '' }) }}
+              <button onClick={() => { setEditingSocial('new'); setSocialForm({ label: '', url: '', icon: '' }) }}
                 className="flex items-center gap-1.5 text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors">
                 <Plus size={14} />Add Button
               </button>
@@ -1053,8 +1053,14 @@ function Dashboard({ onLogout, initialEvents }) {
                   className="bg-surface border border-brand/30 rounded-2xl p-5 mb-4">
                   <p className="text-white text-sm font-semibold mb-4">{editingSocial === 'new' ? 'Add Social Button' : 'Edit Social Button'}</p>
                   <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="w-24 flex-shrink-0">
+                      <label className="text-text-muted text-xs mb-1 block">Icon (emoji)</label>
+                      <input value={socialForm.icon} onChange={e => setSocialForm(f => ({ ...f, icon: e.target.value }))}
+                        placeholder="📸"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-lg text-center focus:outline-none focus:border-brand/40" />
+                    </div>
                     <div className="flex-1">
-                      <label className="text-text-muted text-xs mb-1 block">Label (e.g. Instagram, TikTok)</label>
+                      <label className="text-text-muted text-xs mb-1 block">Label (e.g. Instagram)</label>
                       <input value={socialForm.label} onChange={e => setSocialForm(f => ({ ...f, label: e.target.value }))}
                         placeholder="Instagram"
                         className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-brand/40" />
@@ -1082,6 +1088,11 @@ function Dashboard({ onLogout, initialEvents }) {
               <div className="bg-surface border border-border rounded-2xl overflow-hidden">
                 {socialButtons.map((btn, i) => (
                   <div key={i} className={`flex items-center gap-4 px-5 py-3.5 ${i < socialButtons.length - 1 ? 'border-b border-border' : ''}`}>
+                    {btn.icon && (
+                      <div className="w-9 h-9 rounded-lg bg-white/[0.05] border border-border flex items-center justify-center text-xl flex-shrink-0">
+                        {btn.icon}
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-white text-sm font-medium">{btn.label}</p>
                       <a href={btn.url} target="_blank" rel="noopener noreferrer"
@@ -1089,7 +1100,7 @@ function Dashboard({ onLogout, initialEvents }) {
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button onClick={() => handleCopy(btn.url, `social_${i}`)} className="text-text-muted hover:text-brand transition-colors p-1"><Copy size={13} /></button>
-                      <button onClick={() => { setEditingSocial(i); setSocialForm({ label: btn.label, url: btn.url }) }}
+                      <button onClick={() => { setEditingSocial(i); setSocialForm({ label: btn.label, url: btn.url, icon: btn.icon || '' }) }}
                         className="text-text-muted hover:text-brand transition-colors p-1"><Pencil size={13} /></button>
                       {deletingSocial === i ? (
                         <div className="flex items-center gap-1">
