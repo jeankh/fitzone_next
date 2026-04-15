@@ -665,18 +665,10 @@ function Dashboard({ onLogout, initialEvents }) {
     return 'SAR'
   })
 
-  // Prices
-  const [prices, setPrices] = useState({ transformation: 79, nutrition: 79 })
-  const [editingPrice, setEditingPrice] = useState(null) // 'transformation' | 'nutrition'
-  const [priceInput, setPriceInput] = useState('')
-  const [savingPrice, setSavingPrice] = useState(false)
-
-  // Currency price overrides
-  const [currencyPrices, setCurrencyPrices] = useState({})
-  const [showCurrencyTable, setShowCurrencyTable] = useState(false)
-  const [savingCurrency, setSavingCurrency] = useState(false)
-  const [editingCurrencyCell, setEditingCurrencyCell] = useState(null)
-  const [currencyCellInput, setCurrencyCellInput] = useState('')
+  // Stripe prices (read-only, fetched live)
+  const [prices, setPrices] = useState(null)
+  const [loadingPrices, setLoadingPrices] = useState(true)
+  const [refreshingPrices, setRefreshingPrices] = useState(false)
 
   // Marketing
   const [marketing, setMarketing] = useState({ whatsapp: '', whatsapp_visible: 'true', social_buttons: [] })
@@ -713,9 +705,25 @@ function Dashboard({ onLogout, initialEvents }) {
     }).catch(() => {}).finally(() => setPurchasesLoading(false))
   }
 
+  const loadStripePrices = () => {
+    setLoadingPrices(true)
+    fetch('/api/admin/stripe-prices').then(r => r.json()).then(data => {
+      if (!data.error) setPrices(data)
+    }).catch(() => {}).finally(() => setLoadingPrices(false))
+  }
+
+  const refreshStripePrices = async () => {
+    setRefreshingPrices(true)
+    // Bust the cache then re-fetch
+    await fetch('/api/admin/stripe-prices', { method: 'POST' }).catch(() => {})
+    await fetch('/api/admin/stripe-prices').then(r => r.json()).then(data => {
+      if (!data.error) setPrices(data)
+    }).catch(() => {})
+    setRefreshingPrices(false)
+  }
+
   useEffect(() => {
-    fetch('/api/admin/prices').then(r => r.json()).then(setPrices).catch(() => {})
-    fetch('/api/admin/currency-prices').then(r => r.json()).then(setCurrencyPrices).catch(() => {})
+    loadStripePrices()
     fetch('/api/admin/marketing').then(r => r.json()).then(data => {
       setMarketing(data)
       try { setSocialButtons(JSON.parse(data.social_buttons || '[]')) } catch { setSocialButtons([]) }
@@ -726,36 +734,16 @@ function Dashboard({ onLogout, initialEvents }) {
 
   const conversionRate = events.cart_adds > 0 ? Math.round((events.purchases / events.cart_adds) * 100) : 0
   const revCurrency = CURRENCIES.find(c => c.code === revCurrencyCode) || CURRENCIES[0]
-  // Use per-currency override if available, otherwise convert from SAR
-  const bundlePriceInCurrency = (() => {
-    const ovr = currencyPrices[`${revCurrencyCode}_bundle`]
-    if (ovr) return Number(ovr)
-    return Math.round(prices.bundle * revCurrency.rate)
-  })()
+  const CURRENCY_RATES = { SAR: 1, USD: 0.267, EUR: 0.245, GBP: 0.210, AED: 0.980, KWD: 0.082, QAR: 0.972, BHD: 0.100, EGP: 13.1 }
+  const bundleSAR = prices?.bundle?.amount ?? 158
+  const bundlePriceInCurrency = Math.round(bundleSAR * (CURRENCY_RATES[revCurrencyCode] ?? 1))
   const estRevenue = events.purchases * bundlePriceInCurrency
-
-  // Convert a SAR base price to the selected revenue currency for display
-  const displayPrice = (id, sarAmount) => {
-    const ovr = currencyPrices[`${revCurrencyCode}_${id}`]
-    if (ovr) return `${Number(ovr)} ${revCurrency.symbol}`
-    return `${Math.round(sarAmount * revCurrency.rate)} ${revCurrency.symbol}`
-  }
 
   // ── Handlers ──
   const handleReset = async () => {
     setResetting(true)
     try { await fetch('/api/events', { method: 'DELETE' }); setEvents({ ...EVENT_DEFAULTS }) }
     finally { setResetting(false); setConfirmReset(false) }
-  }
-
-  const startEditPrice = (id, currentPrice) => { setEditingPrice(id); setPriceInput(String(currentPrice)) }
-  const savePrice = async () => {
-    setSavingPrice(true)
-    try {
-      await fetch('/api/admin/prices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingPrice]: Number(priceInput) }) })
-      setPrices(p => ({ ...p, [editingPrice]: Number(priceInput) }))
-      setEditingPrice(null)
-    } finally { setSavingPrice(false) }
   }
 
   const startEditMkt = (key, val) => { setEditingMkt(key); setMktInput(val) }
@@ -786,28 +774,6 @@ function Dashboard({ onLogout, initialEvents }) {
   const handleCopy = (value, label) => {
     navigator.clipboard.writeText(value).catch(() => {})
     setCopied(label); setTimeout(() => setCopied(null), 1500)
-  }
-
-  // Currency price handlers
-  const CURRENCY_CODES = ['SAR', 'USD', 'EUR', 'GBP', 'AED', 'KWD', 'QAR', 'BHD', 'EGP']
-  const CURRENCY_RATES = { SAR: 1, USD: 0.267, EUR: 0.245, GBP: 0.210, AED: 0.980, KWD: 0.082, QAR: 0.972, BHD: 0.100, EGP: 13.1 }
-  const getCurrencyDefault = (code, product) => {
-    const sarPrice = product === 'bundle' ? prices.bundle : product === 'transformation' ? prices.transformation : prices.nutrition
-    return Math.round(sarPrice * CURRENCY_RATES[code])
-  }
-  const getCurrencyCellValue = (code, product) => {
-    const key = `${code}_${product}`
-    if (key in currencyPrices && currencyPrices[key] !== '') return Number(currencyPrices[key])
-    return null
-  }
-  const saveCurrencyCell = async () => {
-    if (!editingCurrencyCell) return
-    setSavingCurrency(true)
-    try {
-      await fetch('/api/admin/currency-prices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingCurrencyCell]: currencyCellInput }) })
-      setCurrencyPrices(p => ({ ...p, [editingCurrencyCell]: currencyCellInput }))
-      setEditingCurrencyCell(null)
-    } finally { setSavingCurrency(false) }
   }
 
   const saveSocialButtons = async (buttons) => {
@@ -844,9 +810,9 @@ function Dashboard({ onLogout, initialEvents }) {
   }
 
   const productCards = [
-    { id: 'transformation', titleEn: 'Complete Shredding & Building Guide', titleAr: 'الدليل الشامل للتنشيف وبناء الجسم', image: '/fitzone-workout.jpeg', price: prices.transformation },
-    { id: 'nutrition',      titleEn: 'Complete Fat Loss Guide',              titleAr: 'الدليل الكامل لخسارة الدهون',         image: '/fitzone-nutrition.jpeg', price: prices.nutrition },
-    { id: 'bundle',         titleEn: 'Complete Bundle',                      titleAr: 'الباقة الكاملة',                       image: '/fitzone-workout.jpeg', price: prices.bundle },
+    { id: 'transformation', titleEn: 'Complete Shredding & Building Guide', titleAr: 'الدليل الشامل للتنشيف وبناء الجسم', image: '/fitzone-workout.jpeg' },
+    { id: 'nutrition',      titleEn: 'Complete Fat Loss Guide',              titleAr: 'الدليل الكامل لخسارة الدهون',         image: '/fitzone-nutrition.jpeg' },
+    { id: 'bundle',         titleEn: 'Complete Bundle',                      titleAr: 'الباقة الكاملة',                       image: '/fitzone-workout.jpeg' },
   ]
 
   return (
@@ -965,122 +931,56 @@ function Dashboard({ onLogout, initialEvents }) {
         </motion.section>
         )}
 
-        {/* ── 2: Products (editable prices) ── */}
+        {/* ── 2: Products (Stripe prices, read-only) ── */}
         {activeTab === 'products' && (
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
           <div className="flex items-center justify-between gap-2 mb-5">
             <div className="flex items-center gap-2">
               <Package size={18} className="text-brand" />
               <h2 className="text-white font-bold text-lg">Products</h2>
+              <span className="text-text-muted text-xs border border-border px-2 py-0.5 rounded-full">Live from Stripe</span>
             </div>
-            <button onClick={() => setShowCurrencyTable(v => !v)}
-              className={`flex items-center gap-1.5 text-sm border px-3 py-1.5 rounded-lg transition-all ${showCurrencyTable ? 'bg-brand/10 border-brand/40 text-brand' : 'border-border text-text-secondary hover:text-white hover:border-brand/40'}`}>
-              <Globe size={13} />Currency Prices
+            <button onClick={refreshStripePrices} disabled={refreshingPrices}
+              className="flex items-center gap-1.5 text-sm border border-border text-text-secondary hover:text-white hover:border-brand/40 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50">
+              <RefreshCw size={13} className={refreshingPrices ? 'animate-spin' : ''} />Refresh
             </button>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
-            {productCards.map((book) => (
-              <div key={book.id} className="bg-surface border border-border rounded-2xl p-5">
-                <div className="flex items-start gap-3 mb-4">
-                  <Image src={book.image} alt={book.titleEn} width={48} height={64} className="w-12 h-16 object-cover rounded-lg flex-shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-white font-semibold text-sm leading-snug mb-1">{book.titleEn}</p>
-                    <p className="text-text-muted text-xs leading-snug">{book.titleAr}</p>
-                  </div>
-                </div>
-                <div className="pt-3 border-t border-border">
-                  {editingPrice === book.id ? (
-                    <div className="flex items-center gap-2">
-                      <input type="number" value={priceInput} onChange={e => setPriceInput(e.target.value)}
-                        className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none w-20" />
-                      <span className="text-text-muted text-xs">SAR</span>
-                      <SaveBtn saving={savingPrice} onClick={savePrice} />
-                      <CancelBtn onClick={() => setEditingPrice(null)} />
+            {productCards.map((book) => {
+              const stripePrice = prices?.[book.id]
+              return (
+                <div key={book.id} className="bg-surface border border-border rounded-2xl p-5">
+                  <div className="flex items-start gap-3 mb-4">
+                    <Image src={book.image} alt={book.titleEn} width={48} height={64} className="w-12 h-16 object-cover rounded-lg flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-white font-semibold text-sm leading-snug mb-1">{book.titleEn}</p>
+                      <p className="text-text-muted text-xs leading-snug">{book.titleAr}</p>
                     </div>
-                  ) : (
+                  </div>
+                  <div className="pt-3 border-t border-border">
                     <div className="flex items-center justify-between">
-                      <span className="text-text-secondary text-xs">Price</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-bold">{displayPrice(book.id, book.price)}</span>
-                        <button onClick={() => startEditPrice(book.id, book.price)} className="text-text-muted hover:text-brand transition-colors">
-                          <Pencil size={13} />
-                        </button>
-                      </div>
+                      <span className="text-text-secondary text-xs">Stripe Price</span>
+                      {loadingPrices ? (
+                        <span className="text-text-muted text-xs animate-pulse">Loading...</span>
+                      ) : stripePrice ? (
+                        <span className="text-white font-bold">{stripePrice.amount} {stripePrice.currency}</span>
+                      ) : (
+                        <span className="text-red-400 text-xs">Not found</span>
+                      )}
                     </div>
-                  )}
-                  {book.id === 'bundle' && (
-                    <p className="text-[#25d366] text-xs mt-2 flex items-center gap-1">
-                      <Gift size={11} />Includes WhatsApp support (free gift)
-                    </p>
-                  )}
+                    {book.id === 'bundle' && (
+                      <p className="text-[#25d366] text-xs mt-2 flex items-center gap-1">
+                        <Gift size={11} />Includes WhatsApp support
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
-
-          {/* Currency Price Table */}
-          <AnimatePresence>
-            {showCurrencyTable && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden mt-4">
-                <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-                  <div className="px-5 py-3 border-b border-border flex items-center gap-2">
-                    <Globe size={14} className="text-brand" />
-                    <p className="text-white text-sm font-semibold">Per-Currency Price Overrides</p>
-                    <p className="text-text-muted text-xs ml-1">— leave blank to use auto-conversion from SAR</p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="px-5 py-2.5 text-left text-text-muted text-xs font-medium w-24">Currency</th>
-                          <th className="px-4 py-2.5 text-left text-text-muted text-xs font-medium">Transformation</th>
-                          <th className="px-4 py-2.5 text-left text-text-muted text-xs font-medium">Nutrition</th>
-                          <th className="px-4 py-2.5 text-left text-text-muted text-xs font-medium">Bundle</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {CURRENCY_CODES.map((code, i) => {
-                          return (
-                            <tr key={code} className={i < CURRENCY_CODES.length - 1 ? 'border-b border-border' : ''}>
-                              <td className="px-5 py-2.5">
-                                <span className="text-white font-mono text-xs font-bold">{code}</span>
-                              </td>
-                              {['transformation', 'nutrition', 'bundle'].map(product => {
-                                const cellKey = `${code}_${product}`
-                                const override = getCurrencyCellValue(code, product)
-                                const defaultVal = getCurrencyDefault(code, product)
-                                const isEditing = editingCurrencyCell === cellKey
-                                return (
-                                  <td key={product} className="px-4 py-2">
-                                    {isEditing ? (
-                                      <div className="flex items-center gap-1.5">
-                                        <input type="number" value={currencyCellInput} onChange={e => setCurrencyCellInput(e.target.value)}
-                                          autoFocus onKeyDown={e => { if (e.key === 'Enter') saveCurrencyCell(); if (e.key === 'Escape') setEditingCurrencyCell(null) }}
-                                          className="w-20 bg-background border border-brand/40 rounded-lg px-2 py-1 text-white text-xs focus:outline-none" />
-                                        <SaveBtn saving={savingCurrency} onClick={saveCurrencyCell} />
-                                        <CancelBtn onClick={() => setEditingCurrencyCell(null)} />
-                                      </div>
-                                    ) : (
-                                      <button onClick={() => { setEditingCurrencyCell(cellKey); setCurrencyCellInput(override !== null ? String(override) : '') }}
-                                        className="flex items-center gap-2 group">
-                                        <span className={override !== null ? 'text-white font-medium text-xs' : 'text-text-muted text-xs'}>{override !== null ? override : defaultVal}</span>
-                                        {override === null && <span className="text-text-muted text-xs">(auto)</span>}
-                                        <Pencil size={10} className="text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
-                                      </button>
-                                    )}
-                                  </td>
-                                )
-                              })}
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <p className="text-text-muted text-xs mt-4 flex items-center gap-1.5">
+            <ExternalLink size={11} />To change prices, update them in your <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Stripe Dashboard</a>, then click Refresh.
+          </p>
         </motion.section>
         )}
 

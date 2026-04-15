@@ -2,6 +2,7 @@ import Script from 'next/script'
 import './globals.css'
 import ClientLayout from '../src/components/ClientLayout'
 import { Analytics } from '@vercel/analytics/next'
+import { getStripe, PRICE_IDS } from '../src/lib/stripe'
 
 const PRICE_DEFAULTS = { transformation: 79, nutrition: 79, bundle: 158 }
 const MARKETING_DEFAULTS = { whatsapp: '966500000000', whatsapp_visible: 'true', social_buttons: '[]' }
@@ -9,13 +10,21 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
 async function fetchPrices() {
   try {
-    const [prices, currencyPrices] = await Promise.all([
-      fetch(`${BASE_URL}/api/admin/prices`, { next: { tags: ['prices'] } }).then(r => r.json()),
-      fetch(`${BASE_URL}/api/admin/currency-prices`, { next: { tags: ['currency-prices'] } }).then(r => r.json()),
+    const stripe = getStripe()
+    const [t, n, b] = await Promise.all([
+      stripe.prices.retrieve(PRICE_IDS.transformation),
+      stripe.prices.retrieve(PRICE_IDS.nutrition),
+      stripe.prices.retrieve(PRICE_IDS.bundle),
     ])
-    return { prices, currencyPrices }
-  } catch {
-    return { prices: PRICE_DEFAULTS, currencyPrices: {} }
+    return {
+      transformation: t.unit_amount / 100,
+      nutrition:       n.unit_amount / 100,
+      bundle:          b.unit_amount / 100,
+      currency:        t.currency.toUpperCase(), // all share the same base currency
+    }
+  } catch (err) {
+    console.error('Failed to fetch Stripe prices, using defaults:', err.message)
+    return { ...PRICE_DEFAULTS, currency: 'SAR' }
   }
 }
 
@@ -53,7 +62,7 @@ export const metadata = {
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID
 
 export default async function RootLayout({ children }) {
-  const [{ prices, currencyPrices }, marketing] = await Promise.all([
+  const [prices, marketing] = await Promise.all([
     fetchPrices(),
     fetchMarketing(),
   ])
@@ -77,7 +86,7 @@ export default async function RootLayout({ children }) {
         )}
       </head>
       <body>
-        <ClientLayout prices={prices} currencyPrices={currencyPrices} marketing={marketing}>
+        <ClientLayout prices={prices} marketing={marketing}>
           {children}
         </ClientLayout>
         <Analytics />

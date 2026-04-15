@@ -6,8 +6,7 @@ import { useUser } from './UserContext'
 const STORAGE_KEY = 'fitzone_cart'
 const INDIVIDUAL_BOOKS = ['transformation', 'nutrition']
 const BUNDLE_ID = 'bundle'
-const DEFAULT_PRICES = { transformation: 79, nutrition: 79, bundle: 158 }
-const DEFAULT_CURRENCY_PRICES = {}
+const DEFAULT_PRICES = { transformation: 79, nutrition: 79, bundle: 158, currency: 'SAR' }
 
 export const BOOKS_DATA = {
   transformation: {
@@ -82,14 +81,13 @@ async function loadServerCart() {
 
 const CartContext = createContext()
 
-export function CartProvider({ children, initialPrices, initialCurrencyPrices }) {
+export function CartProvider({ children, initialPrices }) {
   const router = useRouter()
   const { user } = useUser()
   const [cart, setCart] = useState([])
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [wasAutoUpgraded, setWasAutoUpgraded] = useState(false)
   const [prices] = useState(initialPrices || DEFAULT_PRICES)
-  const [currencyPrices] = useState(initialCurrencyPrices || DEFAULT_CURRENCY_PRICES)
   const [hydrated, setHydrated] = useState(false)
   const userRef = useRef(user)
   userRef.current = user
@@ -101,7 +99,7 @@ export function CartProvider({ children, initialPrices, initialCurrencyPrices })
     setHydrated(true)
   }, [])
 
-  // When user logs in, merge: load server cart, merge with local, persist both
+  // When user logs in, merge server cart with local
   useEffect(() => {
     if (!hydrated) return
     if (user) {
@@ -120,7 +118,7 @@ export function CartProvider({ children, initialPrices, initialCurrencyPrices })
     }
   }, [hydrated, !!user])
 
-  // Sync cart to localStorage + server whenever it changes (after hydration)
+  // Sync cart to localStorage + server whenever it changes
   const prevCartRef = useRef(cart)
   useEffect(() => {
     if (!hydrated) return
@@ -131,24 +129,14 @@ export function CartProvider({ children, initialPrices, initialCurrencyPrices })
   }, [cart, hydrated])
 
   const getPrice = useCallback((id) => {
-    if (id === 'transformation') return prices.transformation
-    if (id === 'nutrition') return prices.nutrition
-    if (id === 'bundle') return prices.bundle
-    return 0
+    return prices[id] ?? 0
   }, [prices])
-
-  const getCurrencyPrice = useCallback((id, currencyCode) => {
-    if (!currencyCode) return null
-    const key = `${currencyCode}_${id}`
-    if (key in currencyPrices && currencyPrices[key] !== '') return Number(currencyPrices[key])
-    return null
-  }, [currencyPrices])
 
   const booksData = useMemo(() => ({
     ...BOOKS_DATA,
     transformation: { ...BOOKS_DATA.transformation, price: prices.transformation },
-    nutrition: { ...BOOKS_DATA.nutrition, price: prices.nutrition },
-    bundle: { ...BOOKS_DATA.bundle, price: prices.bundle },
+    nutrition:       { ...BOOKS_DATA.nutrition,       price: prices.nutrition },
+    bundle:          { ...BOOKS_DATA.bundle,          price: prices.bundle },
   }), [prices])
 
   const addToCart = useCallback((item) => {
@@ -187,9 +175,9 @@ export function CartProvider({ children, initialPrices, initialCurrencyPrices })
     setCart(prev => prev.filter(item => item !== id))
   }, [])
 
-  const clearCart = useCallback(() => setCart([]), [])
-  const isInCart = useCallback((id) => cart.includes(id), [cart])
-  const getTotal = useCallback(() => cart.reduce((sum, id) => sum + getPrice(id), 0), [cart, getPrice])
+  const clearCart  = useCallback(() => setCart([]), [])
+  const isInCart   = useCallback((id) => cart.includes(id), [cart])
+  const getTotal   = useCallback(() => cart.reduce((sum, id) => sum + getPrice(id), 0), [cart, getPrice])
 
   const getMissingBook = useCallback(() => {
     if (cart.includes(BUNDLE_ID)) return null
@@ -200,10 +188,10 @@ export function CartProvider({ children, initialPrices, initialCurrencyPrices })
 
   const openCheckout = useCallback(() => {
     trackEvent('checkout_starts')
-    if (typeof window.gtag === 'function') window.gtag('event', 'begin_checkout', { value: getTotal(), currency: 'SAR' })
+    if (typeof window.gtag === 'function') window.gtag('event', 'begin_checkout', { value: getTotal(), currency: prices.currency || 'SAR' })
     setIsCartOpen(false)
     router.push('/checkout')
-  }, [getTotal, router])
+  }, [getTotal, router, prices.currency])
 
   const value = useMemo(() => ({
     cart,
@@ -219,9 +207,7 @@ export function CartProvider({ children, initialPrices, initialCurrencyPrices })
     openCheckout,
     BOOKS_DATA: booksData,
     prices,
-    currencyPrices,
-    getCurrencyPrice,
-  }), [cart, addToCart, removeFromCart, clearCart, isInCart, getTotal, getMissingBook, wasAutoUpgraded, isCartOpen, openCheckout, booksData, prices, currencyPrices, getCurrencyPrice])
+  }), [cart, addToCart, removeFromCart, clearCart, isInCart, getTotal, getMissingBook, wasAutoUpgraded, isCartOpen, openCheckout, booksData, prices])
 
   return (
     <CartContext.Provider value={value}>
