@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShoppingCart, Gift, CreditCard, CheckCircle, ExternalLink,
-  Copy, LogOut, Lock, BarChart2, Package, Megaphone, RefreshCw,
+  Copy, LogOut, Lock, BarChart2, Package, RefreshCw,
   Eye, EyeOff, TrendingUp, AlertTriangle, Pencil, X, Save,
   Plus, Trash2, BookOpen, Upload, Link as LinkIcon, ChevronDown, ChevronUp,
   Globe, DollarSign, Download, Calendar
@@ -94,7 +94,6 @@ const eventCards = [
 const ADMIN_TABS = [
   { id: 'traffic', label: 'Traffic', icon: BarChart2 },
   { id: 'products', label: 'Products', icon: Package },
-  { id: 'marketing', label: 'Marketing', icon: Megaphone },
   { id: 'blogs', label: 'Blogs', icon: BookOpen },
   { id: 'purchases', label: 'Purchases', icon: DollarSign },
 ]
@@ -670,12 +669,6 @@ function Dashboard({ onLogout, initialEvents }) {
   const [loadingPrices, setLoadingPrices] = useState(true)
   const [refreshingPrices, setRefreshingPrices] = useState(false)
 
-  // Marketing
-  const [marketing, setMarketing] = useState({ whatsapp: '', whatsapp_visible: 'true', social_buttons: [] })
-  const [editingMkt, setEditingMkt] = useState(null)
-  const [mktInput, setMktInput] = useState('')
-  const [savingMkt, setSavingMkt] = useState(false)
-  // Social buttons
   // Blogs
   const [blogs, setBlogs] = useState([])
   const [editingBlog, setEditingBlog] = useState(null) // null | 'new' | post object
@@ -718,9 +711,6 @@ function Dashboard({ onLogout, initialEvents }) {
 
   useEffect(() => {
     loadStripePrices()
-    fetch('/api/admin/marketing').then(r => r.json()).then(data => {
-      setMarketing(data)
-    }).catch(() => {})
     fetch('/api/admin/blogs').then(r => r.json()).then(data => { if (Array.isArray(data)) setBlogs(data) }).catch(() => {})
     loadPurchases()
   }, [])
@@ -737,16 +727,6 @@ function Dashboard({ onLogout, initialEvents }) {
     setResetting(true)
     try { await fetch('/api/events', { method: 'DELETE' }); setEvents({ ...EVENT_DEFAULTS }) }
     finally { setResetting(false); setConfirmReset(false) }
-  }
-
-  const startEditMkt = (key, val) => { setEditingMkt(key); setMktInput(val) }
-  const saveMkt = async () => {
-    setSavingMkt(true)
-    try {
-      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [editingMkt]: mktInput }) })
-      setMarketing(m => ({ ...m, [editingMkt]: mktInput }))
-      setEditingMkt(null)
-    } finally { setSavingMkt(false) }
   }
 
   const handleBlogSave = (saved) => {
@@ -767,14 +747,6 @@ function Dashboard({ onLogout, initialEvents }) {
   const handleCopy = (value, label) => {
     navigator.clipboard.writeText(value).catch(() => {})
     setCopied(label); setTimeout(() => setCopied(null), 1500)
-  }
-
-  const toggleMktVisible = async (key) => {
-    const visKey = `${key}_visible`
-    const current = marketing[visKey] === 'true'
-    const next = current ? 'false' : 'true'
-    await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [visKey]: next }) })
-    setMarketing(m => ({ ...m, [visKey]: next }))
   }
 
   const productCards = [
@@ -949,57 +921,6 @@ function Dashboard({ onLogout, initialEvents }) {
           <p className="text-text-muted text-xs mt-4 flex items-center gap-1.5">
             <ExternalLink size={11} />To change prices, update them in your <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Stripe Dashboard</a>, then click Refresh.
           </p>
-        </motion.section>
-        )}
-
-        {/* ── 3: Marketing Info (editable) ── */}
-        {activeTab === 'marketing' && (
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="space-y-6">
-
-          {/* WhatsApp */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Megaphone size={18} className="text-brand" />
-              <h2 className="text-white font-bold text-lg">WhatsApp</h2>
-            </div>
-            <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-              {/* WhatsApp number */}
-              <div className={`px-5 py-3.5 border-b border-border ${marketing.whatsapp_visible === 'false' ? 'opacity-50' : ''} transition-opacity`}>
-                {editingMkt === 'whatsapp' ? (
-                  <div className="flex items-center gap-3">
-                    <span className="text-text-secondary text-sm w-40 flex-shrink-0">WhatsApp Number</span>
-                    <input value={mktInput} onChange={e => setMktInput(e.target.value)} autoFocus
-                      className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none" />
-                    <SaveBtn saving={savingMkt} onClick={saveMkt} />
-                    <CancelBtn onClick={() => setEditingMkt(null)} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-text-secondary text-sm w-40 flex-shrink-0">WhatsApp Number</span>
-                    <a href={marketing.whatsapp ? `https://wa.me/${marketing.whatsapp}` : undefined} target="_blank" rel="noopener noreferrer"
-                      className="text-white text-sm font-mono flex-1 truncate hover:text-brand transition-colors">
-                      {marketing.whatsapp || '—'}
-                    </a>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button onClick={() => toggleMktVisible('whatsapp')}
-                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-all ${marketing.whatsapp_visible !== 'false' ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/5' : 'border-border text-text-muted hover:text-white hover:border-white/20'}`}>
-                        {marketing.whatsapp_visible !== 'false' ? <><Eye size={12} />Visible</> : <><EyeOff size={12} />Hidden</>}
-                      </button>
-                      <button onClick={() => handleCopy(marketing.whatsapp, 'whatsapp')} className="text-text-muted hover:text-brand transition-colors p-1"><Copy size={13} /></button>
-                      <button onClick={() => { setEditingMkt('whatsapp'); setMktInput(marketing.whatsapp || '') }} className="text-text-muted hover:text-brand transition-colors p-1"><Pencil size={13} /></button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {/* GA4 ID — read only */}
-              <div className="px-5 py-3.5 flex items-center justify-between gap-4">
-                <span className="text-text-secondary text-sm w-40 flex-shrink-0">GA4 Measurement ID</span>
-                <span className="text-white text-sm font-mono flex-1 truncate">{GA_ID}</span>
-                <button onClick={() => handleCopy(GA_ID, 'ga4')} className="text-text-muted hover:text-brand transition-colors flex-shrink-0"><Copy size={13} /></button>
-              </div>
-            </div>
-          </div>
-
         </motion.section>
         )}
 
