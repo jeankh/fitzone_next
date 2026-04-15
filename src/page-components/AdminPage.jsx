@@ -669,6 +669,11 @@ function Dashboard({ onLogout, initialEvents }) {
   const [loadingPrices, setLoadingPrices] = useState(true)
   const [refreshingPrices, setRefreshingPrices] = useState(false)
 
+  // Ebooks
+  const [ebooks, setEbooks] = useState({})
+  const [uploadingEbook, setUploadingEbook] = useState(null) // productId | null
+  const [ebookError, setEbookError] = useState(null)
+
   // Blogs
   const [blogs, setBlogs] = useState([])
   const [editingBlog, setEditingBlog] = useState(null) // null | 'new' | post object
@@ -711,6 +716,7 @@ function Dashboard({ onLogout, initialEvents }) {
 
   useEffect(() => {
     loadStripePrices()
+    fetch('/api/admin/ebooks').then(r => r.json()).then(data => setEbooks(data || {})).catch(() => {})
     fetch('/api/admin/blogs').then(r => r.json()).then(data => { if (Array.isArray(data)) setBlogs(data) }).catch(() => {})
     loadPurchases()
   }, [])
@@ -747,6 +753,21 @@ function Dashboard({ onLogout, initialEvents }) {
   const handleCopy = (value, label) => {
     navigator.clipboard.writeText(value).catch(() => {})
     setCopied(label); setTimeout(() => setCopied(null), 1500)
+  }
+
+  const uploadEbook = async (productId, file) => {
+    setUploadingEbook(productId)
+    setEbookError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('productId', productId)
+      const res = await fetch('/api/admin/upload-ebook', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.url) setEbooks(e => ({ ...e, [productId]: data.url }))
+      else setEbookError(data.error || 'Upload failed')
+    } catch { setEbookError('Upload failed — network error') }
+    setUploadingEbook(null)
   }
 
   const productCards = [
@@ -897,7 +918,7 @@ function Dashboard({ onLogout, initialEvents }) {
                       <p className="text-text-muted text-xs leading-snug">{book.titleAr}</p>
                     </div>
                   </div>
-                  <div className="pt-3 border-t border-border">
+                  <div className="pt-3 border-t border-border space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-text-secondary text-xs">Stripe Price</span>
                       {loadingPrices ? (
@@ -908,8 +929,30 @@ function Dashboard({ onLogout, initialEvents }) {
                         <span className="text-red-400 text-xs">Not found</span>
                       )}
                     </div>
+                    {/* Ebook PDF */}
+                    <div className="border-t border-border pt-3">
+                      <p className="text-text-muted text-xs mb-2">PDF File</p>
+                      {ebooks[book.id] ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-400 text-xs flex items-center gap-1 flex-1 truncate">
+                            <CheckCircle size={11} />Uploaded
+                          </span>
+                          <label className="cursor-pointer text-xs text-brand hover:underline">
+                            Replace
+                            <input type="file" accept=".pdf,application/pdf" className="hidden"
+                              onChange={e => e.target.files?.[0] && uploadEbook(book.id, e.target.files[0])} />
+                          </label>
+                        </div>
+                      ) : (
+                        <label className={`flex items-center justify-center gap-1.5 border border-dashed border-border rounded-lg py-2 cursor-pointer hover:border-brand/40 hover:text-brand transition-colors text-text-muted text-xs ${uploadingEbook === book.id ? 'opacity-50 pointer-events-none' : ''}`}>
+                          {uploadingEbook === book.id ? <><RefreshCw size={12} className="animate-spin" />Uploading...</> : <><Upload size={12} />Upload PDF</>}
+                          <input type="file" accept=".pdf,application/pdf" className="hidden"
+                            onChange={e => e.target.files?.[0] && uploadEbook(book.id, e.target.files[0])} />
+                        </label>
+                      )}
+                    </div>
                     {book.id === 'bundle' && (
-                      <p className="text-[#25d366] text-xs mt-2 flex items-center gap-1">
+                      <p className="text-[#25d366] text-xs flex items-center gap-1">
                         <Gift size={11} />Includes WhatsApp support
                       </p>
                     )}
@@ -918,6 +961,9 @@ function Dashboard({ onLogout, initialEvents }) {
               )
             })}
           </div>
+          {ebookError && (
+            <p className="text-red-400 text-xs mt-3 flex items-center gap-1.5"><AlertTriangle size={11} />{ebookError}</p>
+          )}
           <p className="text-text-muted text-xs mt-4 flex items-center gap-1.5">
             <ExternalLink size={11} />To change prices, update them in your <a href="https://dashboard.stripe.com/products" target="_blank" rel="noopener noreferrer" className="text-brand hover:underline">Stripe Dashboard</a>, then click Refresh.
           </p>

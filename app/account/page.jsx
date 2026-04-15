@@ -2,10 +2,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Mail, Phone, LogOut, Loader2, Package, Download, Clock, RefreshCw, MessageCircle, User, Lock, CheckCircle } from 'lucide-react'
+import { Mail, Phone, LogOut, Loader2, Package, Download, Clock, RefreshCw, User, Lock, CheckCircle } from 'lucide-react'
 import { useLanguage } from '../../src/context/LanguageContext'
 import { useUser } from '../../src/context/UserContext'
-import { useMarketing } from '../../src/context/MarketingContext'
 import Image from 'next/image'
 
 function getBookInfo(id, lang) {
@@ -32,9 +31,9 @@ export default function AccountPage() {
   const isWelcome = searchParams.get('welcome') === 'true'
   const { lang } = useLanguage()
   const { user, loading: userLoading, refetch } = useUser()
-  const marketing = useMarketing()
   const [purchases, setPurchases] = useState([])
   const [purchasesLoading, setPurchasesLoading] = useState(true)
+  const [downloading, setDownloading] = useState(null) // productId | null
   const [newPassword, setNewPassword] = useState('')
   const [savingPw, setSavingPw] = useState(false)
   const [pwSaved, setPwSaved] = useState(false)
@@ -51,6 +50,22 @@ export default function AccountPage() {
       setPurchases(data.purchases || [])
     }).catch((e) => console.error('Failed to load purchases:', e)).finally(() => setPurchasesLoading(false))
   }, [user, userLoading, router])
+
+  const handleDownload = async (productId, title) => {
+    setDownloading(productId)
+    try {
+      const res = await fetch(`/api/user/download?product=${productId}`)
+      const data = await res.json()
+      if (data.url) {
+        const a = document.createElement('a')
+        a.href = data.url
+        a.download = `${title}.pdf`
+        a.target = '_blank'
+        a.click()
+      }
+    } catch {}
+    setDownloading(null)
+  }
 
   const handleLogout = async () => {
     await fetch('/api/user/logout', { method: 'POST' }).catch(() => {})
@@ -85,8 +100,6 @@ export default function AccountPage() {
       <Loader2 size={36} className="text-brand animate-spin" />
     </div>
   )
-
-  const whatsappLink = `https://wa.me/${marketing.whatsapp}`
 
   return (
     <div className="min-h-screen bg-background px-4 pt-28 pb-12" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -212,7 +225,16 @@ export default function AccountPage() {
                             <div className="flex-1 min-w-0">
                               <p className="text-white text-sm font-semibold truncate">{book.title[lang]}</p>
                             </div>
-                            <Download size={14} className="text-brand shrink-0" />
+                            <button
+                              onClick={() => handleDownload(id, book.title['en'])}
+                              disabled={downloading === id}
+                              className="flex items-center gap-1.5 text-xs bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50 shrink-0"
+                            >
+                              {downloading === id
+                                ? <Loader2 size={12} className="animate-spin" />
+                                : <Download size={12} />}
+                              {lang === 'ar' ? 'تحميل' : 'Download'}
+                            </button>
                           </div>
                         )
                       })}
@@ -223,13 +245,6 @@ export default function AccountPage() {
                       <span className="text-white font-bold text-sm">{(p.amount / 100).toFixed(0)} {(p.currency || 'sar').toUpperCase()}</span>
                     </div>
 
-                    <div className="flex gap-2 pt-1">
-                      <a href={whatsappLink} target="_blank" rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 text-xs text-emerald-400 border border-emerald-400/30 px-3 py-2 rounded-lg hover:bg-emerald-400/5 transition-colors">
-                        <MessageCircle size={12} />
-                        {lang === 'ar' ? 'تواصل للتسليم' : 'Contact for delivery'}
-                      </a>
-                    </div>
                   </div>
                 )
               })}
