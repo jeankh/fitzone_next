@@ -1,13 +1,27 @@
 'use client'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { Instagram } from 'lucide-react'
 import { useLanguage } from '../context/LanguageContext'
 import { useMarketing } from '../context/MarketingContext'
 import Image from 'next/image'
 
+function TikTokIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
+    </svg>
+  )
+}
+
+const SOCIAL_LINKS = [
+  { label: 'Instagram', icon: Instagram, href: 'https://instagram.com/fitzone' },
+  { label: 'TikTok',    icon: TikTokIcon, href: 'https://tiktok.com/@fitzone' },
+]
+
 export default function Footer() {
   const { lang } = useLanguage()
-  const { whatsapp, whatsapp_visible, social_buttons } = useMarketing()
+  const { whatsapp, whatsapp_visible } = useMarketing()
 
   const whatsappVisible = whatsapp_visible !== 'false' && whatsapp_visible !== false
 
@@ -28,8 +42,6 @@ export default function Footer() {
       { label: lang === 'ar' ? 'سياسة الاسترداد' : 'Refund Policy', href: '/refund' },
     ],
   }
-
-  const socialLinks = Array.isArray(social_buttons) ? social_buttons : []
 
   const paymentMethods = [
     { icon: '🔒', label: lang === 'ar' ? 'Stripe آمن' : 'Secure Stripe' },
@@ -56,29 +68,21 @@ export default function Footer() {
               }
             </p>
 
-            {socialLinks.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {socialLinks.map((social, i) => (
-                  <motion.a
-                    key={i}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={social.label}
-                    whileHover={{ scale: 1.08, y: -2 }}
-                    className="group w-11 h-11 rounded-xl flex items-center justify-center transition-all bg-white/[0.05] border border-border hover:bg-brand/15 hover:border-brand/40"
-                  >
-                    {social.icon ? (
-                      <span className="text-xl leading-none">{social.icon}</span>
-                    ) : (
-                      <span className="text-xs font-bold text-text-secondary group-hover:text-brand transition-colors leading-tight text-center px-1">
-                        {social.label.slice(0, 2).toUpperCase()}
-                      </span>
-                    )}
-                  </motion.a>
-                ))}
-              </div>
-            )}
+            <div className="flex gap-2">
+              {SOCIAL_LINKS.map((social) => (
+                <motion.a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={social.label}
+                  whileHover={{ scale: 1.08, y: -2 }}
+                  className="w-11 h-11 rounded-xl flex items-center justify-center transition-all bg-white/[0.05] border border-border text-text-secondary hover:bg-brand/15 hover:border-brand/40 hover:text-brand"
+                >
+                  <social.icon size={20} />
+                </motion.a>
+              ))}
+            </div>
           </div>
 
           {/* Books Column */}

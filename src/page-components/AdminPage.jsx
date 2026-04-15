@@ -676,12 +676,6 @@ function Dashboard({ onLogout, initialEvents }) {
   const [mktInput, setMktInput] = useState('')
   const [savingMkt, setSavingMkt] = useState(false)
   // Social buttons
-  const [socialButtons, setSocialButtons] = useState([])
-  const [editingSocial, setEditingSocial] = useState(null) // null | 'new' | index
-  const [socialForm, setSocialForm] = useState({ label: '', url: '', icon: '' })
-  const [savingSocial, setSavingSocial] = useState(false)
-  const [deletingSocial, setDeletingSocial] = useState(null)
-
   // Blogs
   const [blogs, setBlogs] = useState([])
   const [editingBlog, setEditingBlog] = useState(null) // null | 'new' | post object
@@ -726,7 +720,6 @@ function Dashboard({ onLogout, initialEvents }) {
     loadStripePrices()
     fetch('/api/admin/marketing').then(r => r.json()).then(data => {
       setMarketing(data)
-      try { setSocialButtons(JSON.parse(data.social_buttons || '[]')) } catch { setSocialButtons([]) }
     }).catch(() => {})
     fetch('/api/admin/blogs').then(r => r.json()).then(data => { if (Array.isArray(data)) setBlogs(data) }).catch(() => {})
     loadPurchases()
@@ -774,31 +767,6 @@ function Dashboard({ onLogout, initialEvents }) {
   const handleCopy = (value, label) => {
     navigator.clipboard.writeText(value).catch(() => {})
     setCopied(label); setTimeout(() => setCopied(null), 1500)
-  }
-
-  const saveSocialButtons = async (buttons) => {
-    setSavingSocial(true)
-    try {
-      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ social_buttons: JSON.stringify(buttons) }) })
-      setSocialButtons(buttons)
-    } finally { setSavingSocial(false) }
-  }
-
-  const saveSocialForm = async () => {
-    if (!socialForm.label.trim() || !socialForm.url.trim()) return
-    let updated
-    if (editingSocial === 'new') {
-      updated = [...socialButtons, { label: socialForm.label.trim(), url: socialForm.url.trim(), icon: socialForm.icon.trim() }]
-    } else {
-      updated = socialButtons.map((b, i) => i === editingSocial ? { label: socialForm.label.trim(), url: socialForm.url.trim(), icon: socialForm.icon.trim() } : b)
-    }
-    await saveSocialButtons(updated)
-    setEditingSocial(null)
-  }
-
-  const deleteSocialButton = async (index) => {
-    await saveSocialButtons(socialButtons.filter((_, i) => i !== index))
-    setDeletingSocial(null)
   }
 
   const toggleMktVisible = async (key) => {
@@ -1032,90 +1000,6 @@ function Dashboard({ onLogout, initialEvents }) {
             </div>
           </div>
 
-          {/* Social Buttons */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <LinkIcon size={18} className="text-brand" />
-                <h2 className="text-white font-bold text-lg">Social Buttons</h2>
-                <span className="text-text-muted text-sm">({socialButtons.length})</span>
-              </div>
-              <button onClick={() => { setEditingSocial('new'); setSocialForm({ label: '', url: '', icon: '' }) }}
-                className="flex items-center gap-1.5 text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors">
-                <Plus size={14} />Add Button
-              </button>
-            </div>
-
-            {/* Add / Edit form */}
-            <AnimatePresence>
-              {editingSocial !== null && (
-                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                  className="bg-surface border border-brand/30 rounded-2xl p-5 mb-4">
-                  <p className="text-white text-sm font-semibold mb-4">{editingSocial === 'new' ? 'Add Social Button' : 'Edit Social Button'}</p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="w-24 flex-shrink-0">
-                      <label className="text-text-muted text-xs mb-1 block">Icon (emoji)</label>
-                      <input value={socialForm.icon} onChange={e => setSocialForm(f => ({ ...f, icon: e.target.value }))}
-                        placeholder="📸"
-                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-lg text-center focus:outline-none focus:border-brand/40" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-text-muted text-xs mb-1 block">Label (e.g. Instagram)</label>
-                      <input value={socialForm.label} onChange={e => setSocialForm(f => ({ ...f, label: e.target.value }))}
-                        placeholder="Instagram"
-                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-brand/40" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-text-muted text-xs mb-1 block">URL</label>
-                      <input value={socialForm.url} onChange={e => setSocialForm(f => ({ ...f, url: e.target.value }))}
-                        placeholder="https://instagram.com/yourprofile"
-                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-brand/40" />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <SaveBtn saving={savingSocial} onClick={saveSocialForm} />
-                    <CancelBtn onClick={() => setEditingSocial(null)} />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {socialButtons.length === 0 ? (
-              <div className="bg-surface border border-border rounded-2xl p-8 text-center">
-                <p className="text-text-muted text-sm">No social buttons yet. Click "Add Button" to add one.</p>
-              </div>
-            ) : (
-              <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-                {socialButtons.map((btn, i) => (
-                  <div key={i} className={`flex items-center gap-4 px-5 py-3.5 ${i < socialButtons.length - 1 ? 'border-b border-border' : ''}`}>
-                    {btn.icon && (
-                      <div className="w-9 h-9 rounded-lg bg-white/[0.05] border border-border flex items-center justify-center text-xl flex-shrink-0">
-                        {btn.icon}
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium">{btn.label}</p>
-                      <a href={btn.url} target="_blank" rel="noopener noreferrer"
-                        className="text-text-muted text-xs hover:text-brand transition-colors truncate block">{btn.url}</a>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button onClick={() => handleCopy(btn.url, `social_${i}`)} className="text-text-muted hover:text-brand transition-colors p-1"><Copy size={13} /></button>
-                      <button onClick={() => { setEditingSocial(i); setSocialForm({ label: btn.label, url: btn.url, icon: btn.icon || '' }) }}
-                        className="text-text-muted hover:text-brand transition-colors p-1"><Pencil size={13} /></button>
-                      {deletingSocial === i ? (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => deleteSocialButton(i)} className="text-xs text-red-400 hover:text-red-300 border border-red-400/30 px-2 py-1 rounded-lg">Delete</button>
-                          <button onClick={() => setDeletingSocial(null)} className="text-xs text-text-muted border border-border px-2 py-1 rounded-lg">Cancel</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setDeletingSocial(i)} className="text-text-muted hover:text-red-400 transition-colors p-1"><Trash2 size={13} /></button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </motion.section>
         )}
 
