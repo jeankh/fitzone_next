@@ -6,7 +6,7 @@ import { useUser } from './UserContext'
 const STORAGE_KEY = 'fitzone_cart'
 const INDIVIDUAL_BOOKS = ['transformation', 'nutrition']
 const BUNDLE_ID = 'bundle'
-const DEFAULT_PRICES = { transformation: 79, nutrition: 79 }
+const DEFAULT_PRICES = { transformation: 79, nutrition: 79, bundle: 158 }
 
 export const BOOKS_DATA = {
   transformation: {
@@ -132,18 +132,12 @@ export function CartProvider({ children }) {
   const getPrice = useCallback((id) => {
     if (id === 'transformation') return prices.transformation
     if (id === 'nutrition') return prices.nutrition
-    if (id === 'bundle') return prices.transformation + prices.nutrition
+    if (id === 'bundle') return prices.bundle
     return 0
   }, [prices])
 
   const getCurrencyPrice = useCallback((id, currencyCode) => {
     if (!currencyCode) return null
-    if (id === 'bundle') {
-      const t = getCurrencyPrice('transformation', currencyCode)
-      const n = getCurrencyPrice('nutrition', currencyCode)
-      if (t !== null && n !== null) return t + n
-      return null
-    }
     const key = `${currencyCode}_${id}`
     if (key in currencyPrices && currencyPrices[key] !== '') return Number(currencyPrices[key])
     return null
@@ -153,7 +147,7 @@ export function CartProvider({ children }) {
     ...BOOKS_DATA,
     transformation: { ...BOOKS_DATA.transformation, price: prices.transformation },
     nutrition: { ...BOOKS_DATA.nutrition, price: prices.nutrition },
-    bundle: { ...BOOKS_DATA.bundle, price: prices.transformation + prices.nutrition },
+    bundle: { ...BOOKS_DATA.bundle, price: prices.bundle },
   }), [prices])
 
   useEffect(() => {
@@ -161,11 +155,11 @@ export function CartProvider({ children }) {
       fetch('/api/admin/prices').then(r => r.json()),
       fetch('/api/admin/currency-prices').then(r => r.json()),
     ]).then(([basePrices, cpData]) => {
-      setPrices({ transformation: Number(basePrices.transformation), nutrition: Number(basePrices.nutrition) })
+      setPrices({ transformation: Number(basePrices.transformation), nutrition: Number(basePrices.nutrition), bundle: Number(basePrices.bundle) })
       setCurrencyPrices(cpData || {})
     }).catch(() => {
       fetch('/api/admin/prices').then(r => r.json())
-        .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition) }))
+        .then(data => setPrices({ transformation: Number(data.transformation), nutrition: Number(data.nutrition), bundle: Number(data.bundle) }))
         .catch((e) => console.error('Failed to load prices:', e))
     })
   }, [])

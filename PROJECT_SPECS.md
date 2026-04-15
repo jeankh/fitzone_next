@@ -75,6 +75,20 @@ Plaintext migration, signup validation, set-password flow, dynamic imports, clie
 - Removed unused admin bank account management route and dashboard section
 - Cleaned middleware, sitemap, and rate-limiting references for removed features
 
+### Session 12 — Dynamic Social Buttons
+- **Removed all hardcoded social links** (Twitter, Instagram, YouTube, WhatsApp in footer were fixed in code)
+- **Admin-controlled social buttons:** Marketing tab now has an "Add Button" list — each entry has a Label + URL; fully add/edit/delete from admin
+- **Stored as JSON array** in Redis under `fitzone_marketing.social_buttons`; parsed in `MarketingContext`
+- **Footer** now renders whatever buttons are in the array (no buttons if list is empty); WhatsApp contact link in footer nav still controlled by its own visibility toggle
+- **Key files changed:** `app/api/admin/marketing/route.js`, `src/context/MarketingContext.jsx`, `src/page-components/AdminPage.jsx`, `src/sections/Footer.jsx`
+
+### Session 11 — Price System Fix
+- **Bundle price now independent:** `bundle` added as a first-class stored price in Redis (`fitzone_prices`), no longer computed as `transformation + nutrition`
+- **Prices now reflect on website:** `Books.jsx` and `BooksPage.jsx` now use `prices` from `CartContext` (fetched from API on mount) instead of the hardcoded static values in `src/lib/books.js`
+- **Bundle editable in admin:** Removed `isBundle` guard — all three product cards (transformation, nutrition, bundle) now show the pencil/edit button
+- **Currency table updated:** Bundle column in the per-currency overrides table is now fully editable (was read-only auto-computed); API regex updated to accept `bundle` keys
+- **Key files changed:** `app/api/admin/prices/route.js`, `app/api/admin/currency-prices/route.js`, `src/context/CartContext.jsx`, `src/sections/Books.jsx`, `src/page-components/BooksPage.jsx`, `src/page-components/AdminPage.jsx`
+
 ### Session 10 — Admin UX Update
 - Converted the admin dashboard from a long scrolling page into tabbed sections
 - Added tabs for Traffic, Products, Marketing, Blogs, and Purchases

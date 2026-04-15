@@ -679,10 +679,16 @@ function Dashboard({ onLogout, initialEvents }) {
   const [currencyCellInput, setCurrencyCellInput] = useState('')
 
   // Marketing
-  const [marketing, setMarketing] = useState({ whatsapp: '', twitter: '', instagram: '', youtube: '', whatsapp_visible: 'true', twitter_visible: 'true', instagram_visible: 'true', youtube_visible: 'true' })
+  const [marketing, setMarketing] = useState({ whatsapp: '', whatsapp_visible: 'true', social_buttons: [] })
   const [editingMkt, setEditingMkt] = useState(null)
   const [mktInput, setMktInput] = useState('')
   const [savingMkt, setSavingMkt] = useState(false)
+  // Social buttons
+  const [socialButtons, setSocialButtons] = useState([])
+  const [editingSocial, setEditingSocial] = useState(null) // null | 'new' | index
+  const [socialForm, setSocialForm] = useState({ label: '', url: '' })
+  const [savingSocial, setSavingSocial] = useState(false)
+  const [deletingSocial, setDeletingSocial] = useState(null)
 
   // Blogs
   const [blogs, setBlogs] = useState([])
@@ -710,33 +716,28 @@ function Dashboard({ onLogout, initialEvents }) {
   useEffect(() => {
     fetch('/api/admin/prices').then(r => r.json()).then(setPrices).catch(() => {})
     fetch('/api/admin/currency-prices').then(r => r.json()).then(setCurrencyPrices).catch(() => {})
-    fetch('/api/admin/marketing').then(r => r.json()).then(setMarketing).catch(() => {})
+    fetch('/api/admin/marketing').then(r => r.json()).then(data => {
+      setMarketing(data)
+      try { setSocialButtons(JSON.parse(data.social_buttons || '[]')) } catch { setSocialButtons([]) }
+    }).catch(() => {})
     fetch('/api/admin/blogs').then(r => r.json()).then(data => { if (Array.isArray(data)) setBlogs(data) }).catch(() => {})
     loadPurchases()
   }, [])
 
   const conversionRate = events.cart_adds > 0 ? Math.round((events.purchases / events.cart_adds) * 100) : 0
-  const bundlePriceSAR = prices.transformation + prices.nutrition
   const revCurrency = CURRENCIES.find(c => c.code === revCurrencyCode) || CURRENCIES[0]
   // Use per-currency override if available, otherwise convert from SAR
   const bundlePriceInCurrency = (() => {
-    const tOvr = currencyPrices[`${revCurrencyCode}_transformation`]
-    const nOvr = currencyPrices[`${revCurrencyCode}_nutrition`]
-    if (tOvr && nOvr) return Number(tOvr) + Number(nOvr)
-    return Math.round(bundlePriceSAR * revCurrency.rate)
+    const ovr = currencyPrices[`${revCurrencyCode}_bundle`]
+    if (ovr) return Number(ovr)
+    return Math.round(prices.bundle * revCurrency.rate)
   })()
   const estRevenue = events.purchases * bundlePriceInCurrency
 
   // Convert a SAR base price to the selected revenue currency for display
   const displayPrice = (id, sarAmount) => {
-    if (id === 'bundle') {
-      const tOvr = currencyPrices[`${revCurrencyCode}_transformation`]
-      const nOvr = currencyPrices[`${revCurrencyCode}_nutrition`]
-      if (tOvr && nOvr) return `${Number(tOvr) + Number(nOvr)} ${revCurrency.symbol}`
-    } else {
-      const ovr = currencyPrices[`${revCurrencyCode}_${id}`]
-      if (ovr) return `${Number(ovr)} ${revCurrency.symbol}`
-    }
+    const ovr = currencyPrices[`${revCurrencyCode}_${id}`]
+    if (ovr) return `${Number(ovr)} ${revCurrency.symbol}`
     return `${Math.round(sarAmount * revCurrency.rate)} ${revCurrency.symbol}`
   }
 
@@ -791,7 +792,7 @@ function Dashboard({ onLogout, initialEvents }) {
   const CURRENCY_CODES = ['SAR', 'USD', 'EUR', 'GBP', 'AED', 'KWD', 'QAR', 'BHD', 'EGP']
   const CURRENCY_RATES = { SAR: 1, USD: 0.267, EUR: 0.245, GBP: 0.210, AED: 0.980, KWD: 0.082, QAR: 0.972, BHD: 0.100, EGP: 13.1 }
   const getCurrencyDefault = (code, product) => {
-    const sarPrice = product === 'transformation' ? prices.transformation : prices.nutrition
+    const sarPrice = product === 'bundle' ? prices.bundle : product === 'transformation' ? prices.transformation : prices.nutrition
     return Math.round(sarPrice * CURRENCY_RATES[code])
   }
   const getCurrencyCellValue = (code, product) => {
@@ -809,12 +810,30 @@ function Dashboard({ onLogout, initialEvents }) {
     } finally { setSavingCurrency(false) }
   }
 
-  const mktFields = [
-    { key: 'whatsapp', label: 'WhatsApp Number' },
-    { key: 'twitter',  label: 'Twitter / X' },
-    { key: 'instagram',label: 'Instagram' },
-    { key: 'youtube',  label: 'YouTube' },
-  ]
+  const saveSocialButtons = async (buttons) => {
+    setSavingSocial(true)
+    try {
+      await fetch('/api/admin/marketing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ social_buttons: JSON.stringify(buttons) }) })
+      setSocialButtons(buttons)
+    } finally { setSavingSocial(false) }
+  }
+
+  const saveSocialForm = async () => {
+    if (!socialForm.label.trim() || !socialForm.url.trim()) return
+    let updated
+    if (editingSocial === 'new') {
+      updated = [...socialButtons, { label: socialForm.label.trim(), url: socialForm.url.trim() }]
+    } else {
+      updated = socialButtons.map((b, i) => i === editingSocial ? { label: socialForm.label.trim(), url: socialForm.url.trim() } : b)
+    }
+    await saveSocialButtons(updated)
+    setEditingSocial(null)
+  }
+
+  const deleteSocialButton = async (index) => {
+    await saveSocialButtons(socialButtons.filter((_, i) => i !== index))
+    setDeletingSocial(null)
+  }
 
   const toggleMktVisible = async (key) => {
     const visKey = `${key}_visible`
@@ -827,7 +846,7 @@ function Dashboard({ onLogout, initialEvents }) {
   const productCards = [
     { id: 'transformation', titleEn: 'Complete Shredding & Building Guide', titleAr: 'الدليل الشامل للتنشيف وبناء الجسم', image: '/fitzone-workout.jpeg', price: prices.transformation },
     { id: 'nutrition',      titleEn: 'Complete Fat Loss Guide',              titleAr: 'الدليل الكامل لخسارة الدهون',         image: '/fitzone-nutrition.jpeg', price: prices.nutrition },
-    { id: 'bundle',         titleEn: 'Complete Bundle',                      titleAr: 'الباقة الكاملة',                       image: '/fitzone-workout.jpeg', price: bundlePriceSAR, isBundle: true },
+    { id: 'bundle',         titleEn: 'Complete Bundle',                      titleAr: 'الباقة الكاملة',                       image: '/fitzone-workout.jpeg', price: prices.bundle },
   ]
 
   return (
@@ -970,7 +989,7 @@ function Dashboard({ onLogout, initialEvents }) {
                   </div>
                 </div>
                 <div className="pt-3 border-t border-border">
-                  {!book.isBundle && editingPrice === book.id ? (
+                  {editingPrice === book.id ? (
                     <div className="flex items-center gap-2">
                       <input type="number" value={priceInput} onChange={e => setPriceInput(e.target.value)}
                         className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none w-20" />
@@ -983,15 +1002,13 @@ function Dashboard({ onLogout, initialEvents }) {
                       <span className="text-text-secondary text-xs">Price</span>
                       <div className="flex items-center gap-2">
                         <span className="text-white font-bold">{displayPrice(book.id, book.price)}</span>
-                        {!book.isBundle && (
-                          <button onClick={() => startEditPrice(book.id, book.price)} className="text-text-muted hover:text-brand transition-colors">
-                            <Pencil size={13} />
-                          </button>
-                        )}
+                        <button onClick={() => startEditPrice(book.id, book.price)} className="text-text-muted hover:text-brand transition-colors">
+                          <Pencil size={13} />
+                        </button>
                       </div>
                     </div>
                   )}
-                  {book.isBundle && (
+                  {book.id === 'bundle' && (
                     <p className="text-[#25d366] text-xs mt-2 flex items-center gap-1">
                       <Gift size={11} />Includes WhatsApp support (free gift)
                     </p>
@@ -1018,22 +1035,17 @@ function Dashboard({ onLogout, initialEvents }) {
                           <th className="px-5 py-2.5 text-left text-text-muted text-xs font-medium w-24">Currency</th>
                           <th className="px-4 py-2.5 text-left text-text-muted text-xs font-medium">Transformation</th>
                           <th className="px-4 py-2.5 text-left text-text-muted text-xs font-medium">Nutrition</th>
-                          <th className="px-4 py-2.5 text-left text-text-muted text-xs font-medium text-white/30">Bundle (auto)</th>
+                          <th className="px-4 py-2.5 text-left text-text-muted text-xs font-medium">Bundle</th>
                         </tr>
                       </thead>
                       <tbody>
                         {CURRENCY_CODES.map((code, i) => {
-                          const tOverride = getCurrencyCellValue(code, 'transformation')
-                          const nOverride = getCurrencyCellValue(code, 'nutrition')
-                          const tDefault = getCurrencyDefault(code, 'transformation')
-                          const nDefault = getCurrencyDefault(code, 'nutrition')
-                          const bundle = (tOverride ?? tDefault) + (nOverride ?? nDefault)
                           return (
                             <tr key={code} className={i < CURRENCY_CODES.length - 1 ? 'border-b border-border' : ''}>
                               <td className="px-5 py-2.5">
                                 <span className="text-white font-mono text-xs font-bold">{code}</span>
                               </td>
-                              {['transformation', 'nutrition'].map(product => {
+                              {['transformation', 'nutrition', 'bundle'].map(product => {
                                 const cellKey = `${code}_${product}`
                                 const override = getCurrencyCellValue(code, product)
                                 const defaultVal = getCurrencyDefault(code, product)
@@ -1059,9 +1071,6 @@ function Dashboard({ onLogout, initialEvents }) {
                                   </td>
                                 )
                               })}
-                              <td className="px-4 py-2.5">
-                                <span className="text-text-muted text-xs">{bundle}</span>
-                              </td>
                             </tr>
                           )
                         })}
@@ -1077,65 +1086,124 @@ function Dashboard({ onLogout, initialEvents }) {
 
         {/* ── 3: Marketing Info (editable) ── */}
         {activeTab === 'marketing' && (
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }}>
-          <div className="flex items-center gap-2 mb-5">
-            <Megaphone size={18} className="text-brand" />
-            <h2 className="text-white font-bold text-lg">Marketing Info</h2>
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.15 }} className="space-y-6">
+
+          {/* WhatsApp */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Megaphone size={18} className="text-brand" />
+              <h2 className="text-white font-bold text-lg">WhatsApp</h2>
+            </div>
+            <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+              {/* WhatsApp number */}
+              <div className={`px-5 py-3.5 border-b border-border ${marketing.whatsapp_visible === 'false' ? 'opacity-50' : ''} transition-opacity`}>
+                {editingMkt === 'whatsapp' ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-text-secondary text-sm w-40 flex-shrink-0">WhatsApp Number</span>
+                    <input value={mktInput} onChange={e => setMktInput(e.target.value)} autoFocus
+                      className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none" />
+                    <SaveBtn saving={savingMkt} onClick={saveMkt} />
+                    <CancelBtn onClick={() => setEditingMkt(null)} />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-text-secondary text-sm w-40 flex-shrink-0">WhatsApp Number</span>
+                    <a href={marketing.whatsapp ? `https://wa.me/${marketing.whatsapp}` : undefined} target="_blank" rel="noopener noreferrer"
+                      className="text-white text-sm font-mono flex-1 truncate hover:text-brand transition-colors">
+                      {marketing.whatsapp || '—'}
+                    </a>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button onClick={() => toggleMktVisible('whatsapp')}
+                        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-all ${marketing.whatsapp_visible !== 'false' ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/5' : 'border-border text-text-muted hover:text-white hover:border-white/20'}`}>
+                        {marketing.whatsapp_visible !== 'false' ? <><Eye size={12} />Visible</> : <><EyeOff size={12} />Hidden</>}
+                      </button>
+                      <button onClick={() => handleCopy(marketing.whatsapp, 'whatsapp')} className="text-text-muted hover:text-brand transition-colors p-1"><Copy size={13} /></button>
+                      <button onClick={() => { setEditingMkt('whatsapp'); setMktInput(marketing.whatsapp || '') }} className="text-text-muted hover:text-brand transition-colors p-1"><Pencil size={13} /></button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* GA4 ID — read only */}
+              <div className="px-5 py-3.5 flex items-center justify-between gap-4">
+                <span className="text-text-secondary text-sm w-40 flex-shrink-0">GA4 Measurement ID</span>
+                <span className="text-white text-sm font-mono flex-1 truncate">{GA_ID}</span>
+                <button onClick={() => handleCopy(GA_ID, 'ga4')} className="text-text-muted hover:text-brand transition-colors flex-shrink-0"><Copy size={13} /></button>
+              </div>
+            </div>
           </div>
-          <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-            {mktFields.map(({ key, label }, i) => {
-              const val = marketing[key] || ''
-              const isEditing = editingMkt === key
-              const isVisible = marketing[`${key}_visible`] !== 'false'
-              return (
-                <div key={key} className={`px-5 py-3.5 ${i < mktFields.length - 1 ? 'border-b border-border' : ''} ${!isVisible ? 'opacity-50' : ''} transition-opacity`}>
-                  {isEditing ? (
-                    <div className="flex items-center gap-3">
-                      <span className="text-text-secondary text-sm w-40 flex-shrink-0">{label}</span>
-                      <input value={mktInput} onChange={e => setMktInput(e.target.value)} autoFocus
-                        className="flex-1 bg-background border border-brand/40 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none" />
-                      <SaveBtn saving={savingMkt} onClick={saveMkt} />
-                      <CancelBtn onClick={() => setEditingMkt(null)} />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2 w-40 flex-shrink-0">
-                        <span className="text-text-secondary text-sm">{label}</span>
-                        {!isVisible && <span className="text-xs text-text-muted bg-white/5 px-1.5 py-0.5 rounded">hidden</span>}
-                      </div>
-                      <a href={val.startsWith('http') ? val : val ? `https://wa.me/${val}` : undefined}
-                        target="_blank" rel="noopener noreferrer"
-                        className={`text-sm font-mono flex-1 truncate transition-colors ${!isVisible ? 'text-text-muted' : val.startsWith('http') || val ? 'text-white hover:text-brand' : 'text-text-muted'}`}>
-                        {val || '—'}
-                      </a>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {/* Visible / Hidden toggle */}
-                        <button onClick={() => toggleMktVisible(key)}
-                          title={isVisible ? 'Hide from site' : 'Show on site'}
-                          className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-all ${isVisible ? 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/5' : 'border-border text-text-muted hover:text-white hover:border-white/20'}`}>
-                          {isVisible ? <Eye size={12} /> : <EyeOff size={12} />}
-                          {isVisible ? 'Visible' : 'Hidden'}
-                        </button>
-                        <button onClick={() => handleCopy(val, key)} className="text-text-muted hover:text-brand transition-colors p-1">
-                          <Copy size={13} />
-                        </button>
-                        <button onClick={() => startEditMkt(key, val)} className="text-text-muted hover:text-brand transition-colors p-1">
-                          <Pencil size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-            {/* GA4 ID — read only */}
-            <div className="px-5 py-3.5 flex items-center justify-between gap-4">
-              <span className="text-text-secondary text-sm w-40 flex-shrink-0">GA4 Measurement ID</span>
-              <span className="text-white text-sm font-mono flex-1 truncate">{GA_ID}</span>
-              <button onClick={() => handleCopy(GA_ID, 'ga4')} className="text-text-muted hover:text-brand transition-colors flex-shrink-0">
-                <Copy size={13} />
+
+          {/* Social Buttons */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <LinkIcon size={18} className="text-brand" />
+                <h2 className="text-white font-bold text-lg">Social Buttons</h2>
+                <span className="text-text-muted text-sm">({socialButtons.length})</span>
+              </div>
+              <button onClick={() => { setEditingSocial('new'); setSocialForm({ label: '', url: '' }) }}
+                className="flex items-center gap-1.5 text-sm bg-brand text-white px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors">
+                <Plus size={14} />Add Button
               </button>
             </div>
+
+            {/* Add / Edit form */}
+            <AnimatePresence>
+              {editingSocial !== null && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  className="bg-surface border border-brand/30 rounded-2xl p-5 mb-4">
+                  <p className="text-white text-sm font-semibold mb-4">{editingSocial === 'new' ? 'Add Social Button' : 'Edit Social Button'}</p>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                      <label className="text-text-muted text-xs mb-1 block">Label (e.g. Instagram, TikTok)</label>
+                      <input value={socialForm.label} onChange={e => setSocialForm(f => ({ ...f, label: e.target.value }))}
+                        placeholder="Instagram"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-brand/40" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-text-muted text-xs mb-1 block">URL</label>
+                      <input value={socialForm.url} onChange={e => setSocialForm(f => ({ ...f, url: e.target.value }))}
+                        placeholder="https://instagram.com/yourprofile"
+                        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-brand/40" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <SaveBtn saving={savingSocial} onClick={saveSocialForm} />
+                    <CancelBtn onClick={() => setEditingSocial(null)} />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {socialButtons.length === 0 ? (
+              <div className="bg-surface border border-border rounded-2xl p-8 text-center">
+                <p className="text-text-muted text-sm">No social buttons yet. Click "Add Button" to add one.</p>
+              </div>
+            ) : (
+              <div className="bg-surface border border-border rounded-2xl overflow-hidden">
+                {socialButtons.map((btn, i) => (
+                  <div key={i} className={`flex items-center gap-4 px-5 py-3.5 ${i < socialButtons.length - 1 ? 'border-b border-border' : ''}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium">{btn.label}</p>
+                      <a href={btn.url} target="_blank" rel="noopener noreferrer"
+                        className="text-text-muted text-xs hover:text-brand transition-colors truncate block">{btn.url}</a>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button onClick={() => handleCopy(btn.url, `social_${i}`)} className="text-text-muted hover:text-brand transition-colors p-1"><Copy size={13} /></button>
+                      <button onClick={() => { setEditingSocial(i); setSocialForm({ label: btn.label, url: btn.url }) }}
+                        className="text-text-muted hover:text-brand transition-colors p-1"><Pencil size={13} /></button>
+                      {deletingSocial === i ? (
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => deleteSocialButton(i)} className="text-xs text-red-400 hover:text-red-300 border border-red-400/30 px-2 py-1 rounded-lg">Delete</button>
+                          <button onClick={() => setDeletingSocial(null)} className="text-xs text-text-muted border border-border px-2 py-1 rounded-lg">Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setDeletingSocial(i)} className="text-text-muted hover:text-red-400 transition-colors p-1"><Trash2 size={13} /></button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </motion.section>
         )}

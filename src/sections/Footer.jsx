@@ -7,14 +7,9 @@ import Image from 'next/image'
 
 export default function Footer() {
   const { lang } = useLanguage()
-  const { whatsapp, twitter, instagram, youtube,
-          whatsapp_visible, twitter_visible, instagram_visible, youtube_visible } = useMarketing()
+  const { whatsapp, whatsapp_visible, social_buttons } = useMarketing()
 
-  const isVisible = (key) => {
-    const map = { whatsapp: whatsapp_visible, twitter: twitter_visible, instagram: instagram_visible, youtube: youtube_visible }
-    const v = map[key]
-    return v !== 'false' && v !== false
-  }
+  const whatsappVisible = whatsapp_visible !== 'false' && whatsapp_visible !== false
 
   const footerLinks = {
     books: [
@@ -25,7 +20,7 @@ export default function Footer() {
     links: [
       { label: lang === 'ar' ? 'قصص النجاح' : 'Success Stories', href: '/results' },
       { label: lang === 'ar' ? 'المدونة' : 'Blog', href: '/blog' },
-      ...(isVisible('whatsapp') ? [{ label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: `https://wa.me/${whatsapp}`, external: true }] : []),
+      ...(whatsappVisible ? [{ label: lang === 'ar' ? 'تواصل معنا' : 'Contact Us', href: `https://wa.me/${whatsapp}`, external: true }] : []),
     ],
     legal: [
       { label: lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy', href: '/privacy' },
@@ -34,12 +29,7 @@ export default function Footer() {
     ],
   }
 
-  const socialLinks = [
-    { key: 'twitter',   icon: '𝕏',  label: 'Twitter / X', href: twitter },
-    { key: 'instagram', icon: '📷', label: 'Instagram',    href: instagram },
-    { key: 'youtube',   icon: '▶️', label: 'YouTube',      href: youtube },
-    { key: 'whatsapp',  icon: '💬', label: 'WhatsApp',     href: `https://wa.me/${whatsapp}`, isWhatsapp: true },
-  ].filter(s => isVisible(s.key))
+  const socialLinks = Array.isArray(social_buttons) ? social_buttons : []
 
   const paymentMethods = [
     { icon: '🔒', label: lang === 'ar' ? 'Stripe آمن' : 'Secure Stripe' },
@@ -66,25 +56,23 @@ export default function Footer() {
               }
             </p>
 
-            <div className="flex gap-2.5">
-              {socialLinks.map((social) => (
-                <motion.a
-                  key={social.key}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={social.label}
-                  whileHover={{ scale: 1.05, y: -2 }}
-                  className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg transition-all ${
-                    social.isWhatsapp
-                      ? 'bg-[#25d366] text-white hover:bg-[#20bd5a]'
-                      : 'bg-white/[0.04] border border-border text-text-secondary hover:bg-brand/10 hover:border-brand/30 hover:text-brand'
-                  }`}
-                >
-                  {social.icon}
-                </motion.a>
-              ))}
-            </div>
+            {socialLinks.length > 0 && (
+              <div className="flex flex-wrap gap-2.5">
+                {socialLinks.map((social, i) => (
+                  <motion.a
+                    key={i}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={social.label}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    className="h-11 px-4 rounded-xl flex items-center justify-center text-sm font-medium transition-all bg-white/[0.04] border border-border text-text-secondary hover:bg-brand/10 hover:border-brand/30 hover:text-brand"
+                  >
+                    {social.label}
+                  </motion.a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Books Column */}

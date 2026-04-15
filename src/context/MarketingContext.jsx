@@ -3,13 +3,8 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const DEFAULTS = {
   whatsapp: '966500000000',
-  twitter: 'https://x.com/',
-  instagram: 'https://instagram.com/',
-  youtube: 'https://youtube.com/',
-  whatsapp_visible:  'true',
-  twitter_visible:   'true',
-  instagram_visible: 'true',
-  youtube_visible:   'true',
+  whatsapp_visible: 'true',
+  social_buttons: [],
 }
 
 const MarketingContext = createContext(DEFAULTS)
@@ -21,10 +16,11 @@ export function MarketingProvider({ children }) {
     fetch('/api/admin/marketing')
       .then(r => r.json())
       .then(data => {
-        // Normalize boolean false → string 'false' (Upstash may return booleans)
         const normalized = {}
         for (const [k, v] of Object.entries(data || {})) normalized[k] = String(v)
-        setMarketing({ ...DEFAULTS, ...normalized })
+        let social_buttons = []
+        try { social_buttons = JSON.parse(normalized.social_buttons || '[]') } catch {}
+        setMarketing({ ...DEFAULTS, ...normalized, social_buttons })
       })
       .catch((e) => console.error('Failed to load marketing config:', e))
   }, [])

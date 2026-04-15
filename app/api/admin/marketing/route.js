@@ -8,17 +8,11 @@ const KV_KEY = 'fitzone_marketing'
 
 const DEFAULTS = {
   whatsapp: '966500000000',
-  twitter: 'https://x.com/',
-  instagram: 'https://instagram.com/',
-  youtube: 'https://youtube.com/',
   whatsapp_visible: 'true',
-  twitter_visible:  'true',
-  instagram_visible:'true',
-  youtube_visible:  'true',
+  social_buttons: '[]',
 }
 
-const ALLOWED = ['whatsapp', 'twitter', 'instagram', 'youtube',
-                 'whatsapp_visible', 'twitter_visible', 'instagram_visible', 'youtube_visible']
+const ALLOWED = ['whatsapp', 'whatsapp_visible', 'social_buttons']
 
 export async function GET() {
   try {

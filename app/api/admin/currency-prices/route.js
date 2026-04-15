@@ -4,7 +4,7 @@ import { validateOrigin } from '../../../../src/lib/csrf'
 
 const kv = Redis.fromEnv()
 const KV_KEY = 'fitzone_currency_prices'
-const VALID_KEY = /^(SAR|USD|EUR|GBP|AED|KWD|QAR|BHD|EGP)_(transformation|nutrition)$/
+const VALID_KEY = /^(SAR|USD|EUR|GBP|AED|KWD|QAR|BHD|EGP)_(transformation|nutrition|bundle)$/
 
 export async function GET() {
   try {
