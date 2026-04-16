@@ -115,7 +115,7 @@ export default function Header() {
             </div>
 
             <button onClick={() => router.push(user ? '/account' : '/account/login')}
-              className="w-10 h-10 bg-white/5 border border-white/15 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
+              className="hidden sm:flex w-10 h-10 bg-white/5 border border-white/15 rounded-lg items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors">
               <UserCircle size={18} />
             </button>
 
@@ -161,6 +161,11 @@ export default function Header() {
               {item.label}
             </button>
           ))}
+          <button onClick={() => { setMobileMenuOpen(false); router.push(user ? '/account' : '/account/login') }}
+            className={cn('px-4 py-4 rounded-xl text-lg font-medium transition-all flex items-center gap-3', lang === 'ar' ? 'text-right' : 'text-left', pathname === '/account' || pathname === '/account/login' ? 'bg-brand/10 text-brand' : 'text-text-secondary hover:text-white hover:bg-white/5')}>
+            <UserCircle size={20} />
+            {user ? (lang === 'ar' ? 'حسابي' : 'My Account') : (lang === 'ar' ? 'تسجيل الدخول' : 'Login')}
+          </button>
           <button onClick={() => { setMobileMenuOpen(false); router.push('/programs') }} className="mt-4 bg-gradient-to-r from-brand to-brand-dark text-white px-6 py-4 rounded-xl text-lg font-semibold">
             {t('nav.getBooks')}
           </button>
