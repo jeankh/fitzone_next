@@ -14,7 +14,7 @@ export function MarketingProvider({ children, initialMarketing }) {
     if (!initialMarketing) return DEFAULTS
     let social_buttons = []
     try { social_buttons = JSON.parse(initialMarketing.social_buttons || '[]') } catch {}
-    return { ...DEFAULTS, ...initialMarketing, social_buttons }
+    return { ...initialMarketing, ...DEFAULTS, social_buttons }
   })
 
   return (
