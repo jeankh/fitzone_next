@@ -94,6 +94,12 @@ Plaintext migration, signup validation, set-password flow, dynamic imports, clie
 - Added tabs for Traffic, Products, Marketing, Blogs, and Purchases
 - Kept all existing admin tools/logic intact while reducing scroll and making each area easier to manage
 
+### Session 13 — Contact & Icon Fixes
+- WhatsApp default updated across code to `971509982833` (layout, marketing API defaults, MarketingContext, FAQ CTA). Live value still comes from Redis admin setting.
+- Social URLs updated in Footer: Instagram → `fitzoneapp1`, TikTok → `@fitzoneapp`
+- Fixed TikTok icon — custom SVG now accepts `size` prop and applies width/height so it matches Instagram icon visually
+- Legal "الدفع" section: dropped SAR-specific wording, now simply `جميع الاسعار تشمل الضريبة.`
+
 ## Current State
 All known issues resolved. Build passes cleanly. Remaining nice-to-haves:
 - Download links in account dashboard (currently WhatsApp-only delivery)
