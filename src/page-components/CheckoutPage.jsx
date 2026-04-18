@@ -285,8 +285,8 @@ function PhoneField({ selectedCountry, onCountryChange, value, onChange, onBlur,
 export default function CheckoutPage() {
   const router = useRouter()
   const { lang } = useLanguage()
-  const { formatPrice, countryCode } = useCurrency()
-  const { cart, removeFromCart, clearCart, addToCart, getTotal, getMissingBook, wasAutoUpgraded, BOOKS_DATA } = useCart()
+  const { formatPriceFor, formatAmount, priceFor, countryCode, currencyCode } = useCurrency()
+  const { cart, removeFromCart, clearCart, addToCart, getMissingBook, wasAutoUpgraded, BOOKS_DATA } = useCart()
   const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight
 
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0])
@@ -314,7 +314,11 @@ export default function CheckoutPage() {
     }
   }, [user])
 
-  const finalTotal = getTotal()
+  // Total in the visitor's currency, using Stripe's currency_options for each item.
+  const finalTotal = cart.reduce((sum, id) => {
+    const p = priceFor(id)
+    return sum + (p ? p.amount : 0)
+  }, 0)
 
   const handleInput = (e) => {
     const { name, value } = e.target
@@ -364,6 +368,7 @@ export default function CheckoutPage() {
           phone: fullPhone,
           name: formData.name,
           lang,
+          currency: currencyCode,
         }),
       })
 
@@ -508,7 +513,7 @@ export default function CheckoutPage() {
                 <div className="absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity" />
                 {redirecting
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{lang === 'ar' ? 'جاري التحويل…' : 'Redirecting…'}</>
-                  : <><Lock size={16} />{lang === 'ar' ? `ادفع الآن ${formatPrice(finalTotal, lang)}` : `Pay Now ${formatPrice(finalTotal, lang)}`}</>
+                  : <><Lock size={16} />{lang === 'ar' ? `ادفع الآن ${formatAmount(finalTotal, lang)}` : `Pay Now ${formatAmount(finalTotal, lang)}`}</>
                 }
               </motion.button>
 
@@ -541,7 +546,7 @@ export default function CheckoutPage() {
                       <span className="text-2xl shrink-0">{book.icon}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-sm font-medium truncate">{lang === 'ar' ? book.titleAr : book.titleEn}</p>
-                        <p className="text-brand text-sm font-bold">{formatPrice(book.price, lang)}</p>
+                        <p className="text-brand text-sm font-bold">{formatPriceFor(bookId, lang)}</p>
                       </div>
                       <button onClick={() => removeFromCart(bookId)}
                         className="w-7 h-7 rounded-lg bg-red-500/0 group-hover:bg-red-500/10 text-white/20 group-hover:text-red-400 flex items-center justify-center transition-all">
@@ -610,7 +615,7 @@ export default function CheckoutPage() {
               <div className="border-t border-white/8 pt-4 mb-4">
                 <div className="flex items-center justify-between">
                   <span className="text-white/50 text-sm">{lang === 'ar' ? 'المجموع' : 'Subtotal'}</span>
-                  <span className="text-white text-sm">{formatPrice(finalTotal, lang)}</span>
+                  <span className="text-white text-sm">{formatAmount(finalTotal, lang)}</span>
                 </div>
                 <div className="flex items-center justify-between mt-1">
                   <span className="text-white/50 text-sm">{lang === 'ar' ? 'الضريبة' : 'Tax'}</span>
@@ -620,7 +625,7 @@ export default function CheckoutPage() {
 
               <div className="flex items-center justify-between py-3 border-t border-white/10">
                 <span className="text-white font-bold">{lang === 'ar' ? 'الإجمالي' : 'Total'}</span>
-                <span className="text-brand text-xl font-bold">{formatPrice(finalTotal, lang)}</span>
+                <span className="text-brand text-xl font-bold">{formatAmount(finalTotal, lang)}</span>
               </div>
 
               {/* Security badge */}

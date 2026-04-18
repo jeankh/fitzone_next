@@ -10,7 +10,7 @@ const ShellWrapper = dynamic(() => import('./ShellWrapper'), { ssr: false })
 
 export default function ClientLayout({ children, prices, marketing }) {
   return (
-    <CurrencyProvider>
+    <CurrencyProvider priceOptions={prices?.options} baseCurrency={prices?.currency}>
       <LanguageProvider>
         <UserProvider>
           <MarketingProvider initialMarketing={marketing}>

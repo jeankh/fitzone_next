@@ -20,7 +20,14 @@ export default function CartModal() {
     BOOKS_DATA,
   } = useCart()
   const { lang } = useLanguage()
-  const { formatPrice } = useCurrency()
+  const { formatPriceFor, priceFor, formatAmount } = useCurrency()
+
+  // Total is summed in the visitor's currency using Stripe's currency_options.
+  // If a product has no matching option, its base-currency amount is included.
+  const totalInView = cart.reduce((sum, id) => {
+    const p = priceFor(id)
+    return sum + (p ? p.amount : 0)
+  }, 0)
   const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight
 
   const missingBook = getMissingBook()
@@ -103,7 +110,7 @@ export default function CartModal() {
                             {lang === 'ar' ? book.titleAr : book.titleEn}
                           </h3>
                           <p className="text-brand font-bold mt-0.5">
-                            {formatPrice(book.price, lang)}
+                            {formatPriceFor(bookId, lang)}
                           </p>
                           {bookId === 'bundle' && (
                             <span className="inline-flex items-center gap-1 text-[10px] text-accent-green font-semibold mt-1">
@@ -194,7 +201,7 @@ export default function CartModal() {
                   {lang === 'ar' ? 'المجموع' : 'Total'}
                 </span>
                 <span className="text-white text-2xl font-bold">
-                  {formatPrice(getTotal(), lang)}
+                  {formatAmount(totalInView, lang)}
                 </span>
               </div>
 

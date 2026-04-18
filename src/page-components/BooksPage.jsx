@@ -82,7 +82,7 @@ export default function BooksPage() {
   const searchParams = useSearchParams()
   const { addToCart, isInCart, removeFromCart, prices } = useCart()
   const { lang, t } = useLanguage()
-  const { formatPrice } = useCurrency()
+  const { formatPrice, formatPriceFor } = useCurrency()
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
   const [highlightedBook, setHighlightedBook] = useState(null)
@@ -217,7 +217,7 @@ export default function BooksPage() {
                 {/* 3. Bottom bar — price + CTA */}
                 <div className="flex items-center gap-3 px-4 py-3 border-t border-border bg-white/[0.02]">
                   <div className="flex items-baseline gap-1.5 flex-shrink-0">
-                    <span className="text-white text-2xl font-extrabold">{formatPrice(prices[book.id], lang)}</span>
+                    <span className="text-white text-2xl font-extrabold">{formatPriceFor(book.id, lang)}</span>
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.97 }}
@@ -280,7 +280,7 @@ export default function BooksPage() {
                   </div>
                   <div className="border-t border-border pt-4">
                     <div className="flex items-center gap-2 mb-4 flex-wrap">
-                      <span className="text-white text-2xl font-extrabold">{formatPrice(prices[book.id], lang)}</span>
+                      <span className="text-white text-2xl font-extrabold">{formatPriceFor(book.id, lang)}</span>
                     </div>
                     <div className="flex gap-3">
                       <motion.button
@@ -450,7 +450,7 @@ export default function BooksPage() {
                 <div className="mt-auto bg-white/[0.03] border border-white/8 rounded-2xl p-5 flex flex-col gap-4">
                   {/* Price row */}
                   <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-white text-5xl font-extrabold tracking-tight">{formatPrice(prices.bundle, lang)}</span>
+                    <span className="text-white text-5xl font-extrabold tracking-tight">{formatPriceFor('bundle', lang)}</span>
                     <div className="flex flex-col gap-1 ms-auto">
                     </div>
                   </div>

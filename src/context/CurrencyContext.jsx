@@ -1,19 +1,20 @@
 'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
 
-// Rates are expressed as "1 AED = X <currency>". Base currency is AED (what Stripe charges).
-// Update these if base currency changes.
-const BASE_CURRENCY = 'AED'
-const RATES = {
-  AED: { symbol: 'د.إ', symbolEn: 'AED', rate: 1 },
-  SAR: { symbol: 'ر.س', symbolEn: 'SAR', rate: 1.02 },
-  USD: { symbol: '$',    symbolEn: 'USD', rate: 0.272 },
-  EUR: { symbol: '€',    symbolEn: 'EUR', rate: 0.250 },
-  GBP: { symbol: '£',    symbolEn: 'GBP', rate: 0.214 },
-  KWD: { symbol: 'د.ك', symbolEn: 'KWD', rate: 0.084 },
-  QAR: { symbol: 'ر.ق', symbolEn: 'QAR', rate: 0.991 },
-  BHD: { symbol: 'د.ب', symbolEn: 'BHD', rate: 0.103 },
-  EGP: { symbol: 'ج.م', symbolEn: 'EGP', rate: 13.4  },
+// Symbols only — no hardcoded rates. Actual prices come from Stripe's currency_options.
+// If Stripe has no option for the visitor's currency, we fall back to the base Stripe
+// currency so the displayed price always matches what Checkout will charge.
+const DEFAULT_BASE = 'AED'
+const SYMBOLS = {
+  AED: { symbol: 'د.إ', symbolEn: 'AED' },
+  SAR: { symbol: 'ر.س', symbolEn: 'SAR' },
+  USD: { symbol: '$',    symbolEn: 'USD' },
+  EUR: { symbol: '€',    symbolEn: 'EUR' },
+  GBP: { symbol: '£',    symbolEn: 'GBP' },
+  KWD: { symbol: 'د.ك', symbolEn: 'KWD' },
+  QAR: { symbol: 'ر.ق', symbolEn: 'QAR' },
+  BHD: { symbol: 'د.ب', symbolEn: 'BHD' },
+  EGP: { symbol: 'ج.م', symbolEn: 'EGP' },
 }
 
 const COUNTRY_TO_CURRENCY = {
@@ -34,18 +35,38 @@ const COUNTRY_TO_CURRENCY = {
 
 const CurrencyContext = createContext(null)
 
-export function CurrencyProvider({ children }) {
-  const [currency, setCurrency] = useState({ code: BASE_CURRENCY, ...RATES[BASE_CURRENCY] })
+function renderAmount(code, amount, lang) {
+  const sym = SYMBOLS[code] || { symbol: code, symbolEn: code }
+  const rounded = Math.round(amount)
+  if (code === 'AED') return lang === 'ar' ? `${rounded} ${sym.symbol}` : `${sym.symbolEn} ${rounded}`
+  if (code === 'SAR') return lang === 'ar' ? `${rounded} ر.س` : `SAR ${rounded}`
+  const prefixSymbols = ['$', '£', '€']
+  if (!lang || lang === 'en') {
+    return prefixSymbols.includes(sym.symbol) ? `${sym.symbol}${rounded}` : `${rounded} ${sym.symbolEn}`
+  }
+  return `${rounded} ${sym.symbol}`
+}
+
+export function CurrencyProvider({ children, priceOptions, baseCurrency }) {
+  const base = (baseCurrency || DEFAULT_BASE).toUpperCase()
+  const [currencyCode, setCurrencyCode] = useState(base)
   const [countryCode, setCountryCode] = useState('AE')
   const [loading, setLoading] = useState(true)
+
+  // Only accept a detected currency if Stripe actually has a price for it (any product).
+  // Otherwise stick with the base currency so the displayed price matches Checkout.
+  const hasStripePriceFor = (code) => {
+    if (!priceOptions) return code === base
+    return Object.values(priceOptions).some(opts => opts && opts[code] != null)
+  }
 
   useEffect(() => {
     const cached = sessionStorage.getItem('fitzone_currency')
     if (cached) {
       try {
         const parsed = JSON.parse(cached)
-        if (RATES[parsed.code]) {
-          setCurrency({ code: parsed.code, ...RATES[parsed.code] })
+        if (SYMBOLS[parsed.code] && hasStripePriceFor(parsed.code)) {
+          setCurrencyCode(parsed.code)
           if (parsed.countryCode) setCountryCode(parsed.countryCode)
           setLoading(false)
           return
@@ -56,8 +77,7 @@ export function CurrencyProvider({ children }) {
     const controller = new AbortController()
     const timeout = setTimeout(() => {
       controller.abort()
-      setCurrency({ code: BASE_CURRENCY, ...RATES[BASE_CURRENCY] })
-      setCountryCode('AE')
+      setCurrencyCode(base)
       setLoading(false)
     }, 3000)
 
@@ -66,57 +86,46 @@ export function CurrencyProvider({ children }) {
       .then(data => {
         clearTimeout(timeout)
         const detectedCountry = data.country_code || 'AE'
-        const code = COUNTRY_TO_CURRENCY[detectedCountry] || 'USD'
-        const resolved = { code, ...RATES[code] }
+        const detected = COUNTRY_TO_CURRENCY[detectedCountry] || 'USD'
+        const code = hasStripePriceFor(detected) ? detected : base
         sessionStorage.setItem('fitzone_currency', JSON.stringify({ code, countryCode: detectedCountry }))
-        setCurrency(resolved)
+        setCurrencyCode(code)
         setCountryCode(detectedCountry)
         setLoading(false)
       })
       .catch((e) => {
         console.error('Currency detection failed:', e)
         clearTimeout(timeout)
-        setCurrency({ code: BASE_CURRENCY, ...RATES[BASE_CURRENCY] })
-        setCountryCode('AE')
+        setCurrencyCode(base)
         setLoading(false)
       })
   }, [])
 
-  // Input amount is in the base currency (AED — what Stripe charges).
-  const formatPrice = (baseAmount, lang) => {
-    const converted = Math.round(baseAmount * currency.rate)
-    if (currency.code === BASE_CURRENCY) {
-      return lang === 'ar' ? `${converted} ${currency.symbol}` : `${currency.symbolEn} ${converted}`
-    }
-    if (currency.code === 'SAR') {
-      return lang === 'ar' ? `${converted} ر.س` : `SAR ${converted}`
-    }
-    const prefixSymbols = ['$', '£', '€']
-    if (!lang || lang === 'en') {
-      return prefixSymbols.includes(currency.symbol)
-        ? `${currency.symbol}${converted}`
-        : `${converted} ${currency.symbolEn}`
-    }
-    return `${converted} ${currency.symbol}`
+  const currency = { code: currencyCode, ...(SYMBOLS[currencyCode] || SYMBOLS[base]) }
+
+  // Lookup the Stripe-priced amount for a product in the active currency.
+  // Falls back to the base currency amount if Stripe has no option for this currency.
+  const priceFor = (productId) => {
+    if (!priceOptions || !priceOptions[productId]) return null
+    const opts = priceOptions[productId]
+    if (opts[currencyCode] != null) return { code: currencyCode, amount: opts[currencyCode] }
+    if (opts[base] != null) return { code: base, amount: opts[base] }
+    const first = Object.entries(opts)[0]
+    return first ? { code: first[0], amount: first[1] } : null
   }
 
-  // Format a pre-converted amount (override price already in target currency)
-  const formatAmount = (amount, lang) => {
-    const rounded = Math.round(amount)
-    if (currency.code === 'SAR') {
-      return lang === 'ar' ? `${rounded} ر.س` : `SAR ${rounded}`
-    }
-    const prefixSymbols = ['$', '£', '€']
-    if (!lang || lang === 'en') {
-      return prefixSymbols.includes(currency.symbol)
-        ? `${currency.symbol}${rounded}`
-        : `${rounded} ${currency.symbolEn}`
-    }
-    return `${rounded} ${currency.symbol}`
+  const formatPriceFor = (productId, lang) => {
+    const p = priceFor(productId)
+    if (!p) return ''
+    return renderAmount(p.code, p.amount, lang)
   }
+
+  // Back-compat: callers that pass a raw number (base-currency amount) keep working.
+  const formatPrice = (amount, lang) => renderAmount(base, amount, lang)
+  const formatAmount = (amount, lang) => renderAmount(currencyCode, amount, lang)
 
   return (
-    <CurrencyContext.Provider value={{ currency, formatPrice, formatAmount, loading }}>
+    <CurrencyContext.Provider value={{ currency, currencyCode, countryCode, formatPrice, formatPriceFor, formatAmount, priceFor, loading, baseCurrency: base }}>
       {children}
     </CurrencyContext.Provider>
   )

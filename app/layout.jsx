@@ -8,23 +8,47 @@ const PRICE_DEFAULTS = { transformation: 79, nutrition: 79, bundle: 158 }
 const MARKETING_DEFAULTS = { whatsapp: '971509982833', whatsapp_visible: 'true', social_buttons: '[]' }
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
+function extractOptions(price) {
+  const base = price.currency.toUpperCase()
+  const options = { [base]: price.unit_amount / 100 }
+  if (price.currency_options) {
+    for (const [code, opt] of Object.entries(price.currency_options)) {
+      if (opt?.unit_amount != null) options[code.toUpperCase()] = opt.unit_amount / 100
+    }
+  }
+  return options
+}
+
 async function fetchPrices() {
   try {
     const stripe = getStripe()
     const [t, n, b] = await Promise.all([
-      stripe.prices.retrieve(PRICE_IDS.transformation),
-      stripe.prices.retrieve(PRICE_IDS.nutrition),
-      stripe.prices.retrieve(PRICE_IDS.bundle),
+      stripe.prices.retrieve(PRICE_IDS.transformation, { expand: ['currency_options'] }),
+      stripe.prices.retrieve(PRICE_IDS.nutrition,       { expand: ['currency_options'] }),
+      stripe.prices.retrieve(PRICE_IDS.bundle,          { expand: ['currency_options'] }),
     ])
     return {
       transformation: t.unit_amount / 100,
       nutrition:       n.unit_amount / 100,
       bundle:          b.unit_amount / 100,
-      currency:        t.currency.toUpperCase(), // all share the same base currency
+      currency:        t.currency.toUpperCase(),
+      options: {
+        transformation: extractOptions(t),
+        nutrition:       extractOptions(n),
+        bundle:          extractOptions(b),
+      },
     }
   } catch (err) {
     console.error('Failed to fetch Stripe prices, using defaults:', err.message)
-    return { ...PRICE_DEFAULTS, currency: 'AED' }
+    return {
+      ...PRICE_DEFAULTS,
+      currency: 'AED',
+      options: {
+        transformation: { AED: PRICE_DEFAULTS.transformation },
+        nutrition:       { AED: PRICE_DEFAULTS.nutrition },
+        bundle:          { AED: PRICE_DEFAULTS.bundle },
+      },
+    }
   }
 }
 
