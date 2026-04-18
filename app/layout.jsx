@@ -24,7 +24,7 @@ async function fetchPrices() {
     }
   } catch (err) {
     console.error('Failed to fetch Stripe prices, using defaults:', err.message)
-    return { ...PRICE_DEFAULTS, currency: 'SAR' }
+    return { ...PRICE_DEFAULTS, currency: 'AED' }
   }
 }
 

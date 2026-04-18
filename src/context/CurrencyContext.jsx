@@ -1,18 +1,19 @@
 'use client'
 import { createContext, useContext, useState, useEffect } from 'react'
 
-// Fallback rates (SAR-based). Admin can override per-product prices via /api/admin/currency-prices.
-// These are only used when no admin-configured price exists for a currency.
+// Rates are expressed as "1 AED = X <currency>". Base currency is AED (what Stripe charges).
+// Update these if base currency changes.
+const BASE_CURRENCY = 'AED'
 const RATES = {
-  SAR: { symbol: 'ر.س', symbolEn: 'SAR', rate: 1 },
-  USD: { symbol: '$',    symbolEn: 'USD', rate: 0.267 },
-  EUR: { symbol: '€',    symbolEn: 'EUR', rate: 0.245 },
-  GBP: { symbol: '£',    symbolEn: 'GBP', rate: 0.210 },
-  AED: { symbol: 'د.إ', symbolEn: 'AED', rate: 0.980 },
-  KWD: { symbol: 'د.ك', symbolEn: 'KWD', rate: 0.082 },
-  QAR: { symbol: 'ر.ق', symbolEn: 'QAR', rate: 0.972 },
-  BHD: { symbol: 'د.ب', symbolEn: 'BHD', rate: 0.100 },
-  EGP: { symbol: 'ج.م', symbolEn: 'EGP', rate: 13.1  },
+  AED: { symbol: 'د.إ', symbolEn: 'AED', rate: 1 },
+  SAR: { symbol: 'ر.س', symbolEn: 'SAR', rate: 1.02 },
+  USD: { symbol: '$',    symbolEn: 'USD', rate: 0.272 },
+  EUR: { symbol: '€',    symbolEn: 'EUR', rate: 0.250 },
+  GBP: { symbol: '£',    symbolEn: 'GBP', rate: 0.214 },
+  KWD: { symbol: 'د.ك', symbolEn: 'KWD', rate: 0.084 },
+  QAR: { symbol: 'ر.ق', symbolEn: 'QAR', rate: 0.991 },
+  BHD: { symbol: 'د.ب', symbolEn: 'BHD', rate: 0.103 },
+  EGP: { symbol: 'ج.م', symbolEn: 'EGP', rate: 13.4  },
 }
 
 const COUNTRY_TO_CURRENCY = {
@@ -34,8 +35,8 @@ const COUNTRY_TO_CURRENCY = {
 const CurrencyContext = createContext(null)
 
 export function CurrencyProvider({ children }) {
-  const [currency, setCurrency] = useState(RATES.SAR)
-  const [countryCode, setCountryCode] = useState('SA')
+  const [currency, setCurrency] = useState({ code: BASE_CURRENCY, ...RATES[BASE_CURRENCY] })
+  const [countryCode, setCountryCode] = useState('AE')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -55,8 +56,8 @@ export function CurrencyProvider({ children }) {
     const controller = new AbortController()
     const timeout = setTimeout(() => {
       controller.abort()
-      setCurrency({ code: 'SAR', ...RATES.SAR })
-      setCountryCode('SA')
+      setCurrency({ code: BASE_CURRENCY, ...RATES[BASE_CURRENCY] })
+      setCountryCode('AE')
       setLoading(false)
     }, 3000)
 
@@ -64,7 +65,7 @@ export function CurrencyProvider({ children }) {
       .then(r => r.json())
       .then(data => {
         clearTimeout(timeout)
-        const detectedCountry = data.country_code || 'SA'
+        const detectedCountry = data.country_code || 'AE'
         const code = COUNTRY_TO_CURRENCY[detectedCountry] || 'USD'
         const resolved = { code, ...RATES[code] }
         sessionStorage.setItem('fitzone_currency', JSON.stringify({ code, countryCode: detectedCountry }))
@@ -75,27 +76,27 @@ export function CurrencyProvider({ children }) {
       .catch((e) => {
         console.error('Currency detection failed:', e)
         clearTimeout(timeout)
-        setCurrency({ code: 'SAR', ...RATES.SAR })
-        setCountryCode('SA')
+        setCurrency({ code: BASE_CURRENCY, ...RATES[BASE_CURRENCY] })
+        setCountryCode('AE')
         setLoading(false)
       })
   }, [])
 
-  const formatPrice = (sarAmount, lang) => {
-    const converted = Math.round(sarAmount * currency.rate)
-    const sym = lang === 'ar' ? currency.symbol : currency.symbolEn
-    // For SAR in Arabic: "79 ر.س", for USD: "$ 21", for others: symbol before or after
+  // Input amount is in the base currency (AED — what Stripe charges).
+  const formatPrice = (baseAmount, lang) => {
+    const converted = Math.round(baseAmount * currency.rate)
+    if (currency.code === BASE_CURRENCY) {
+      return lang === 'ar' ? `${converted} ${currency.symbol}` : `${currency.symbolEn} ${converted}`
+    }
     if (currency.code === 'SAR') {
       return lang === 'ar' ? `${converted} ر.س` : `SAR ${converted}`
     }
-    // Western symbols ($, £, €) go before the number
     const prefixSymbols = ['$', '£', '€']
     if (!lang || lang === 'en') {
       return prefixSymbols.includes(currency.symbol)
         ? `${currency.symbol}${converted}`
         : `${converted} ${currency.symbolEn}`
     }
-    // Arabic: always number then symbol
     return `${converted} ${currency.symbol}`
   }
 

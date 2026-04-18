@@ -6,7 +6,7 @@ import { useUser } from './UserContext'
 const STORAGE_KEY = 'fitzone_cart'
 const INDIVIDUAL_BOOKS = ['transformation', 'nutrition']
 const BUNDLE_ID = 'bundle'
-const DEFAULT_PRICES = { transformation: 79, nutrition: 79, bundle: 158, currency: 'SAR' }
+const DEFAULT_PRICES = { transformation: 79, nutrition: 79, bundle: 158, currency: 'AED' }
 
 export const BOOKS_DATA = {
   transformation: {
@@ -188,7 +188,7 @@ export function CartProvider({ children, initialPrices }) {
 
   const openCheckout = useCallback(() => {
     trackEvent('checkout_starts')
-    if (typeof window.gtag === 'function') window.gtag('event', 'begin_checkout', { value: getTotal(), currency: prices.currency || 'SAR' })
+    if (typeof window.gtag === 'function') window.gtag('event', 'begin_checkout', { value: getTotal(), currency: prices.currency || 'AED' })
     setIsCartOpen(false)
     router.push('/checkout')
   }, [getTotal, router, prices.currency])
