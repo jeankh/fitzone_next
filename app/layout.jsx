@@ -5,7 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { getStripe, PRICE_IDS } from '../src/lib/stripe'
 
 const PRICE_DEFAULTS = { transformation: 79, nutrition: 79, bundle: 158 }
-const MARKETING_DEFAULTS = { whatsapp: '966500000000', whatsapp_visible: 'true', social_buttons: '[]' }
+const MARKETING_DEFAULTS = { whatsapp: '971509982833', whatsapp_visible: 'true', social_buttons: '[]' }
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
 
 async function fetchPrices() {

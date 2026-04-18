@@ -6,17 +6,17 @@ import { useLanguage } from '../context/LanguageContext'
 import { useMarketing } from '../context/MarketingContext'
 import Image from 'next/image'
 
-function TikTokIcon(props) {
+function TikTokIcon({ size = 24, ...props }) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M16.5 2h-3v13.2a2.7 2.7 0 1 1-2.7-2.7c.2 0 .5 0 .7.1V9.5a5.7 5.7 0 1 0 5 5.7V9a7.4 7.4 0 0 0 4.3 1.4V7.3a4.4 4.4 0 0 1-4.3-4.3V2z"/>
     </svg>
   )
 }
 
 const SOCIAL_LINKS = [
-  { label: 'Instagram', icon: Instagram, href: 'https://instagram.com/fitzone' },
-  { label: 'TikTok',    icon: TikTokIcon, href: 'https://tiktok.com/@fitzone' },
+  { label: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/fitzoneapp1' },
+  { label: 'TikTok',    icon: TikTokIcon, href: 'https://www.tiktok.com/@fitzoneapp' },
 ]
 
 export default function Footer() {

@@ -2,7 +2,7 @@
 import { createContext, useContext, useState } from 'react'
 
 const DEFAULTS = {
-  whatsapp: '966500000000',
+  whatsapp: '971509982833',
   whatsapp_visible: 'true',
   social_buttons: [],
 }

@@ -43,7 +43,7 @@ export default function FAQ() {
             </p>
 
             <motion.a
-              href="https://wa.me/966500000000"
+              href="https://wa.me/971509982833"
               target="_blank"
               rel="noopener noreferrer"
               whileHover={{ scale: 1.02, y: -2 }}
