@@ -41,14 +41,15 @@ const CurrencyContext = createContext(null)
 
 function renderAmount(code, amount, lang) {
   const sym = SYMBOLS[code] || { symbol: code, symbolEn: code }
-  const rounded = Math.round(amount)
-  if (code === 'AED') return lang === 'ar' ? `${rounded} ${sym.symbol}` : `${sym.symbolEn} ${rounded}`
-  if (code === 'SAR') return lang === 'ar' ? `${rounded} ر.س` : `SAR ${rounded}`
+  const isWhole = Number.isInteger(amount)
+  const display = isWhole ? String(amount) : amount.toFixed(2)
+  if (code === 'AED') return lang === 'ar' ? `${display} ${sym.symbol}` : `${sym.symbolEn} ${display}`
+  if (code === 'SAR') return lang === 'ar' ? `${display} ر.س` : `SAR ${display}`
   const prefixSymbols = ['$', '£', '€']
   if (!lang || lang === 'en') {
-    return prefixSymbols.includes(sym.symbol) ? `${sym.symbol}${rounded}` : `${rounded} ${sym.symbolEn}`
+    return prefixSymbols.includes(sym.symbol) ? `${sym.symbol}${display}` : `${display} ${sym.symbolEn}`
   }
-  return `${rounded} ${sym.symbol}`
+  return `${display} ${sym.symbol}`
 }
 
 export function CurrencyProvider({ children, priceOptions, baseCurrency }) {
