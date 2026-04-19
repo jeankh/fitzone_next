@@ -14,6 +14,8 @@ const SYMBOLS = {
   KWD: { symbol: 'د.ك', symbolEn: 'KWD' },
   QAR: { symbol: 'ر.ق', symbolEn: 'QAR' },
   BHD: { symbol: 'د.ب', symbolEn: 'BHD' },
+  OMR: { symbol: 'ر.ع', symbolEn: 'OMR' },
+  JOD: { symbol: 'د.أ', symbolEn: 'JOD' },
   EGP: { symbol: 'ج.م', symbolEn: 'EGP' },
 }
 
@@ -23,6 +25,8 @@ const COUNTRY_TO_CURRENCY = {
   KW: 'KWD',
   QA: 'QAR',
   BH: 'BHD',
+  OM: 'OMR',
+  JO: 'JOD',
   EG: 'EGP',
   GB: 'GBP',
   US: 'USD', CA: 'USD', AU: 'USD', NZ: 'USD',

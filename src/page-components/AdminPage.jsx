@@ -759,14 +759,23 @@ function Dashboard({ onLogout, initialEvents }) {
     setUploadingEbook(productId)
     setEbookError(null)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('productId', productId)
-      const res = await fetch('/api/admin/upload-ebook', { method: 'POST', body: formData })
-      const data = await res.json()
-      if (data.url) setEbooks(e => ({ ...e, [productId]: data.url }))
-      else setEbookError(data.error || 'Upload failed')
-    } catch { setEbookError('Upload failed — network error') }
+      const { upload } = await import('@vercel/blob/client')
+      const blob = await upload(`ebooks/${productId}-${Date.now()}.pdf`, file, {
+        access: 'public',
+        handleUploadUrl: '/api/admin/upload-ebook',
+        clientPayload: JSON.stringify({ productId }),
+        contentType: 'application/pdf',
+      })
+      // Persist the blob URL in Redis ourselves — the blob webhook isn't reliable on localhost.
+      await fetch('/api/admin/upload-ebook', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, url: blob.url }),
+      })
+      setEbooks(e => ({ ...e, [productId]: blob.url }))
+    } catch (err) {
+      setEbookError(err?.message || 'Upload failed')
+    }
     setUploadingEbook(null)
   }
 
