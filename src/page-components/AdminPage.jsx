@@ -1157,7 +1157,7 @@ export default function AdminPage({ initialEvents }) {
 
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY) === 'true') {
-      fetch('/api/admin/prices').then(r => {
+      fetch('/api/admin/purchases').then(r => {
         if (r.status === 401) { sessionStorage.removeItem(SESSION_KEY); setIsAuthenticated(false) }
       }).catch(() => {})
     }
