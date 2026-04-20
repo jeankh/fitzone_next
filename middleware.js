@@ -4,7 +4,7 @@ import { checkRateLimit } from './src/lib/ratelimit'
 import { verifyUserToken } from './src/lib/user-auth'
 
 const PUBLIC_ADMIN_ROUTES = ['/api/admin/login', '/api/admin/logout']
-const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/blogs', '/api/checkout/success', '/api/user/me', '/api/user/purchases', '/api/user/verify-magic', '/api/user/cart']
+const PUBLIC_GET_ROUTES = ['/api/admin/prices', '/api/admin/currency-prices', '/api/admin/marketing', '/api/admin/blogs', '/api/checkout/success', '/api/user/me', '/api/user/purchases', '/api/user/verify-magic', '/api/user/cart', '/api/user/download']
 const PUBLIC_POST_ROUTES = ['/api/checkout/create-checkout-session', '/api/webhooks/stripe', '/api/user/signup', '/api/user/login', '/api/user/logout', '/api/user/send-magic', '/api/user/send-reset', '/api/user/set-password', '/api/user/reset-password']
 const WEBHOOK_ROUTES = ['/api/webhooks/stripe']
 const INTERNAL_ROUTES = ['/api/events']
