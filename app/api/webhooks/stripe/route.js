@@ -3,7 +3,8 @@ import { getStripe } from '../../../../src/lib/stripe'
 import { getRedis } from '../../../../src/lib/redis'
 import { getFromEmail, getResend } from '../../../../src/lib/email'
 import { buildOrderConfirmationEmail } from '../../../../src/lib/emails'
-import { parseItems } from '../../../../src/lib/user-auth'
+import { parseItems, claimPurchaseSession } from '../../../../src/lib/user-auth'
+import { incrementEventCount } from '../../../../src/lib/events'
 
 const PURCHASES_KEY = 'fitzone_purchases'
 
@@ -33,6 +34,15 @@ export async function POST(req) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
+
+    // Claim the session atomically. If the /checkout/success callback
+    // already processed this session (or a Stripe retry already fired),
+    // skip: everything below is already done exactly once.
+    const claimed = await claimPurchaseSession(session.id)
+    if (!claimed) {
+      return NextResponse.json({ received: true, deduplicated: true })
+    }
+
     const { items, phone, name, lang } = session.metadata || {}
     const email = session.customer_email
     const amount = session.amount_total
@@ -71,16 +81,7 @@ export async function POST(req) {
       console.log(`WhatsApp notification queued for ${phone} (implement with Twilio/WhatsApp Business API)`)
     }
 
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.fitzoneapp.com'}/api/events`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-secret': process.env.INTERNAL_SECRET || '',
-        },
-        body: JSON.stringify({ key: 'purchases' }),
-      })
-    } catch {}
+    await incrementEventCount('purchases')
   }
 
   return NextResponse.json({ received: true })

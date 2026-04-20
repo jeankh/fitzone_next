@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 import { getStripe } from '../../../../src/lib/stripe'
-import { getOrCreateUser, addUserPurchase, createMagicToken, parseItems } from '../../../../src/lib/user-auth'
+import { getOrCreateUser, addUserPurchase, createMagicToken, parseItems, claimPurchaseSession } from '../../../../src/lib/user-auth'
 import { getRedis } from '../../../../src/lib/redis'
 import { getFromEmail, getResend } from '../../../../src/lib/email'
 import { buildAccountCreatedEmail } from '../../../../src/lib/emails'
+import { incrementEventCount } from '../../../../src/lib/events'
 
 const PURCHASES_KEY = 'fitzone_purchases'
 
@@ -26,67 +27,67 @@ export async function GET(req) {
       return NextResponse.json({ error: 'Payment not completed' }, { status: 400 })
     }
 
-    // Auto-create account and link purchase
+    // Auto-create account and link purchase. Gated by claimPurchaseSession
+    // so retries (page refresh, webhook re-delivery) don't duplicate the
+    // user-purchase row, the admin-purchases row, the Traffic counter, or
+    // the welcome/magic-link email.
     let accountCreated = false
-    try {
-      const buyerEmail = session.customer_email
-      if (buyerEmail) {
-        const { user, isNew } = await getOrCreateUser({
-          name: session.metadata?.name || buyerEmail.split('@')[0],
-          email: buyerEmail,
-          phone: session.metadata?.phone || '',
-        })
-
-        const purchase = {
-          id: session.id,
-          email: buyerEmail || '',
-          phone: session.metadata?.phone || '',
-          name: session.metadata?.name || '',
-          items: parseItems(session.metadata?.items),
-          amount: session.amount_total || 0,
-          currency: session.currency || 'sar',
-          status: session.payment_status || 'paid',
-          createdAt: new Date().toISOString(),
-        }
-        await addUserPurchase(user.id, purchase)
-
-        // Also store in admin purchases list
-        try {
-          const kv = getRedis()
-          const existing = await kv.lrange(PURCHASES_KEY, 0, -1)
-          const alreadyStored = existing.some(item => {
-            try { return JSON.parse(item).id === session.id } catch { return false }
+    const claimed = await claimPurchaseSession(session.id)
+    if (claimed) {
+      try {
+        const buyerEmail = session.customer_email
+        if (buyerEmail) {
+          const { user, isNew } = await getOrCreateUser({
+            name: session.metadata?.name || buyerEmail.split('@')[0],
+            email: buyerEmail,
+            phone: session.metadata?.phone || '',
           })
-          if (!alreadyStored) {
-            await kv.lpush(PURCHASES_KEY, JSON.stringify(purchase))
+
+          const purchase = {
+            id: session.id,
+            email: buyerEmail || '',
+            phone: session.metadata?.phone || '',
+            name: session.metadata?.name || '',
+            items: parseItems(session.metadata?.items),
+            amount: session.amount_total || 0,
+            currency: session.currency || 'sar',
+            status: session.payment_status || 'paid',
+            createdAt: new Date().toISOString(),
           }
-        } catch {}
-
-        accountCreated = isNew
-
-        // Send magic link email for new accounts
-        if (isNew) {
-          const magicToken = await createMagicToken(user.id)
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.get('host')}`
-          const magicUrl = `${baseUrl}/api/user/verify-magic?token=${magicToken}`
-          const lang = session.metadata?.lang || 'ar'
+          await addUserPurchase(user.id, purchase)
 
           try {
-            const template = buildAccountCreatedEmail({ name: user.name, magicUrl, lang })
+            await getRedis().lpush(PURCHASES_KEY, JSON.stringify(purchase))
+          } catch {}
 
-            await (await getResend()).emails.send({
-              from: getFromEmail(),
-              to: buyerEmail,
-              subject: template.subject,
-              html: template.html,
-            })
-          } catch (emailError) {
-            console.error('Account email error:', emailError.message)
+          await incrementEventCount('purchases')
+
+          accountCreated = isNew
+
+          // Send magic link email for new accounts
+          if (isNew) {
+            const magicToken = await createMagicToken(user.id)
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `https://${req.headers.get('host')}`
+            const magicUrl = `${baseUrl}/api/user/verify-magic?token=${magicToken}`
+            const lang = session.metadata?.lang || 'ar'
+
+            try {
+              const template = buildAccountCreatedEmail({ name: user.name, magicUrl, lang })
+
+              await (await getResend()).emails.send({
+                from: getFromEmail(),
+                to: buyerEmail,
+                subject: template.subject,
+                html: template.html,
+              })
+            } catch (emailError) {
+              console.error('Account email error:', emailError.message)
+            }
           }
         }
+      } catch (e) {
+        console.error('Failed to process account:', e.message)
       }
-    } catch (e) {
-      console.error('Failed to process account:', e.message)
     }
 
     // Return minimal safe data (no PII, no passwords)

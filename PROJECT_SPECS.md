@@ -100,6 +100,14 @@ Plaintext migration, signup validation, set-password flow, dynamic imports, clie
 - Fixed TikTok icon — custom SVG now accepts `size` prop and applies width/height so it matches Instagram icon visually
 - Legal "الدفع" section: dropped SAR-specific wording, now simply `جميع الاسعار تشمل الضريبة.`
 
+### Session 15 — Purchase Idempotency Fix
+- Two writers (Stripe webhook + `/api/checkout/success` route) both appended to `fitzone_purchases` for the same session. Dedupe in the success route was check-then-act and raced with the webhook → same session appeared twice. Traffic counter undercounted because only the webhook incremented it.
+- Added `claimPurchaseSession(sessionId)` in `src/lib/user-auth.js` — atomic `SET NX EX` on `fitzone_purchase_seen_<id>` (7-day TTL). Exactly one writer wins per session.
+- Added `src/lib/events.js` exporting `incrementEventCount(key)` — direct Redis `hincrby`, replaces the self-request `fetch('/api/events')` from the webhook.
+- Webhook and success route now both claim the session before doing side effects (store admin purchase row, per-user row, confirmation email, welcome email, counter increment).
+- Allowlist `/api/events` POST still serves client-side event tracking (cart/checkout) — untouched.
+- Out-of-band cleanup needed in Upstash: remove one of the duplicate `m.alhadidi98` rows via `LREM fitzone_purchases 1 "<json>"` and `HSET fitzone_events purchases 2` to realign the counter.
+
 ### Session 14 — Purchase Items Shape Fix
 - Stripe metadata forces `items` to a string, so `create-checkout-session` stringifies the array. Webhook and checkout-success handlers were storing that JSON string as-is, while consumers split it on `,` → new customers saw `["transformation"]` as a product title and downloads 400'd.
 - Added `parseItems(value)` helper in `src/lib/user-auth.js` that accepts array, JSON string `'["id"]'`, or legacy comma string, returning an array

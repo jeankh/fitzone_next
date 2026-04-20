@@ -127,6 +127,26 @@ export async function addUserPurchase(userId, purchase) {
   await kv.lpush(key, JSON.stringify(purchase))
 }
 
+const PURCHASE_SEEN_PREFIX = 'fitzone_purchase_seen_'
+
+// Atomic idempotency guard: returns true if this session has not been
+// recorded before (caller proceeds to write), false if another writer
+// already claimed it. Uses SET NX EX so both the Stripe webhook and the
+// /checkout/success callback can race safely — only one wins.
+// Why this exists: Stripe retries webhooks on slow responses, and the
+// success callback can run before the webhook finishes. Before this
+// guard, duplicate rows landed in fitzone_purchases.
+export async function claimPurchaseSession(sessionId) {
+  if (!sessionId) return false
+  const kv = getRedis()
+  const result = await kv.set(
+    `${PURCHASE_SEEN_PREFIX}${sessionId}`,
+    '1',
+    { nx: true, ex: 60 * 60 * 24 * 7 },
+  )
+  return result === 'OK'
+}
+
 // Purchase records exist in three shapes in Redis:
 //   - array (new writes)
 //   - JSON string like '["transformation"]' (old writes that forgot to parse)
