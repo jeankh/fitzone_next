@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { verifyUserToken, getUserPurchases } from '../../../../src/lib/user-auth'
+import { verifyUserToken, getUserPurchases, parseItems } from '../../../../src/lib/user-auth'
 import { getRedis } from '../../../../src/lib/redis'
 
 export const dynamic = 'force-dynamic'
@@ -22,7 +22,7 @@ export async function GET(request) {
     // Verify the user has purchased this product
     const purchases = await getUserPurchases(payload.userId)
     const hasPurchased = purchases.some(p => {
-      const items = (p.items || '').split(',').map(s => s.trim())
+      const items = parseItems(p.items)
       return items.includes(productId) || items.includes('bundle')
     })
 

@@ -143,9 +143,22 @@ export function buildMagicLinkEmail({ name, magicUrl, lang = 'ar', supportEmail 
 export function buildOrderConfirmationEmail({ emailName, items, lang = 'ar', supportEmail = 'support@fitzoneapp.com' }) {
   const isAr = lang === 'ar'
   const safeName = escapeHtml(emailName)
-  const itemList = (items || '')
-    .split(',')
-    .filter(Boolean)
+  // items may arrive as an array, a JSON string like '["transformation"]',
+  // or a legacy comma string like 'transformation,nutrition'.
+  // Inlined here instead of importing parseItems to keep this module free of
+  // server-auth deps (jose/bcrypt) — email builders are used from many paths.
+  let ids = []
+  if (Array.isArray(items)) {
+    ids = items
+  } else if (typeof items === 'string' && items.trim()) {
+    const trimmed = items.trim()
+    if (trimmed.startsWith('[')) {
+      try { ids = JSON.parse(trimmed) } catch { ids = [] }
+    } else {
+      ids = trimmed.split(',').map(s => s.trim()).filter(Boolean)
+    }
+  }
+  const itemList = ids
     .map(id => `<li style="margin-bottom:10px">${itemName(id, lang)}</li>`)
     .join('')
 

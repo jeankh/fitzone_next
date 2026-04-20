@@ -100,6 +100,15 @@ Plaintext migration, signup validation, set-password flow, dynamic imports, clie
 - Fixed TikTok icon — custom SVG now accepts `size` prop and applies width/height so it matches Instagram icon visually
 - Legal "الدفع" section: dropped SAR-specific wording, now simply `جميع الاسعار تشمل الضريبة.`
 
+### Session 14 — Purchase Items Shape Fix
+- Stripe metadata forces `items` to a string, so `create-checkout-session` stringifies the array. Webhook and checkout-success handlers were storing that JSON string as-is, while consumers split it on `,` → new customers saw `["transformation"]` as a product title and downloads 400'd.
+- Added `parseItems(value)` helper in `src/lib/user-auth.js` that accepts array, JSON string `'["id"]'`, or legacy comma string, returning an array
+- Write path now stores `items` as an array: `app/api/checkout/success/route.js`, `app/api/webhooks/stripe/route.js`
+- Read path normalizes at API boundaries so clients never see the raw shape: `app/api/user/purchases/route.js`, `app/api/admin/purchases/route.js`; download authorization uses `parseItems` in `app/api/user/download/route.js`
+- Client code (`app/account/page.jsx`, `src/page-components/AdminPage.jsx`) now expects `items` as an array
+- Order-confirmation email (`src/lib/emails.js`) accepts any of the three shapes for back-compat with existing queued emails
+- Old Redis records were NOT backfilled — read-side normalizer covers them transparently
+
 ## Current State
 All known issues resolved. Build passes cleanly. Remaining nice-to-haves:
 - Download links in account dashboard (currently WhatsApp-only delivery)

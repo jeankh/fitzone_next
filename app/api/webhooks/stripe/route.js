@@ -3,6 +3,7 @@ import { getStripe } from '../../../../src/lib/stripe'
 import { getRedis } from '../../../../src/lib/redis'
 import { getFromEmail, getResend } from '../../../../src/lib/email'
 import { buildOrderConfirmationEmail } from '../../../../src/lib/emails'
+import { parseItems } from '../../../../src/lib/user-auth'
 
 const PURCHASES_KEY = 'fitzone_purchases'
 
@@ -36,8 +37,9 @@ export async function POST(req) {
     const email = session.customer_email
     const amount = session.amount_total
     const currency = session.currency
+    const parsedItems = parseItems(items)
 
-    console.log('Payment completed:', { email, phone, name, items, amount, currency, lang })
+    console.log('Payment completed:', { email, phone, name, items: parsedItems, amount, currency, lang })
 
     try {
       await getRedis().lpush(PURCHASES_KEY, JSON.stringify({
@@ -45,7 +47,7 @@ export async function POST(req) {
         email: email || '',
         phone: phone || '',
         name: name || '',
-        items: items || '',
+        items: parsedItems,
         amount: amount || 0,
         currency: currency || 'sar',
         lang: lang || 'ar',
@@ -58,7 +60,7 @@ export async function POST(req) {
 
     if (email) {
       try {
-        await sendConfirmationEmail({ email, name, items, lang })
+        await sendConfirmationEmail({ email, name, items: parsedItems, lang })
         console.log('Confirmation email sent to:', email)
       } catch (err) {
         console.error('Failed to send confirmation email:', err.message)

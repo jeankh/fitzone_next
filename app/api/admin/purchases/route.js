@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getRedis } from '../../../../src/lib/redis'
+import { parseItems } from '../../../../src/lib/user-auth'
 
 const PURCHASES_KEY = 'fitzone_purchases'
 
@@ -12,7 +13,10 @@ export async function GET(request) {
 
     const raw = await kv.lrange(PURCHASES_KEY, page * limit, page * limit + limit - 1)
     const purchases = raw.map(item => {
-      try { return typeof item === 'string' ? JSON.parse(item) : item } catch { return null }
+      try {
+        const p = typeof item === 'string' ? JSON.parse(item) : item
+        return p ? { ...p, items: parseItems(p.items) } : null
+      } catch { return null }
     }).filter(Boolean)
 
     let stats = { total: 0, totalRevenue: 0, revenueByCurrency: {}, itemCounts: {} }
@@ -26,7 +30,7 @@ export async function GET(request) {
         stats.revenueByCurrency[c] = (stats.revenueByCurrency[c] || 0) + (p.amount || 0)
       }
       for (const p of parsed) {
-        const items = (p.items || '').split(',').filter(Boolean)
+        const items = parseItems(p.items)
         for (const id of items) stats.itemCounts[id] = (stats.itemCounts[id] || 0) + 1
       }
     }

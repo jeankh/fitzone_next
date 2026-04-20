@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 import { getStripe } from '../../../../src/lib/stripe'
-import { getOrCreateUser, addUserPurchase, createMagicToken } from '../../../../src/lib/user-auth'
+import { getOrCreateUser, addUserPurchase, createMagicToken, parseItems } from '../../../../src/lib/user-auth'
 import { getRedis } from '../../../../src/lib/redis'
 import { getFromEmail, getResend } from '../../../../src/lib/email'
 import { buildAccountCreatedEmail } from '../../../../src/lib/emails'
@@ -42,7 +42,7 @@ export async function GET(req) {
           email: buyerEmail || '',
           phone: session.metadata?.phone || '',
           name: session.metadata?.name || '',
-          items: session.metadata?.items || '',
+          items: parseItems(session.metadata?.items),
           amount: session.amount_total || 0,
           currency: session.currency || 'sar',
           status: session.payment_status || 'paid',

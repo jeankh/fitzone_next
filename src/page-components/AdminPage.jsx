@@ -1116,7 +1116,7 @@ function Dashboard({ onLogout, initialEvents }) {
                         </div>
                         <span className="text-text-secondary text-xs truncate">{p.email || '—'}</span>
                         <div className="flex flex-wrap gap-1">
-                          {(p.items || '').split(',').filter(Boolean).map(id => (
+                          {(Array.isArray(p.items) ? p.items : []).map(id => (
                             <span key={id} className="text-[10px] bg-brand/10 text-brand px-1.5 py-0.5 rounded capitalize">{id}</span>
                           ))}
                         </div>

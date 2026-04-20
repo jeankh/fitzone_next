@@ -192,7 +192,7 @@ export default function AccountPage() {
           ) : (
             <div className="divide-y divide-border">
               {purchases.map((p, i) => {
-                const rawItems = (p.items || '').split(',').filter(Boolean)
+                const rawItems = Array.isArray(p.items) ? p.items : []
                 // Expand bundle into both individual books for download
                 const items = rawItems.includes('bundle')
                   ? ['transformation', 'nutrition']

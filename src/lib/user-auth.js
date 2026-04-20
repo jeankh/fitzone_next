@@ -127,6 +127,26 @@ export async function addUserPurchase(userId, purchase) {
   await kv.lpush(key, JSON.stringify(purchase))
 }
 
+// Purchase records exist in three shapes in Redis:
+//   - array (new writes)
+//   - JSON string like '["transformation"]' (old writes that forgot to parse)
+//   - comma string like 'transformation,nutrition' (original format)
+// Normalize to an array for every consumer.
+export function parseItems(value) {
+  let result = []
+  if (Array.isArray(value)) {
+    result = value
+  } else if (value && typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed.startsWith('[')) {
+      try { result = JSON.parse(trimmed) } catch { result = [] }
+    } else {
+      result = trimmed.split(',').map(s => s.trim()).filter(Boolean)
+    }
+  }
+  return Array.isArray(result) ? result.filter(x => typeof x === 'string') : []
+}
+
 export async function getOrCreateUser({ name, email, phone }) {
   const normalizedEmail = email.toLowerCase().trim()
   const existing = await getUserByEmail(normalizedEmail)
